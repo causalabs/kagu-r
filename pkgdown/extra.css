@@ -1,0 +1,149 @@
+/* ============================================================
+   Kagu — pkgdown custom styling
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&display=swap');
+
+/* ---- Home: full-width, no sidebar so the hero can breathe ---- */
+.template-home aside { display: none; }
+@media (min-width: 768px) {
+  .template-home main.col-md-9 { flex: 0 0 100%; max-width: 100%; }
+}
+.template-home main { margin: 0 auto; max-width: 940px; }
+/* the hero supplies its own title; neutralise pkgdown's auto page-header chrome */
+.kagu-hero .page-header { margin: 0; padding: 0; border: 0; min-height: 0; }
+.kagu-hero .page-header .anchor { display: none; }
+
+/* ---- Hero banner ---- */
+.kagu-hero {
+  position: relative;
+  overflow: hidden;
+  margin: 1.5rem 0 3.5rem;
+  padding: 6rem 1.5rem 6.5rem;
+  border-radius: 22px;
+  text-align: center;
+  border: 1px solid #ece7dd;
+  background:
+    radial-gradient(1100px 520px at 50% -12%, #e3f3f0 0%, rgba(227,243,240,0) 62%),
+    linear-gradient(180deg, #fbfaf7 0%, #f4f1ea 100%);
+  box-shadow:
+    0 1px 2px rgba(28, 40, 38, .04),
+    0 28px 56px -28px rgba(28, 40, 38, .20);
+}
+
+/* DAG-constellation art, served as a background so pandoc never rewrites it.
+   Faded toward the centre with a radial mask so the headline stays crisp. */
+.kagu-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201200%20600'%20preserveAspectRatio='xMidYMid%20slice'%3E%3Cdefs%3E%3Cmarker%20id='a'%20viewBox='0%200%2010%2010'%20refX='9'%20refY='5'%20markerWidth='6'%20markerHeight='6'%20orient='auto-start-reverse'%3E%3Cpath%20d='M0,0%20L10,5%20L0,10%20z'%20fill='%2326a69a'/%3E%3C/marker%3E%3C/defs%3E%3Cg%20stroke='%2326a69a'%20stroke-width='1.4'%20fill='none'%20marker-end='url(%23a)'%20opacity='0.16'%3E%3Cline%20x1='150'%20y1='150'%20x2='280'%20y2='300'/%3E%3Cline%20x1='150'%20y1='150'%20x2='320'%20y2='110'/%3E%3Cline%20x1='320'%20y1='110'%20x2='470'%20y2='240'/%3E%3Cline%20x1='280'%20y1='300'%20x2='470'%20y2='240'/%3E%3Cline%20x1='280'%20y1='300'%20x2='230'%20y2='470'/%3E%3Cline%20x1='470'%20y1='240'%20x2='430'%20y2='470'/%3E%3Cline%20x1='930'%20y1='120'%20x2='1060'%20y2='260'/%3E%3Cline%20x1='930'%20y1='120'%20x2='780'%20y2='200'/%3E%3Cline%20x1='780'%20y1='200'%20x2='900'%20y2='380'/%3E%3Cline%20x1='1060'%20y1='260'%20x2='900'%20y2='380'/%3E%3Cline%20x1='900'%20y1='380'%20x2='970'%20y2='520'/%3E%3Cline%20x1='780'%20y1='200'%20x2='720'%20y2='430'/%3E%3C/g%3E%3Cg%20fill='%2326a69a'%20opacity='0.22'%3E%3Ccircle%20cx='150'%20cy='150'%20r='7'/%3E%3Ccircle%20cx='320'%20cy='110'%20r='6'/%3E%3Ccircle%20cx='280'%20cy='300'%20r='8'/%3E%3Ccircle%20cx='470'%20cy='240'%20r='7'/%3E%3Ccircle%20cx='230'%20cy='470'%20r='6'/%3E%3Ccircle%20cx='430'%20cy='470'%20r='6'/%3E%3Ccircle%20cx='930'%20cy='120'%20r='7'/%3E%3Ccircle%20cx='780'%20cy='200'%20r='8'/%3E%3Ccircle%20cx='1060'%20cy='260'%20r='6'/%3E%3Ccircle%20cx='900'%20cy='380'%20r='7'/%3E%3Ccircle%20cx='970'%20cy='520'%20r='6'/%3E%3Ccircle%20cx='720'%20cy='430'%20r='6'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center;
+  -webkit-mask-image: radial-gradient(620px 360px at 50% 46%, transparent 0%, #000 78%);
+          mask-image: radial-gradient(620px 360px at 50% 46%, transparent 0%, #000 78%);
+}
+
+.kagu-hero__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.kagu-hero__title {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: clamp(2.9rem, 6.2vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: #1c2826;
+  margin: 0 0 1.1rem;
+}
+
+.kagu-hero__tagline {
+  font-size: clamp(1.05rem, 1.9vw, 1.3rem);
+  line-height: 1.55;
+  color: #4a5754;
+  max-width: 560px;
+  margin: 0 auto 2.25rem;
+}
+
+.kagu-hero__install {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  background: #1c2826;
+  color: #f4f1ea;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: .95rem;
+  padding: .8rem 1.15rem;
+  border-radius: 11px;
+  box-shadow: 0 14px 34px -16px rgba(28, 40, 38, .55);
+}
+.kagu-hero__install::before {
+  content: "›";
+  color: #26a69a;
+  font-weight: 700;
+}
+.kagu-hero__install code {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.kagu-hero__actions {
+  margin-top: 2.25rem;
+  display: flex;
+  gap: .9rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.kagu-btn {
+  display: inline-block;
+  font-weight: 600;
+  text-decoration: none;
+  padding: .8rem 1.6rem;
+  border-radius: 11px;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
+}
+.kagu-btn--primary {
+  background: #26a69a;
+  color: #fff;
+  box-shadow: 0 14px 26px -12px rgba(38, 166, 154, .75);
+}
+.kagu-btn--primary:hover {
+  background: #1f8e83;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px -12px rgba(38, 166, 154, .85);
+}
+.kagu-btn--ghost {
+  background: transparent;
+  color: #1c2826;
+  border: 1px solid #d6cfc1;
+}
+.kagu-btn--ghost:hover {
+  background: #fff;
+  color: #1c2826;
+  transform: translateY(-1px);
+}
+
+/* ---- Body headings on the home page in Fraunces, to match the hero ---- */
+.template-home main h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: #1c2826;
+  margin-top: 2.75rem;
+}
+.template-home main h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  color: #2a3835;
+}

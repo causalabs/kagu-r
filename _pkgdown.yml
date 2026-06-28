@@ -1,0 +1,78 @@
+url: https://your-org.github.io/kagu-r/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary:         "#26a69a"
+    navbar-bg:       "#212529"
+    navbar-light-color:       "#ffffff"
+    navbar-light-hover-color: "#b2dfdb"
+    navbar-light-active-color: "#b2dfdb"
+    base_font:       {google: "IBM Plex Sans"}
+    code_font:       {google: "IBM Plex Mono"}
+
+navbar:
+  bg: dark
+
+home:
+  title: Kagu
+  description: Bayesian graphical causal models in R
+
+reference:
+  - title: "Model"
+    desc: "Main user-facing class."
+    contents:
+      - KaguModel
+  - title: "Mechanisms"
+    desc: "Probabilistic models for node conditional distributions."
+    contents:
+      - Mechanism
+      - LinearMechanism
+  - title: "Effects"
+    desc: "Causal effect estimation and results."
+    contents:
+      - EffectResult
+      - compute_effect
+  - title: "DAG utilities"
+    desc: "Graph operations on DAG specifications."
+    contents:
+      - validate_dag
+      - topological_sort
+      - ancestors
+      - descendants
+      - is_ancestor
+      - node_depth
+  - title: "Plots"
+    contents:
+      - kagu_plot_dag
+      - kagu_plot_posterior
+  - title: "Save / load"
+    contents:
+      - kagu_save
+      - kagu_load
+  - title: "Fitting"
+    contents:
+      - fit_node
+  - title: "Summaries"
+    contents:
+      - build_summary_table
+  - title: "Internal"
+    desc: "File-level documentation pages."
+    contents:
+      - dag
+      - effects
+      - inference
+      - io
+      - mechanisms
+      - plots
+      - summary
+
+articles:
+  - title: "Get started"
+    navbar: ~
+    contents:
+      - quickstart
+  - title: "Examples"
+    navbar: Examples
+    contents:
+      - comparison

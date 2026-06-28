@@ -1,0 +1,23 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Package build artefacts
+/doc/
+/Meta/
+/inst/doc/
+*.tar.gz
+*.Rcheck/
+
+# pkgdown site (built at deploy time)
+/docs/
+
+# testthat artefacts
+/tests/testthat/_snaps/
+
+# brms compiled Stan models
+*.rds
+!tests/testthat/fixtures/*.rds

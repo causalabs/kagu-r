@@ -1,0 +1,104 @@
+---
+title: "Quickstart"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quickstart}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 6, fig.height = 4
+)
+library(kagu)
+set.seed(42)
+```
+
+## Define the causal structure
+
+A Kagu model is a DAG — a named list mapping each node to its parent nodes.
+
+```{r dag}
+dag <- list(
+  education = c(),
+  experience = c(),
+  income = c("education", "experience")
+)
+
+model <- KaguModel$new(dag = dag)
+model$plot_dag()
+```
+
+## Simulate data and fit
+
+```{r data}
+N          <- 500
+education  <- rnorm(N, 14, 2)
+experience <- rnorm(N, 10, 5)
+income     <- 3000 + 500 * education + 200 * experience + rnorm(N, sd = 2000)
+
+data <- data.frame(
+  education  = education,
+  experience = experience,
+  income     = income
+)
+```
+
+```{r fit, results = "hide"}
+model$fit(data, draws = 1000, tune = 1000, chains = 4)
+```
+
+## Causal effects
+
+```{r unit-effect}
+# Unit effect at the mean — equivalent to a regression coefficient
+effect <- model$effects("education", "income")
+effect$summary()
+```
+
+```{r sd-effect}
+# Effect of a 1-SD increase in education
+effect_sd <- model$effects("education", "income", std_units = TRUE)
+effect_sd$summary()
+```
+
+```{r contrast}
+# Explicit contrast: 12 years vs 16 years of education
+effect_contrast <- model$effects("education", "income", values = c(12, 16))
+effect_contrast$summary()
+```
+
+```{r plot-effect}
+effect$plot()
+```
+
+## Dose-response curve
+
+```{r sweep}
+sweep <- model$effects("education", "income", sweep = TRUE)
+sweep$plot()
+```
+
+## Model summary
+
+```{r summary}
+model$summary()
+```
+
+## Diagnostics
+
+```{r diagnostics}
+model$diagnostics("income")
+```
+
+## Save and load
+
+```{r save-load}
+tmp <- tempfile(fileext = ".rds")
+model$save(tmp)
+loaded <- KaguModel$load(tmp)
+loaded$effects("education", "income")$summary()
+```

@@ -1,0 +1,37 @@
+Package: kagu
+Title: Bayesian Graphical Causal Models
+Version: 0.1.0
+Authors@R:
+    person("Jordan", role = c("aut", "cre"), email = "jordan@example.com")
+Description: Fit Bayesian graphical causal models specified as directed acyclic
+    graphs (DAGs). Each node's conditional distribution is fitted as an
+    independent Bayesian model via brms, exploiting the Markov blanket
+    factorisation. Causal effects are estimated by propagating interventions
+    forward through the structural model using the do-operator.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.2.0)
+Imports:
+    R6,
+    brms (>= 2.20.0),
+    stats,
+    posterior (>= 1.4.0),
+    ggplot2 (>= 3.4.0),
+    bayestestR (>= 0.13.0),
+    dplyr,
+    tibble,
+    rlang,
+    grid
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    withr,
+    cmdstanr
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://github.com/your-org/kagu-r
+BugReports: https://github.com/your-org/kagu-r/issues
+Config/roxygen2/version: 8.0.0
