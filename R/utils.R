@@ -1,5 +1,40 @@
 # Internal utilities — not exported
 
+#' Check that every DAG node has a matching column in the data
+#'
+#' Raises an informative error if any node (and hence any node referenced as a
+#' parent) is absent from `data`. The message distinguishes a simply forgotten
+#' column from a genuinely latent variable, since the latter is a substantive
+#' identification problem rather than a typo.
+#'
+#' @param dag Named list — the DAG specification.
+#' @param data A `data.frame`.
+#' @noRd
+.check_data_nodes <- function(dag, data) {
+  missing <- setdiff(names(dag), names(data))
+  if (length(missing) == 0) return(invisible(NULL))
+
+  cli::cli_abort(c(
+    "{cli::qty(missing)}DAG node{?s} {.val {missing}} {?is/are} not present in {.arg data}.",
+    "i" = paste(
+      "{cli::qty(missing)}If {?this variable was/these variables were} simply",
+      "left out, add {?it/them} as {?a column/columns} and re-fit."
+    ),
+    "!" = paste(
+      "{cli::qty(missing)}If {?it is/they are} {.emph latent} — an unmeasured",
+      "common cause, for instance — Kagu cannot estimate {?its/their}",
+      "mechanism, because there are no observations to condition on."
+    ),
+    "i" = paste(
+      "Unobserved confounding biases every effect that flows through the",
+      "missing node, and no amount of modelling recovers it from the data",
+      "alone. Where a confounder is truly latent, establish that your target",
+      "effect is identifiable (e.g. via an instrument, a valid adjustment set,",
+      "or a front-door path) before trusting the estimates."
+    )
+  ))
+}
+
 #' Extract (n_chains, n_draws) from a brmsfit
 #'
 #' @param fit A `brmsfit` object.
@@ -33,13 +68,34 @@
   arr
 }
 
-#' Suppress brms/Stan console output during sampling
+#' Run an expression while swallowing brms/Stan/cmdstanr chatter
 #'
-#' @param expr Expression to evaluate silently.
+#' brms and cmdstanr print compilation and sampling chatter (e.g.
+#' "Model executable is up to date!") to both stdout and the message stream.
+#' This captures and discards all of it on success. If the expression errors,
+#' the captured log is surfaced first so the failure is still debuggable.
+#' Warnings are deliberately **not** suppressed — divergence / convergence
+#' warnings should reach the user.
+#'
+#' @param expr Expression to evaluate quietly.
 #' @noRd
 .quietly <- function(expr) {
-  suppressMessages(suppressWarnings(
-    utils::capture.output(result <- expr, type = "message")
-  ))
-  result
+  ok  <- FALSE
+  val <- NULL
+
+  captured <- utils::capture.output(
+    type = "output",
+    suppressMessages({
+      val <- tryCatch(
+        { result <- force(expr); ok <- TRUE; result },
+        error = function(e) e
+      )
+    })
+  )
+
+  if (!ok) {
+    if (length(captured)) message(paste(captured, collapse = "\n"))
+    stop(val)
+  }
+  val
 }

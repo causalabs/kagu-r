@@ -30,7 +30,7 @@ fit_node <- function(node, parents, data, mechanism,
   formula <- mechanism$build_formula(node, parents)
   priors  <- .build_priors(mechanism, parents)
 
-  brms::brm(
+  .quietly(brms::brm(
     formula  = formula,
     data     = data,
     family   = mechanism$family(),
@@ -42,7 +42,7 @@ fit_node <- function(node, parents, data, mechanism,
     silent   = silent,
     refresh  = 0,
     ...
-  )
+  ))
 }
 
 # --- Internal helpers --------------------------------------------------------

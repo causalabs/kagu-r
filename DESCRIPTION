@@ -16,6 +16,7 @@ Depends:
 Imports:
     R6,
     brms (>= 2.20.0),
+    cli,
     stats,
     posterior (>= 1.4.0),
     ggplot2 (>= 3.4.0),

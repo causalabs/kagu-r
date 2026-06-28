@@ -73,16 +73,22 @@ KaguModel <- R6::R6Class("KaguModel",
     #' @param ... Additional arguments forwarded to `brms::brm()`.
     #' @return `self` invisibly (for method chaining).
     fit = function(data, draws = 1000L, tune = 1000L, chains = 4L, ...) {
+      .check_data_nodes(self$dag, data)
+
       self$data <- data
       order     <- topological_sort(self$dag)
+      n_nodes   <- length(order)
 
-      for (node in order) {
-        parents <- self$dag[[node]]
-        message(sprintf("Fitting node '%s'...", node))
+      cli::cli_alert_info("Fitting {n_nodes} node{?s} in topological order …")
+      for (i in seq_along(order)) {
+        node <- order[[i]]
+        # Persistent per-node line (visible across consoles, RStudio, scripts);
+        # printed *before* the fit so the user sees which node is running.
+        cli::cli_alert("[{i}/{n_nodes}] fitting node {.field {node}} …")
 
         self$traces[[node]] <- fit_node(
           node      = node,
-          parents   = parents,
+          parents   = self$dag[[node]],
           data      = data,
           mechanism = self$mechanisms[[node]],
           draws     = draws,
@@ -91,6 +97,7 @@ KaguModel <- R6::R6Class("KaguModel",
           ...
         )
       }
+      cli::cli_alert_success("Fitted {n_nodes} node{?s}.")
 
       self$.fitted <- TRUE
       invisible(self)

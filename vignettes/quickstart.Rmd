@@ -17,11 +17,16 @@ library(kagu)
 set.seed(42)
 ```
 
+This quickstart fits a small causal model end to end: define the graph, fit it,
+and read off causal effects with full posterior uncertainty.
+
 ## Define the causal structure
 
 A Kagu model is a DAG — a named list mapping each node to its parent nodes.
+Here `income` is caused by both `education` and `experience`, which have no
+parents of their own (they are *root* nodes, written as `c()`).
 
-```{r dag}
+```{r dag, fig.height = 3}
 dag <- list(
   education = c(),
   experience = c(),
@@ -29,10 +34,25 @@ dag <- list(
 )
 
 model <- KaguModel$new(dag = dag)
-model$plot_dag()
+
+# node_pos gives each node a c(row, col) grid coordinate (row increases
+# downward, col rightward) so the layout renders predictably.
+model$plot_dag(node_pos = list(
+  education  = c(0, -1),
+  experience = c(0,  1),
+  income     = c(1,  0)
+))
 ```
 
+The arrows encode our causal assumptions: an arrow `A → B` means "A is a direct
+cause of B". Everything Kagu computes is relative to this structure, so it pays
+to get it right.
+
 ## Simulate data and fit
+
+We generate data in which each extra year of education adds £500 to income and
+each year of experience adds £200, then fit the model. Each node's conditional
+distribution is fitted as an independent Bayesian regression via `brms`.
 
 ```{r data}
 N          <- 500
@@ -47,35 +67,74 @@ data <- data.frame(
 )
 ```
 
-```{r fit, results = "hide"}
+```{r fit, results = "hide", message = FALSE}
 model$fit(data, draws = 1000, tune = 1000, chains = 4)
 ```
 
 ## Causal effects
 
+The default `effects()` call returns the **local causal effect at the mean** —
+the instantaneous slope of `target` with respect to `source`, holding the
+intervention central. For a linear mechanism this is directly comparable to a
+regression coefficient, and here it recovers the data-generating value of ≈ 500.
+
 ```{r unit-effect}
-# Unit effect at the mean — equivalent to a regression coefficient
 effect <- model$effects("education", "income")
 effect$summary()
 ```
 
+The summary is a tidy tibble. Reading the columns:
+
+- `from` / `to` — the two intervention values being contrasted.
+- `mean` — the posterior mean effect (our point estimate).
+- `sd` — the posterior standard deviation (how uncertain that estimate is).
+- `hdi_lower` / `hdi_upper` — the bounds of the 90% **highest density interval**
+  (HDI): the narrowest interval containing 90% of the posterior probability.
+  It is the Bayesian analogue of a confidence interval, but with the
+  interpretation people usually *want*: there is a 90% probability the effect
+  lies inside it, given the model and data. When the HDI excludes 0, the effect
+  is credibly non-zero in that direction.
+
+### Standardised effect
+
+`std_units = TRUE` reports the effect of a **one standard-deviation** increase
+in the cause, centred at its mean. This puts effects of variables measured on
+different scales onto a common footing for comparison.
+
 ```{r sd-effect}
-# Effect of a 1-SD increase in education
 effect_sd <- model$effects("education", "income", std_units = TRUE)
 effect_sd$summary()
 ```
 
+### Explicit contrast
+
+Pass `values = c(from, to)` to ask a concrete counterfactual question. Here:
+how much more would someone with 16 years of education earn than someone with
+12, all else flowing through the causal model?
+
 ```{r contrast}
-# Explicit contrast: 12 years vs 16 years of education
 effect_contrast <- model$effects("education", "income", values = c(12, 16))
 effect_contrast$summary()
 ```
+
+The mean is roughly four times the unit effect, as expected for a four-year gap
+under a linear mechanism.
+
+### Visualising the posterior
+
+`plot()` shows the full posterior distribution of the effect — the point is the
+mean and the bar beneath is the HDI. The spread *is* the uncertainty.
 
 ```{r plot-effect}
 effect$plot()
 ```
 
 ## Dose-response curve
+
+A sweep traces the expected outcome across a grid of intervention values,
+`E[income | do(education = x)]`, with an HDI ribbon. This is the interventional
+dose-response curve: what we expect income to be if we *set* education to each
+value.
 
 ```{r sweep}
 sweep <- model$effects("education", "income", sweep = TRUE)
@@ -84,17 +143,29 @@ sweep$plot()
 
 ## Model summary
 
+`summary()` returns a coefficient table across every node. Alongside the
+posterior `mean`, `sd`, and HDI for each parameter, it reports two convergence
+diagnostics: `rhat` should be ≈ 1.00 (values above ~1.01 signal that the chains
+have not mixed), and `ess_bulk` is the effective sample size (higher is better;
+a few hundred is usually plenty).
+
 ```{r summary}
 model$summary()
 ```
 
 ## Diagnostics
 
+For a closer look at a single node, `diagnostics()` returns the per-parameter
+r-hat and effective sample sizes with chain structure preserved.
+
 ```{r diagnostics}
 model$diagnostics("income")
 ```
 
 ## Save and load
+
+A fitted model (optionally with its data) round-trips to disk, so you can refit
+once and query effects later.
 
 ```{r save-load}
 tmp <- tempfile(fileext = ".rds")
