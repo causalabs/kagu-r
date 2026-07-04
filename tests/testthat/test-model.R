@@ -1,7 +1,7 @@
-test_that("KaguModel$new() assigns LinearMechanism by default", {
+test_that("KaguModel$new() assigns GPMechanism by default", {
   model <- KaguModel$new(dag = CHAIN_DAG)
   for (node in names(CHAIN_DAG)) {
-    expect_true(inherits(model$mechanisms[[node]], "LinearMechanism"))
+    expect_true(inherits(model$mechanisms[[node]], "GPMechanism"))
   }
 })
 

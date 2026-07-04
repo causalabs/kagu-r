@@ -28,7 +28,7 @@ per-graph log marginal likelihoods and the cache of unique local fits.
     \item{\code{local_logml}}{Named numeric — cached log marginal likelihood of each
 unique local model, keyed by \code{"node|sorted,parents"}.}
 
-    \item{\code{local_fits}}{Named list — the fitted \code{brmsfit} for each unique local
+    \item{\code{local_fits}}{Named list — the fitted model for each unique local
 model (reused for effect propagation; same keys as \code{local_logml}).}
 
     \item{\code{mechanisms}}{Named list of \code{Mechanism} instances, one per node.}

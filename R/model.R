@@ -31,7 +31,7 @@ KaguModel <- R6::R6Class("KaguModel",
     mechanisms = NULL,
     #' @field data The training `data.frame` (set after `$fit()`).
     data = NULL,
-    #' @field traces Named list of `brmsfit` objects, one per node (after fit).
+    #' @field traces Named list of mechanism fit objects, one per node (after fit).
     traces = NULL,
     #' @field .fitted Logical — whether `$fit()` has been called.
     .fitted = FALSE,
@@ -43,7 +43,7 @@ KaguModel <- R6::R6Class("KaguModel",
     #' @param dag Named list mapping each node to a character vector of its
     #'   parent node names. Root nodes map to `c()`.
     #' @param mechanisms Optional named list of `Mechanism` instances. Any
-    #'   node not specified receives a `LinearMechanism` by default.
+    #'   node not specified receives a `GPMechanism` by default.
     initialize = function(dag, mechanisms = NULL) {
       validate_dag(dag)
       self$dag <- dag
@@ -53,7 +53,7 @@ KaguModel <- R6::R6Class("KaguModel",
 
       self$mechanisms <- setNames(
         lapply(nodes, function(n) {
-          if (!is.null(mechanisms[[n]])) mechanisms[[n]] else LinearMechanism$new()
+          if (!is.null(mechanisms[[n]])) mechanisms[[n]] else GPMechanism$new()
         }),
         nodes
       )
@@ -67,12 +67,9 @@ KaguModel <- R6::R6Class("KaguModel",
 
     #' @description Fit each node's conditional distribution in topological order.
     #' @param data A `data.frame` with one column per node.
-    #' @param draws Integer — post-warmup draws per chain (default 1000).
-    #' @param tune Integer — warmup draws per chain (default 1000).
-    #' @param chains Integer — number of MCMC chains (default 4).
-    #' @param ... Additional arguments forwarded to `brms::brm()`.
+    #' @param ... Additional arguments forwarded to each node's mechanism `$fit()`.
     #' @return `self` invisibly (for method chaining).
-    fit = function(data, draws = 1000L, tune = 1000L, chains = 4L, ...) {
+    fit = function(data, ...) {
       .check_data_nodes(self$dag, data)
 
       self$data <- data
@@ -91,9 +88,6 @@ KaguModel <- R6::R6Class("KaguModel",
           parents   = self$dag[[node]],
           data      = data,
           mechanism = self$mechanisms[[node]],
-          draws     = draws,
-          tune      = tune,
-          chains    = chains,
           ...
         )
       }
@@ -142,25 +136,39 @@ KaguModel <- R6::R6Class("KaguModel",
     # -------------------------------------------------------------------------
     # Summaries and diagnostics
 
-    #' @description Coefficient table across all node mechanisms.
-    #' @param hdi_prob Numeric — HDI probability (default 0.90).
-    #' @return A `tibble` with columns `node`, `variable`, `mean`, `sd`,
-    #'   `hdi_lower`, `hdi_upper`, `rhat`, `ess_bulk`.
+    #' @description Per-node summary table.
+    #'
+    #' For each node, reports the direct local effect of each parent (the
+    #' function's gradient at the parents' means — comparable to a regression
+    #' coefficient) and the residual noise sd, each with posterior mean, sd and
+    #' HDI.
+    #' @param hdi_prob Numeric — HDI probability (default 0.90; currently fixed).
+    #' @return A `tibble` with columns `node`, `term`, `mean`, `sd`,
+    #'   `hdi_lower`, `hdi_upper`.
     summary = function(hdi_prob = 0.90) {
       if (!self$.fitted) stop("Call $fit() before $summary().")
-      build_summary_table(self$traces, hdi_prob)
+      build_summary_table(self)
     },
 
-    #' @description R-hat and ESS diagnostics for fitted nodes.
+    #' @description Fit diagnostics for each node.
+    #'
+    #' The Gaussian-process sampler produces a single chain, so r-hat / ESS do
+    #' not apply; this reports the posterior draw count and the residual noise sd
+    #' per node.
     #' @param node Optional character scalar. If `NULL`, runs for all nodes.
-    #' @return A `tibble` from `posterior::summarise_draws()`.
+    #' @return A `tibble` with `node`, `n_chains`, `n_draws`, `sigma`, `sigma_sd`.
     diagnostics = function(node = NULL) {
       if (!self$.fitted) stop("Call $fit() before $diagnostics().")
       target_nodes <- if (is.null(node)) names(self$traces) else node
       results <- lapply(target_nodes, function(n) {
-        df       <- posterior::summarise_draws(self$traces[[n]])
-        df$node  <- n
-        df[, c("node", setdiff(names(df), "node"))]
+        mech  <- self$mechanisms[[n]]
+        shape <- mech$posterior_shape(self$traces[[n]])
+        terms <- mech$node_terms(n, self$dag[[n]], self$data, self$traces[[n]])
+        sig   <- terms[terms$term == "sigma (noise)", ]
+        tibble::tibble(
+          node = n, n_chains = shape[["n_chains"]], n_draws = shape[["n_draws"]],
+          sigma = sig$mean, sigma_sd = sig$sd
+        )
       })
       do.call(rbind, results)
     },
@@ -177,11 +185,17 @@ KaguModel <- R6::R6Class("KaguModel",
     },
 
     #' @description Plot the posterior for a fitted node.
+    #'
+    #' Shows the node's direct local effects (each parent's gradient at the
+    #' means) and residual noise, as posterior means with HDI intervals.
     #' @param node Character scalar — the node to plot.
     #' @return A `ggplot` object.
     plot_posterior = function(node) {
       if (!self$.fitted) stop("Call $fit() before $plot_posterior().")
-      kagu_plot_posterior(self$traces[[node]], node)
+      terms <- self$mechanisms[[node]]$node_terms(
+        node, self$dag[[node]], self$data, self$traces[[node]]
+      )
+      kagu_plot_posterior(terms, node)
     },
 
     # -------------------------------------------------------------------------
@@ -207,8 +221,8 @@ KaguModel <- R6::R6Class("KaguModel",
                   paste(nodes, collapse = ", ")))
       if (self$.fitted) {
         n_draws <- tryCatch({
-          s <- .chain_draw_shape(self$traces[[nodes[[1]]]])
-          sprintf("%d chains x %d draws", s[["n_chains"]], s[["n_draws"]])
+          s <- self$mechanisms[[nodes[[1]]]]$posterior_shape(self$traces[[nodes[[1]]]])
+          sprintf("%d chain x %d draws", s[["n_chains"]], s[["n_draws"]])
         }, error = function(e) "?")
         cat(sprintf("  Posterior: %s\n", n_draws))
       }
@@ -223,12 +237,9 @@ KaguModel$load <- function(path) kagu_load(path)
 # Static structure-discovery method (called as KaguModel$discover(data, ...)).
 # Delegates to kagu_discover(); see ?kagu_discover for full documentation.
 KaguModel$discover <- function(data, nodes = NULL, disallowed = NULL,
-                               mechanisms = NULL, prior = "uniform",
-                               draws = 2000L, tune = 1000L, chains = 4L,
-                               backend = "cmdstanr", ...) {
+                               mechanisms = NULL, prior = "uniform", ...) {
   kagu_discover(
     data, nodes = nodes, disallowed = disallowed, mechanisms = mechanisms,
-    prior = prior, draws = draws, tune = tune, chains = chains,
-    backend = backend, ...
+    prior = prior, ...
   )
 }

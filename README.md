@@ -1,10 +1,10 @@
 # kagu
 
 **kagu** is an R package for fitting Bayesian graphical causal models (GCMs).
-Models are specified as directed acyclic graphs (DAGs), fitted with full
-Bayesian inference via [brms](https://paul-buerkner.github.io/brms/), and
-causal effects are extracted by propagating interventions forward through the
-structural model.
+Models are specified as directed acyclic graphs (DAGs); each node's conditional
+distribution is modelled as a Gaussian process of its parents, and causal
+effects are extracted by propagating interventions forward through the
+structural model, carrying the full posterior throughout.
 
 ---
 
@@ -36,7 +36,7 @@ model$fit(data)
 
 # --- 2. Causal effects ---
 
-# Unit effect at the mean — equivalent to a regression coefficient
+# Local effect at the mean (for a linear relationship, a regression coefficient)
 effect <- model$effects("smoking", "health")
 effect$summary()
 #> # A tibble: 1 × 8
@@ -59,8 +59,8 @@ sweep <- model$effects("smoking", "health", sweep = TRUE)
 sweep$plot()
 
 # --- 4. Summaries and diagnostics ---
-model$summary()             # coefficient table across all nodes
-model$diagnostics("health") # r-hat and ESS
+model$summary()             # per-node direct local effects + residual noise
+model$diagnostics("health") # draw count and residual noise per node
 
 # --- 5. Plots ---
 model$plot_dag()              # DAG visualisation
@@ -104,22 +104,24 @@ Effects are computed via the *do-operator*:
 
 | Class | Model | Use case |
 |---|---|---|
-| `LinearMechanism` | `X_i ~ Normal(α + Σ βⱼ Paⱼ, σ)` | Continuous, unbounded |
+| `GPMechanism` | `X_i ~ GaussianProcess(Pa(X_i))` | Continuous; linear or nonlinear |
+
+Each mechanism is a Gaussian process over a smooth eigen-basis of its parents,
+fitted in closed form (conjugate Normal posterior; noise and amplitude set by
+type-II maximum likelihood). This gives full posterior uncertainty on effects
+and a closed-form marginal likelihood for structure discovery — no MCMC.
 
 ---
 
 ## Roadmap
 
-- [x] Core DAG-based Bayesian fitting (brms)
+- [x] Core DAG-based causal modelling (Gaussian-process mechanisms)
 - [x] Do-calculus effect estimation with full posterior
 - [x] Sweep plots with HDI ribbon
-- [x] R-hat diagnostics on effect posteriors
+- [x] Causal structure discovery — posterior over DAGs
+- [x] Bayesian model averaging of effects over the DAG posterior
 - [x] Save/load with data
 - [x] Documentation site (pkgdown)
 - [x] CI/CD (GitHub Actions)
-- [ ] **GLM mechanisms** — `LogNormalMechanism`, `GammaMechanism`,
-  `PoissonMechanism`, `NegBinomialMechanism`, `BernoulliMechanism`,
-  `BetaMechanism`, `OrderedMechanism`
-- [ ] User-defined priors via mechanism configuration
-- [ ] Model fit diagnostics per node (posterior predictive checks, LOO)
-- [ ] Model comparison per node (WAIC / LOO)
+- [ ] Non-Gaussian outcome families (counts, binary, bounded)
+- [ ] User-defined priors over DAGs (sparsity, edge/temporal constraints)

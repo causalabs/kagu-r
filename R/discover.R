@@ -34,7 +34,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     #' @field local_logml Named numeric — cached log marginal likelihood of each
     #'   unique local model, keyed by `"node|sorted,parents"`.
     local_logml = NULL,
-    #' @field local_fits Named list — the fitted `brmsfit` for each unique local
+    #' @field local_fits Named list — the fitted model for each unique local
     #'   model (reused for effect propagation; same keys as `local_logml`).
     local_fits = NULL,
     #' @field mechanisms Named list of `Mechanism` instances, one per node.
@@ -218,8 +218,8 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #' Fits a GCM to every candidate DAG over the supplied variables and returns a
 #' posterior probability distribution over those DAGs,
 #' \deqn{P(G \mid X) \propto P(X \mid G)\, P(G),}
-#' where each graph's marginal likelihood \eqn{P(X \mid G)} is obtained by
-#' bridge-sampling the per-node brms fits and \eqn{P(G)} is the prior.
+#' where each graph's marginal likelihood \eqn{P(X \mid G)} is obtained from the
+#' per-node Gaussian-process fits and \eqn{P(G)} is the prior.
 #'
 #' This is normally called as the static method **`KaguModel$discover(data,
 #' ...)`**; `kagu_discover()` is the underlying function.
@@ -239,11 +239,12 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #' edge/temporal constraints, or fully custom priors over structures.
 #'
 #' @section Marginal likelihoods and Markov equivalence:
-#' Marginal likelihoods are computed by bridge sampling, which is stochastic and
-#' benefits from a generous number of `draws`; set a seed for reproducibility.
-#' Note that Markov-equivalent DAGs are statistically indistinguishable from
-#' observational data and will therefore receive (near-)equal posterior mass —
-#' this is a faithful representation of structural uncertainty, not a defect.
+#' Each node's marginal likelihood is the closed-form type-II (empirical-Bayes)
+#' evidence of its Gaussian-process model, so discovery involves no bridge
+#' sampling and no Stan compilation. Note that Markov-equivalent DAGs are
+#' statistically indistinguishable from observational data and will therefore
+#' receive (near-)equal posterior mass — a faithful representation of structural
+#' uncertainty, not a defect.
 #'
 #' @param data A `data.frame` with one column per variable.
 #' @param nodes Optional character vector of node names. Defaults to all columns
@@ -252,11 +253,9 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #'   each forbidding the directed edge `from -> to`. Useful for encoding a known
 #'   temporal ordering and for pruning the search space.
 #' @param mechanisms Optional named list of [Mechanism] instances, one per node.
-#'   Any node not specified receives a [LinearMechanism].
+#'   Any node not specified receives a [GPMechanism].
 #' @param prior Character — prior over DAGs. Only `"uniform"` is supported.
-#' @param draws,tune,chains,backend Passed through to the per-node fits. `draws`
-#'   defaults to 2000 for stable bridge sampling.
-#' @param ... Additional arguments forwarded to `brms::brm()`.
+#' @param ... Additional arguments forwarded to each node's mechanism `$fit()`.
 #' @return A [DiscoveryResult].
 #' @export
 #'
@@ -276,9 +275,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #' res$plot(true_dag = list(a = c(), b = "a", c = "b"))
 #' }
 kagu_discover <- function(data, nodes = NULL, disallowed = NULL,
-                          mechanisms = NULL, prior = "uniform",
-                          draws = 2000L, tune = 1000L, chains = 4L,
-                          backend = "cmdstanr", ...) {
+                          mechanisms = NULL, prior = "uniform", ...) {
   if (is.null(nodes)) nodes <- names(data)
 
   missing <- setdiff(nodes, names(data))
@@ -291,7 +288,7 @@ kagu_discover <- function(data, nodes = NULL, disallowed = NULL,
 
   if (is.null(mechanisms)) mechanisms <- list()
   mech_for <- function(n) {
-    if (!is.null(mechanisms[[n]])) mechanisms[[n]] else LinearMechanism$new()
+    if (!is.null(mechanisms[[n]])) mechanisms[[n]] else GPMechanism$new()
   }
   resolved_mech <- stats::setNames(lapply(nodes, mech_for), nodes)
 
@@ -320,7 +317,7 @@ kagu_discover <- function(data, nodes = NULL, disallowed = NULL,
   for (i in seq_along(keys)) {
     info <- registry[[keys[[i]]]]
     rhs  <- if (length(info$parents)) paste(info$parents, collapse = " + ") else "1"
-    # Progress with a rolling time estimate (the first fit also compiles Stan).
+    # Progress with a rolling time estimate.
     eta <- ""
     if (i > 1L) {
       per <- as.numeric(difftime(Sys.time(), t_start, units = "secs")) / (i - 1L)
@@ -329,8 +326,7 @@ kagu_discover <- function(data, nodes = NULL, disallowed = NULL,
     cli::cli_alert("[{i}/{n_unique}] fitting {.field {info$node}} ~ {rhs}{eta}")
 
     res <- .fit_and_marglik(
-      info$node, info$parents, data, mech_for(info$node),
-      draws = draws, tune = tune, chains = chains, backend = backend, ...
+      info$node, info$parents, data, mech_for(info$node), ...
     )
     local_fits[[keys[[i]]]]  <- res$fit
     local_logml[[keys[[i]]]] <- res$logml

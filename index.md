@@ -13,10 +13,9 @@
 ## Why Kagu
 
 A causal system is specified as a directed acyclic graph (DAG). Each node is
-fitted as an independent Bayesian model via
-[brms](https://paul-buerkner.github.io/brms/), and causal effects are extracted
-by propagating interventions forward through the structural model — carrying the
-full posterior all the way through.
+modelled as a Gaussian process of its parents — a flexible, nonparametric
+default — and causal effects are extracted by propagating interventions forward
+through the structural model, carrying the full posterior all the way through.
 
 ```r
 library(kagu)
@@ -59,18 +58,17 @@ order, and compare `E[Y | do(X = x)]` against `E[Y | do(X = x')]`.
 
 | Class | Model | Use case |
 |---|---|---|
-| `LinearMechanism` | `X_i ~ Normal(α + Σ βⱼ Paⱼ, σ)` | Continuous, unbounded |
+| `GPMechanism` | `X_i ~ GaussianProcess(Pa(X_i))` | Continuous; linear or nonlinear |
 
 ## Roadmap
 
-- [x] Core DAG-based Bayesian fitting (brms)
+- [x] Core DAG-based causal modelling (Gaussian-process mechanisms)
 - [x] Do-calculus effect estimation with full posterior
 - [x] Sweep plots with HDI ribbon
-- [x] R-hat diagnostics on effect posteriors
+- [x] Causal structure discovery — posterior over DAGs
+- [x] Bayesian model averaging of effects over the DAG posterior
 - [x] Save / load with data
 - [x] Documentation site (pkgdown)
 - [x] CI/CD (GitHub Actions)
-- [ ] **GLM mechanisms** — LogNormal, Gamma, Poisson, NegBinom, Bernoulli, Beta, Ordered
-- [ ] User-defined priors via mechanism configuration
-- [ ] Model fit diagnostics per node (posterior predictive checks, LOO)
-- [ ] Model comparison per node (WAIC / LOO)
+- [ ] Non-Gaussian outcome families (counts, binary, bounded)
+- [ ] User-defined priors over DAGs (sparsity, edge constraints)

@@ -2,9 +2,10 @@
 % Please edit documentation in R/mechanisms.R
 \name{mechanisms}
 \alias{mechanisms}
-\title{Mechanism base class and built-in implementations}
+\title{Mechanism base class and the Gaussian-process implementation}
 \description{
 A \code{Mechanism} encapsulates the probabilistic model for a single node's
-conditional distribution \code{P(X | parents)}. Subclass and implement
-\code{build_formula()} and \code{predict_mean()} to add new mechanism types.
+conditional distribution \code{P(X | parents)}. Kagu's sole built-in mechanism is
+the Gaussian process (\link{GPMechanism}), a flexible nonparametric default. To
+add a new backend, subclass \code{Mechanism} and implement the methods below.
 }

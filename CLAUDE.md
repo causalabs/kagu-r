@@ -16,7 +16,8 @@ This is the R port of Kagu. The Python version lives in a separate repo.
 ## Stack
 
 - **R ≥ 4.2**, managed with `renv` or direct `remotes`
-- **brms** — Bayesian inference backend (one `brm()` call per node)
+- **BayesGPfit** — supplies the smooth eigen-basis; each node is a Gaussian
+  process fitted as a conjugate Bayesian linear model on that basis (no MCMC)
 - **posterior** — chain/draw structure, r-hat, ESS
 - **bayestestR** — HDI computation
 - **ggplot2** — all plots
@@ -33,8 +34,8 @@ R/
   kagu-package.R   # package-level docs and namespace imports
   dag.R            # validate_dag, topological_sort, ancestors, descendants, node_depth
   utils.R          # .chain_draw_shape, .to_draws_array, .quietly (internal only)
-  mechanisms.R     # Mechanism R6 ABC + LinearMechanism
-  inference.R      # fit_node() — wraps brms::brm()
+  mechanisms.R     # Mechanism R6 ABC + GPMechanism (+ conjugate GP internals)
+  inference.R      # fit_node() dispatcher + .fit_and_marglik()
   model.R          # KaguModel R6 class
   effects.R        # EffectResult R6 class + compute_effect() + .propagate()
   discover.R       # kagu_discover() + DiscoveryResult (posterior over DAGs)
@@ -70,11 +71,11 @@ KaguModel$new(dag, mechanisms = NULL)
 ```
 - `dag`: named list, each node -> character vector of parent names.
 - `mechanisms`: optional named list of `Mechanism` instances; defaults to
-  `LinearMechanism` for unspecified nodes.
+  `GPMechanism` for unspecified nodes.
 
 Key methods:
 ```r
-model$fit(data, draws=1000, tune=1000, chains=4, ...)
+model$fit(data, ...)                       # ... forwarded to mechanism$fit()
 model$effects(source, target, values=NULL, std_units=FALSE, conditions=NULL,
               sweep=FALSE, sweep_n=50, sweep_range=NULL, hdi=0.90)
 model$summary(hdi_prob=0.90)
@@ -82,24 +83,36 @@ model$diagnostics(node=NULL)
 model$plot_dag(node_pos=NULL)
 model$plot_posterior(node)
 model$save(path, include_data=TRUE)
-KaguModel$load(path)   # static method on the generator
+KaguModel$load(path)                        # static method on the generator
+KaguModel$discover(data, ...)               # static method — structure discovery
 ```
 
-### `Mechanism` ABC + `LinearMechanism` (`R/mechanisms.R`)
+### `Mechanism` ABC + `GPMechanism` (`R/mechanisms.R`)
 
-Two methods to implement in subclasses:
-- `$build_formula(node, parents)` → `brmsformula`
-- `$predict_mean(node, parents, parent_values, fit)` → `[n_chains, n_draws]` matrix
-- `$family()` → `brmsfamily`
+Backend-agnostic interface (a mechanism owns its full lifecycle):
+- `$fit(node, parents, data, ...)` → opaque fit object
+- `$predict_mean(node, parents, parent_values, fit)` → `[1, n_draws]` matrix
+- `$log_marglik(node, parents, data)` → scalar (for discovery)
+- `$posterior_shape(fit)` → `c(n_chains=1, n_draws)`
+- `$node_terms(node, parents, data, fit)` → summary rows
 
-`LinearMechanism` priors:
-- `b_Intercept ~ Normal(0, prior_alpha)` (default 10)
-- `b_<parent> ~ Normal(0, prior_beta)` (default 2)
-- `sigma ~ HalfNormal(prior_sigma)` (default 1)
+`GPMechanism` (default and only): each node is a Gaussian process over the
+`BayesGPfit` eigen-basis, fitted as a **conjugate Bayesian linear regression**
+(`.gp_conj_fit`) with the noise/amplitude hyperparameters set by type-II ML.
+Root nodes (no parents) use a marginal Normal. Key internals:
+- `.gp_basis()` — standardise inputs + build eigen-basis (`GP.std.grids`,
+  `GP.eigen.funcs.fast`, `GP.eigen.value`).
+- `.gp_conj_fit()` — exact Gaussian posterior over basis coefficients, pre-drawn
+  coefficient samples (for matched-draw propagation), residual-sd draws, and the
+  log marginal likelihood.
+- `.gp_type2_evidence()` — closed-form type-II marginal likelihood (Woodbury /
+  matrix-determinant lemma); used by discovery.
 
-**Important:** brms always back-transforms and reports the uncentered
-`b_Intercept` in the posterior, so `predict_mean` arithmetic is
-straightforward regardless of internal sampling parameterisation.
+**Important:** BayesGPfit's own `GP.fast.Bayes.fit` sampler is **not** used for
+fitting — its noise/uncertainty quantification is designed for dense imaging
+grids and is wrong for scattered regression (sigma scales with n; 1D degenerate).
+We use only its (exported) basis functions and do the Bayesian regression
+ourselves.
 
 ### `EffectResult` (`R/effects.R`)
 
@@ -129,16 +142,15 @@ calls `mechanism$predict_mean()` for all others, stops at target.
 
 ## Posterior draw convention
 
-All posterior samples use `(n_chains, n_draws)` matrices throughout:
-- `n_chains = dim(as_draws_array(fit))[[2]]`
-- `n_draws  = dim(as_draws_array(fit))[[1]]`
+All posterior samples use `(n_chains, n_draws)` matrices throughout. The GP is a
+single "chain" (`n_chains = 1`); get the shape via
+`mechanism$posterior_shape(fit)`. `predict_mean()` draws the GP function at
+matched draw indices — `f^(d)(parent^(d))` — from the pre-drawn coefficient
+samples, preserving coherent per-draw propagation.
 
-`t(draws[,, "b_Intercept"])` converts from `[n_draws, n_chains]` to
-`[n_chains, n_draws]`.
-
-`EffectResult$diagnostics()` uses `.to_draws_array()` (in `utils.R`) to
-reconstruct a `posterior::draws_array` from `[n_chains, n_draws]` and passes
-it to `posterior::summarise_draws()` for genuine r-hat.
+`EffectResult$diagnostics()` still uses `.to_draws_array()` (in `utils.R`), but
+with a single chain r-hat is not meaningful — treat the effect `sd`/HDI as the
+uncertainty summary.
 
 ---
 
@@ -170,29 +182,31 @@ devtools::test()
 testthat::test_package("kagu")
 ```
 
-- Brms-dependent tests use `skip_on_cran()`.
-- Use `SAMPLE_KWARGS = list(draws=500, tune=500, chains=2, silent=2)` for speed.
-- `helper.R` provides `make_chain_data()`, `CHAIN_DAG`, `CONFOUNDED_DAG`.
+- Fitting-dependent tests use `skip_on_cran()`.
+- Fitting is fast (closed-form, no MCMC), so the whole suite runs in ~1s.
+- `helper.R` provides `make_chain_data()`, `CHAIN_DAG`, `CONFOUNDED_DAG`
+  (`SAMPLE_KWARGS` is now an empty list — the GP mechanism has no sampling knobs).
 
 ---
 
 ## Design decisions (R-specific)
 
-**cmdstanr default backend**
-`fit_node()` defaults to `backend = "cmdstanr"`. Users can override per-call
-or via `model$fit(..., backend = "rstan")`. cmdstanr is in `Suggests` (not
-`Imports`) so the package installs without it — brms will error at fit time
-with a clear message if cmdstanr isn't available.
+**GP via conjugate Bayesian linear regression, not the Gibbs sampler**
+BayesGPfit's `GP.fast.Bayes.fit` is built for dense imaging grids; its noise and
+uncertainty are wrong for scattered regression (sigma scales with n, 1D is
+degenerate). We use only its exported basis functions and do a conjugate Normal
+regression ourselves — exact posterior, correct uncertainty, closed-form
+evidence, and it fits in milliseconds.
 
-**`b_Intercept` is always the raw intercept**
-brms may centre predictors internally for sampling efficiency but always
-back-transforms to the uncentered `b_Intercept` in the posterior, so
-`predict_mean = b_Intercept + Σ b_j * parent_j` is exact.
+**Type-II marginal likelihood for discovery**
+Each node's evidence is the closed-form empirical-Bayes marginal likelihood of
+the basis-linear GP model (`.gp_type2_evidence`). No bridge sampling, no MCMC —
+discovery over a few variables runs in a fraction of a second.
 
-**`posterior` package for chain/draw structure**
-Use `posterior::as_draws_array(fit)` (dims `[n_iter, n_chains, n_vars]`) then
-transpose individual parameter slices to `[n_chains, n_draws]` matrices. This
-preserves chain structure for genuine r-hat via `posterior::summarise_draws()`.
+**`posterior` package for effect diagnostics only**
+`.to_draws_array()` reconstructs a `draws_array` from the `[1, n_draws]` effect
+samples for `posterior::summarise_draws()`. With a single chain r-hat is `NA`;
+the `sd`/HDI is the uncertainty summary.
 
 **R6 over S3/S4**
 Mirrors the Python class design closely. Users coming from Python or the R
@@ -207,18 +221,16 @@ descendants. Keeps the dependency footprint small.
 
 ## Roadmap
 
-- [x] Core DAG-based Bayesian fitting (brms)
+- [x] Core DAG-based causal modelling (Gaussian-process mechanisms)
 - [x] Do-calculus effect estimation with full posterior
 - [x] Sweep plots with HDI ribbon (ggplot2)
-- [x] R-hat diagnostics on effect posteriors (posterior package)
 - [x] Save/load with data (saveRDS/readRDS)
 - [x] Documentation site (pkgdown)
 - [x] CI/CD (GitHub Actions)
-- [x] Causal structure discovery — posterior over DAGs via bridge-sampled
+- [x] Causal structure discovery — posterior over DAGs via closed-form GP
   marginal likelihoods (`KaguModel$discover` / `kagu_discover`)
-- [ ] GLM mechanisms (LogNormal, Gamma, Poisson, NegBinom, Bernoulli, Beta, Ordered)
-- [ ] User-defined priors via mechanism configuration (incl. priors over DAGs)
-- [ ] Bayesian model averaging of effects over the DAG posterior
-- [ ] Analytic linear-Gaussian marginal likelihood (fast-path for discovery)
+- [x] Bayesian model averaging of effects over the DAG posterior
+  (`DiscoveryResult$effects`)
+- [ ] Non-Gaussian outcome families (counts, binary, bounded)
+- [ ] User-defined priors over DAGs (sparsity, edge/temporal constraints)
 - [ ] Model fit diagnostics (posterior predictive checks, LOO)
-- [ ] Model comparison per node (WAIC / LOO)

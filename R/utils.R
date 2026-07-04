@@ -35,16 +35,6 @@
   ))
 }
 
-#' Extract (n_chains, n_draws) from a brmsfit
-#'
-#' @param fit A `brmsfit` object.
-#' @return Named integer vector with elements `n_chains` and `n_draws`.
-#' @noRd
-.chain_draw_shape <- function(fit) {
-  draws <- posterior::as_draws_array(fit)
-  c(n_chains = dim(draws)[[2]], n_draws = dim(draws)[[1]])
-}
-
 #' Convert a [n_chains, n_draws] matrix to a posterior draws_array
 #'
 #' Produces an array of class `draws_array` with dimensions
@@ -66,36 +56,4 @@
   )
   class(arr) <- c("draws_array", "draws", "array")
   arr
-}
-
-#' Run an expression while swallowing brms/Stan/cmdstanr chatter
-#'
-#' brms and cmdstanr print compilation and sampling chatter (e.g.
-#' "Model executable is up to date!") to both stdout and the message stream.
-#' This captures and discards all of it on success. If the expression errors,
-#' the captured log is surfaced first so the failure is still debuggable.
-#' Warnings are deliberately **not** suppressed — divergence / convergence
-#' warnings should reach the user.
-#'
-#' @param expr Expression to evaluate quietly.
-#' @noRd
-.quietly <- function(expr) {
-  ok  <- FALSE
-  val <- NULL
-
-  captured <- utils::capture.output(
-    type = "output",
-    suppressMessages({
-      val <- tryCatch(
-        { result <- force(expr); ok <- TRUE; result },
-        error = function(e) e
-      )
-    })
-  )
-
-  if (!ok) {
-    if (length(captured)) message(paste(captured, collapse = "\n"))
-    stop(val)
-  }
-  val
 }

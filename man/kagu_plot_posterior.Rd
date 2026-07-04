@@ -2,18 +2,20 @@
 % Please edit documentation in R/plots.R
 \name{kagu_plot_posterior}
 \alias{kagu_plot_posterior}
-\title{Plot the posterior of a fitted node}
+\title{Plot a fitted node's summary terms}
 \usage{
-kagu_plot_posterior(fit, node)
+kagu_plot_posterior(terms, node)
 }
 \arguments{
-\item{fit}{A \code{brmsfit} object.}
+\item{terms}{A \code{tibble} of node terms (from a mechanism's \verb{$node_terms()}),
+with columns \code{term}, \code{mean}, \code{hdi_lower}, \code{hdi_upper}.}
 
 \item{node}{Character scalar — node name (used for the plot title).}
 }
 \value{
-A \code{ggplot} / \code{bayesplot} object.
+A \code{ggplot} object.
 }
 \description{
-Produces a grid of \code{bayesplot::mcmc_areas()} plots, one per parameter.
+Shows the node's direct local effects (each parent's gradient at the parents'
+means) and residual noise as posterior means with HDI intervals.
 }

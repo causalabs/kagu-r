@@ -52,7 +52,8 @@ to get it right.
 
 We generate data in which each extra year of education adds £500 to income and
 each year of experience adds £200, then fit the model. Each node's conditional
-distribution is fitted as an independent Bayesian regression via `brms`.
+distribution is modelled as a Gaussian process of its parents, so the fit adapts
+to whatever shape the relationship takes.
 
 ```{r data}
 N          <- 500
@@ -143,11 +144,12 @@ sweep$plot()
 
 ## Model summary
 
-`summary()` returns a coefficient table across every node. Alongside the
-posterior `mean`, `sd`, and HDI for each parameter, it reports two convergence
-diagnostics: `rhat` should be ≈ 1.00 (values above ~1.01 signal that the chains
-have not mixed), and `ess_bulk` is the effective sample size (higher is better;
-a few hundred is usually plenty).
+`summary()` returns a table across every node. For each parent it reports the
+**direct local effect** — the gradient of the node's fitted function with respect
+to that parent, evaluated at the parents' means. For a linear relationship this
+is exactly the slope, so here `education` and `experience` recover ≈ 500 and
+≈ 200. Each node also gets a `sigma (noise)` row for its residual scale, and
+everything carries a posterior mean, sd, and HDI.
 
 ```{r summary}
 model$summary()
@@ -155,8 +157,9 @@ model$summary()
 
 ## Diagnostics
 
-For a closer look at a single node, `diagnostics()` returns the per-parameter
-r-hat and effective sample sizes with chain structure preserved.
+`diagnostics()` reports the posterior draw count and residual noise per node.
+(The Gaussian-process posterior is available in closed form as a single sample,
+so the chain-based r-hat / ESS diagnostics of MCMC do not apply.)
 
 ```{r diagnostics}
 model$diagnostics("income")

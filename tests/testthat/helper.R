@@ -3,7 +3,9 @@
 RNG_SEED <- 42L
 N        <- 200L
 
-SAMPLE_KWARGS <- list(draws = 500L, tune = 500L, chains = 2L, silent = 2L)
+# GP mechanism needs no sampling knobs; kept empty so `do.call(model$fit, ...)`
+# call sites still work.
+SAMPLE_KWARGS <- list()
 
 make_chain_data <- function(seed = RNG_SEED, n = N) {
   set.seed(seed)

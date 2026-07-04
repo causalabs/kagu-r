@@ -7,10 +7,11 @@
 \title{kagu: Bayesian Graphical Causal Models}
 \description{
 Fit Bayesian graphical causal models specified as directed acyclic graphs
-(DAGs). Each node's conditional distribution \code{P(X | parents)} is fitted as
-an independent Bayesian model via \strong{brms}, exploiting the Markov blanket
+(DAGs). Each node's conditional distribution \code{P(X | parents)} is modelled as
+a Gaussian process of its parents, exploiting the Markov blanket
 factorisation. Causal effects are estimated by propagating interventions
-forward through the structural model using the do-operator.
+forward through the structural model using the do-operator, and causal
+structure can be discovered as a posterior distribution over DAGs.
 \subsection{Main entry point}{
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{model <- KaguModel$new(dag = list(x = c(), y = c("x")))

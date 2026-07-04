@@ -4,19 +4,7 @@
 \alias{fit_node}
 \title{Fit a single node's conditional distribution}
 \usage{
-fit_node(
-  node,
-  parents,
-  data,
-  mechanism,
-  draws = 1000L,
-  tune = 1000L,
-  chains = 4L,
-  backend = "cmdstanr",
-  silent = 2L,
-  save_all = FALSE,
-  ...
-)
+fit_node(node, parents, data, mechanism, ...)
 }
 \arguments{
 \item{node}{Character scalar — name of the node to fit.}
@@ -25,31 +13,15 @@ fit_node(
 
 \item{data}{A \code{data.frame} with columns for all nodes.}
 
-\item{mechanism}{A \code{Mechanism} instance.}
+\item{mechanism}{A \code{Mechanism} instance (defaults to \link{GPMechanism} in
+\code{KaguModel}).}
 
-\item{draws}{Integer — number of post-warmup draws per chain (default 1000).}
-
-\item{tune}{Integer — number of warmup draws per chain (default 1000).}
-
-\item{chains}{Integer — number of MCMC chains (default 4).}
-
-\item{backend}{Character — Stan backend passed to \code{brms::brm()}. Defaults
-to \code{"cmdstanr"} for faster compilation and sampling. Set to \code{"rstan"} if
-cmdstanr is not installed.}
-
-\item{silent}{Integer passed to \code{brms::brm()} — 2 suppresses all output
-(default), 0 shows everything.}
-
-\item{save_all}{Logical — if \code{TRUE}, fit with \code{save_pars = save_pars(all = TRUE)} so the fit is suitable for bridge sampling (marginal likelihood).
-Required by \code{\link[=.node_log_marglik]{.node_log_marglik()}}; off by default.}
-
-\item{...}{Additional arguments forwarded to \code{brms::brm()}.}
+\item{...}{Additional arguments forwarded to the mechanism's \verb{$fit()}.}
 }
 \value{
-A \code{brmsfit} object.
+A mechanism-specific fit object.
 }
 \description{
-Builds the brms formula from the mechanism, fits with \code{brms::brm()}, and
-returns the resulting \code{brmsfit}. Stan/brms console output is suppressed;
-on error the captured output is printed before re-raising.
+Thin dispatcher that delegates to the node's \link{Mechanism}. Kept as a
+convenience/entry point; \code{KaguModel$fit()} calls it once per node.
 }

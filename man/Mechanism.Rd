@@ -4,43 +4,53 @@
 \alias{Mechanism}
 \title{Mechanism abstract base class}
 \description{
-All mechanisms must implement two methods:
+A mechanism owns the full lifecycle of a node's conditional model, decoupled
+from any particular inference backend. Subclasses implement:
 \itemize{
-\item \verb{$build_formula(node, parents)} — returns a \code{brms::brmsformula}.
-\item \verb{$predict_mean(node, parents, parent_values, fit)} — given posterior draws
-and parent values as \verb{[n_chains, n_draws]} matrices, returns the predicted
-conditional mean as a \verb{[n_chains, n_draws]} matrix.
+\item \verb{$fit(node, parents, data, ...)} — fit the local model, returning an opaque
+fit object.
+\item \verb{$predict_mean(node, parents, parent_values, fit)} — the conditional mean
+\code{E[node | parents]} for each posterior draw, as a \verb{[n_chains, n_draws]}
+matrix (Gaussian processes use a single chain, so \code{n_chains = 1}).
+\item \verb{$log_marglik(node, parents, data)} — the log marginal likelihood
+\verb{log P(node | parents)}, used by structure discovery.
+\item \verb{$posterior_shape(fit)} — \code{c(n_chains, n_draws)} for the fit.
+\item \verb{$node_terms(node, parents, data, fit)} — summary rows for \code{model$summary()}.
 }
 }
 \section{Methods}{
 \subsection{Public methods}{
   \itemize{
-    \item \href{#method-Mechanism-build_formula}{\code{Mechanism$build_formula()}}
+    \item \href{#method-Mechanism-fit}{\code{Mechanism$fit()}}
     \item \href{#method-Mechanism-predict_mean}{\code{Mechanism$predict_mean()}}
-    \item \href{#method-Mechanism-family}{\code{Mechanism$family()}}
+    \item \href{#method-Mechanism-log_marglik}{\code{Mechanism$log_marglik()}}
+    \item \href{#method-Mechanism-posterior_shape}{\code{Mechanism$posterior_shape()}}
+    \item \href{#method-Mechanism-node_terms}{\code{Mechanism$node_terms()}}
     \item \href{#method-Mechanism-clone}{\code{Mechanism$clone()}}
   }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Mechanism-build_formula"></a>}}
-\if{latex}{\out{\hypertarget{method-Mechanism-build_formula}{}}}
-\subsection{\code{Mechanism$build_formula()}}{
-  Build the brms formula for this node.
+\if{html}{\out{<a id="method-Mechanism-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-Mechanism-fit}{}}}
+\subsection{\code{Mechanism$fit()}}{
+  Fit the node's local model.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{Mechanism$build_formula(node, parents)}
+    \preformatted{Mechanism$fit(node, parents, data, ...)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name (response variable).}
+      \item{\code{node}}{Character scalar — the node name (response).}
       \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{data}}{A \code{data.frame} with columns for the node and its parents.}
+      \item{\code{...}}{Backend-specific arguments.}
     }
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \code{brms::brmsformula}.
+    An opaque fit object.
   }
 }
 
@@ -48,7 +58,7 @@ conditional mean as a \verb{[n_chains, n_draws]} matrix.
 \if{html}{\out{<a id="method-Mechanism-predict_mean"></a>}}
 \if{latex}{\out{\hypertarget{method-Mechanism-predict_mean}{}}}
 \subsection{\code{Mechanism$predict_mean()}}{
-  Predict the conditional mean for each posterior draw.
+  Conditional mean for each posterior draw.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{Mechanism$predict_mean(node, parents, parent_values, fit)}
@@ -59,9 +69,9 @@ conditional mean as a \verb{[n_chains, n_draws]} matrix.
     \describe{
       \item{\code{node}}{Character scalar — the node name.}
       \item{\code{parents}}{Character vector of parent node names.}
-      \item{\code{parent_values}}{Named list of \verb{[n_chains, n_draws]} matrices,
-one per parent, giving the parent values for each posterior draw.}
-      \item{\code{fit}}{A \code{brmsfit} object from fitting this node.}
+      \item{\code{parent_values}}{Named list of \verb{[n_chains, n_draws]} matrices, one per
+parent, giving the parent values for each posterior draw.}
+      \item{\code{fit}}{A fit object from \verb{$fit()}.}
     }
     \if{html}{\out{</div>}}
   }
@@ -71,17 +81,74 @@ one per parent, giving the parent values for each posterior draw.}
 }
 
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Mechanism-family"></a>}}
-\if{latex}{\out{\hypertarget{method-Mechanism-family}{}}}
-\subsection{\code{Mechanism$family()}}{
-  brms family for this mechanism.
+\if{html}{\out{<a id="method-Mechanism-log_marglik"></a>}}
+\if{latex}{\out{\hypertarget{method-Mechanism-log_marglik}{}}}
+\subsection{\code{Mechanism$log_marglik()}}{
+  Log marginal likelihood \verb{log P(node | parents)}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{Mechanism$family()}
+    \preformatted{Mechanism$log_marglik(node, parents, data)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar — the node name.}
+      \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{data}}{A \code{data.frame}.}
+    }
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \code{brmsfamily} object (e.g. \code{brms::gaussian()}).
+    A single numeric.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Mechanism-posterior_shape"></a>}}
+\if{latex}{\out{\hypertarget{method-Mechanism-posterior_shape}{}}}
+\subsection{\code{Mechanism$posterior_shape()}}{
+  Posterior shape of a fit.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Mechanism$posterior_shape(fit)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{fit}}{A fit object from \verb{$fit()}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    Named integer vector \code{c(n_chains, n_draws)}.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Mechanism-node_terms"></a>}}
+\if{latex}{\out{\hypertarget{method-Mechanism-node_terms}{}}}
+\subsection{\code{Mechanism$node_terms()}}{
+  Summary rows for this node (used by \code{model$summary()}).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Mechanism$node_terms(node, parents, data, fit)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar — the node name.}
+      \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{data}}{A \code{data.frame}.}
+      \item{\code{fit}}{A fit object from \verb{$fit()}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \code{tibble} with columns \code{node}, \code{term}, \code{mean}, \code{sd},
+\code{hdi_lower}, \code{hdi_upper}.
   }
 }
 

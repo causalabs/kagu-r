@@ -29,7 +29,7 @@ P(G \mid X) \;\propto\; P(X \mid G)\, P(G).
 $$
 
 Here $P(X \mid G)$ is the marginal likelihood of the data under graph $G$
-(computed by bridge-sampling the per-node fits) and $P(G)$ is a prior over
+(computed in closed form from the per-node Gaussian-process fits) and $P(G)$ is a prior over
 structures (currently uniform). Rather than returning a single "best" graph,
 this returns a full probability distribution — an honest representation of what
 the data can and cannot tell us about causal structure.

@@ -2,19 +2,20 @@
 % Please edit documentation in R/summary.R
 \name{build_summary_table}
 \alias{build_summary_table}
-\title{Build a parameter summary table across all nodes}
+\title{Build a per-node summary table across all nodes}
 \usage{
-build_summary_table(traces, hdi_prob = 0.9)
+build_summary_table(model)
 }
 \arguments{
-\item{traces}{Named list of \code{brmsfit} objects, one per node.}
-
-\item{hdi_prob}{Numeric — HDI probability (default 0.90).}
+\item{model}{A fitted \code{KaguModel}.}
 }
 \value{
-A \code{tibble} with columns \code{node}, \code{variable}, \code{mean}, \code{sd},
-\code{hdi_lower}, \code{hdi_upper}, \code{rhat}, \code{ess_bulk}.
+A \code{tibble} with columns \code{node}, \code{term}, \code{mean}, \code{sd}, \code{hdi_lower},
+\code{hdi_upper}.
 }
 \description{
-Build a parameter summary table across all nodes
+For each node, the node's mechanism contributes summary rows — for a Gaussian
+process, the direct local effect of each parent (the fitted function's
+gradient at the parents' means, comparable to a regression coefficient) and
+the residual noise sd.
 }

@@ -46,7 +46,7 @@ test_that(".dag_edges produces canonical parent->child labels", {
                    sort(c("a→b", "a→c", "b→c")))
 })
 
-# --- brms-dependent integration tests --------------------------------------
+# --- fitting-dependent integration tests ------------------------------------
 
 test_that("discovery yields a valid posterior over DAGs", {
   skip_on_cran()
@@ -57,7 +57,7 @@ test_that("discovery yields a valid posterior over DAGs", {
   cc <- 1.2 * b + rnorm(n, sd = 0.5)        # true: a -> b -> c
   df <- data.frame(a = a, b = b, c = cc)
 
-  res <- KaguModel$discover(df, draws = 500L, tune = 500L, chains = 2L)
+  res <- KaguModel$discover(df)
 
   expect_s3_class(res, "DiscoveryResult")
   expect_equal(sum(res$prob), 1, tolerance = 1e-8)
@@ -92,8 +92,7 @@ test_that("model-averaged effects return an EffectResult like the single-DAG API
 
   # Temporal ordering identifies the chain (a < b < c).
   res <- KaguModel$discover(
-    df, disallowed = list(c("b", "a"), c("c", "a"), c("c", "b")),
-    draws = 500L, tune = 500L, chains = 2L
+    df, disallowed = list(c("b", "a"), c("c", "a"), c("c", "b"))
   )
 
   eff <- res$effects("a", "c")

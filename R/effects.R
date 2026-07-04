@@ -180,7 +180,7 @@ compute_effect <- function(model, source, target,
 
   # Zero effect if source has no causal path to target
   if (!is_ancestor(model$dag, source, target)) {
-    shape    <- .chain_draw_shape(model$traces[[target]])
+    shape    <- model$mechanisms[[target]]$posterior_shape(model$traces[[target]])
     zero_mat <- matrix(0, nrow = shape[["n_chains"]], ncol = shape[["n_draws"]])
     return(EffectResult$new(
       source = source, target = target,
@@ -193,7 +193,7 @@ compute_effect <- function(model, source, target,
   src_data  <- model$data[[source]]
   src_mean  <- mean(src_data)
   src_sd    <- stats::sd(src_data)
-  shape     <- .chain_draw_shape(model$traces[[target]])
+  shape     <- model$mechanisms[[target]]$posterior_shape(model$traces[[target]])
   n_chains  <- shape[["n_chains"]]
   n_draws   <- shape[["n_draws"]]
 

@@ -35,7 +35,7 @@ effect$summary()
 
     \item{\code{data}}{The training \code{data.frame} (set after \verb{$fit()}).}
 
-    \item{\code{traces}}{Named list of \code{brmsfit} objects, one per node (after fit).}
+    \item{\code{traces}}{Named list of mechanism fit objects, one per node (after fit).}
 
     \item{\code{.fitted}}{Logical — whether \verb{$fit()} has been called.}
   }
@@ -72,7 +72,7 @@ effect$summary()
       \item{\code{dag}}{Named list mapping each node to a character vector of its
 parent node names. Root nodes map to \code{c()}.}
       \item{\code{mechanisms}}{Optional named list of \code{Mechanism} instances. Any
-node not specified receives a \code{LinearMechanism} by default.}
+node not specified receives a \code{GPMechanism} by default.}
     }
     \if{html}{\out{</div>}}
   }
@@ -85,17 +85,14 @@ node not specified receives a \code{LinearMechanism} by default.}
   Fit each node's conditional distribution in topological order.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{KaguModel$fit(data, draws = 1000L, tune = 1000L, chains = 4L, ...)}
+    \preformatted{KaguModel$fit(data, ...)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{data}}{A \code{data.frame} with one column per node.}
-      \item{\code{draws}}{Integer — post-warmup draws per chain (default 1000).}
-      \item{\code{tune}}{Integer — warmup draws per chain (default 1000).}
-      \item{\code{chains}}{Integer — number of MCMC chains (default 4).}
-      \item{\code{...}}{Additional arguments forwarded to \code{brms::brm()}.}
+      \item{\code{...}}{Additional arguments forwarded to each node's mechanism \verb{$fit()}.}
     }
     \if{html}{\out{</div>}}
   }
@@ -152,7 +149,12 @@ Defaults to the observed range of \code{source}.}
 \if{html}{\out{<a id="method-KaguModel-summary"></a>}}
 \if{latex}{\out{\hypertarget{method-KaguModel-summary}{}}}
 \subsection{\code{KaguModel$summary()}}{
-  Coefficient table across all node mechanisms.
+  Per-node summary table.
+
+For each node, reports the direct local effect of each parent (the
+function's gradient at the parents' means — comparable to a regression
+coefficient) and the residual noise sd, each with posterior mean, sd and
+HDI.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{KaguModel$summary(hdi_prob = 0.9)}
@@ -161,13 +163,13 @@ Defaults to the observed range of \code{source}.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{hdi_prob}}{Numeric — HDI probability (default 0.90).}
+      \item{\code{hdi_prob}}{Numeric — HDI probability (default 0.90; currently fixed).}
     }
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \code{tibble} with columns \code{node}, \code{variable}, \code{mean}, \code{sd},
-\code{hdi_lower}, \code{hdi_upper}, \code{rhat}, \code{ess_bulk}.
+    A \code{tibble} with columns \code{node}, \code{term}, \code{mean}, \code{sd},
+\code{hdi_lower}, \code{hdi_upper}.
   }
 }
 
@@ -175,7 +177,11 @@ Defaults to the observed range of \code{source}.}
 \if{html}{\out{<a id="method-KaguModel-diagnostics"></a>}}
 \if{latex}{\out{\hypertarget{method-KaguModel-diagnostics}{}}}
 \subsection{\code{KaguModel$diagnostics()}}{
-  R-hat and ESS diagnostics for fitted nodes.
+  Fit diagnostics for each node.
+
+The Gaussian-process sampler produces a single chain, so r-hat / ESS do
+not apply; this reports the posterior draw count and the residual noise sd
+per node.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{KaguModel$diagnostics(node = NULL)}
@@ -189,7 +195,7 @@ Defaults to the observed range of \code{source}.}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \code{tibble} from \code{posterior::summarise_draws()}.
+    A \code{tibble} with \code{node}, \code{n_chains}, \code{n_draws}, \code{sigma}, \code{sigma_sd}.
   }
 }
 
@@ -221,6 +227,9 @@ for manual node placement (overrides auto-layout for specified nodes).}
 \if{latex}{\out{\hypertarget{method-KaguModel-plot_posterior}{}}}
 \subsection{\code{KaguModel$plot_posterior()}}{
   Plot the posterior for a fitted node.
+
+Shows the node's direct local effects (each parent's gradient at the
+means) and residual noise, as posterior means with HDI intervals.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{KaguModel$plot_posterior(node)}

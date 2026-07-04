@@ -10,10 +10,6 @@ kagu_discover(
   disallowed = NULL,
   mechanisms = NULL,
   prior = "uniform",
-  draws = 2000L,
-  tune = 1000L,
-  chains = 4L,
-  backend = "cmdstanr",
   ...
 )
 }
@@ -28,14 +24,11 @@ each forbidding the directed edge \code{from -> to}. Useful for encoding a known
 temporal ordering and for pruning the search space.}
 
 \item{mechanisms}{Optional named list of \link{Mechanism} instances, one per node.
-Any node not specified receives a \link{LinearMechanism}.}
+Any node not specified receives a \link{GPMechanism}.}
 
 \item{prior}{Character — prior over DAGs. Only \code{"uniform"} is supported.}
 
-\item{draws, tune, chains, backend}{Passed through to the per-node fits. \code{draws}
-defaults to 2000 for stable bridge sampling.}
-
-\item{...}{Additional arguments forwarded to \code{brms::brm()}.}
+\item{...}{Additional arguments forwarded to each node's mechanism \verb{$fit()}.}
 }
 \value{
 A \link{DiscoveryResult}.
@@ -44,8 +37,8 @@ A \link{DiscoveryResult}.
 Fits a GCM to every candidate DAG over the supplied variables and returns a
 posterior probability distribution over those DAGs,
 \deqn{P(G \mid X) \propto P(X \mid G)\, P(G),}
-where each graph's marginal likelihood \eqn{P(X \mid G)} is obtained by
-bridge-sampling the per-node brms fits and \eqn{P(G)} is the prior.
+where each graph's marginal likelihood \eqn{P(X \mid G)} is obtained from the
+per-node Gaussian-process fits and \eqn{P(G)} is the prior.
 }
 \details{
 This is normally called as the static method \strong{\code{KaguModel$discover(data, ...)}}; \code{kagu_discover()} is the underlying function.
@@ -68,11 +61,12 @@ edge/temporal constraints, or fully custom priors over structures.
 
 \section{Marginal likelihoods and Markov equivalence}{
 
-Marginal likelihoods are computed by bridge sampling, which is stochastic and
-benefits from a generous number of \code{draws}; set a seed for reproducibility.
-Note that Markov-equivalent DAGs are statistically indistinguishable from
-observational data and will therefore receive (near-)equal posterior mass —
-this is a faithful representation of structural uncertainty, not a defect.
+Each node's marginal likelihood is the closed-form type-II (empirical-Bayes)
+evidence of its Gaussian-process model, so discovery involves no bridge
+sampling and no Stan compilation. Note that Markov-equivalent DAGs are
+statistically indistinguishable from observational data and will therefore
+receive (near-)equal posterior mass — a faithful representation of structural
+uncertainty, not a defect.
 }
 
 \examples{

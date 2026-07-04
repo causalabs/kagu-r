@@ -160,27 +160,31 @@ kagu_plot_discovery <- function(result, top_n = 20L, true_dag = NULL) {
   p
 }
 
-#' Plot the posterior of a fitted node
+#' Plot a fitted node's summary terms
 #'
-#' Produces a grid of `bayesplot::mcmc_areas()` plots, one per parameter.
+#' Shows the node's direct local effects (each parent's gradient at the parents'
+#' means) and residual noise as posterior means with HDI intervals.
 #'
-#' @param fit A `brmsfit` object.
+#' @param terms A `tibble` of node terms (from a mechanism's `$node_terms()`),
+#'   with columns `term`, `mean`, `hdi_lower`, `hdi_upper`.
 #' @param node Character scalar — node name (used for the plot title).
-#' @return A `ggplot` / `bayesplot` object.
+#' @return A `ggplot` object.
 #' @export
-kagu_plot_posterior <- function(fit, node) {
-  draws <- posterior::as_draws_df(fit)
-  # Keep only population-level parameters (b_*)
-  param_cols <- grep("^b_", names(draws), value = TRUE)
-  if (length(param_cols) == 0) param_cols <- grep("^sigma", names(draws), value = TRUE)
+kagu_plot_posterior <- function(terms, node) {
+  terms$term <- factor(terms$term, levels = rev(terms$term))
 
-  draws_mat <- as.matrix(draws[, param_cols, drop = FALSE])
-
-  bayesplot::mcmc_areas(
-    draws_mat,
-    prob       = 0.90,
-    point_est  = "mean"
-  ) +
-    ggplot2::labs(title = sprintf("Posterior: node '%s'", node)) +
-    ggplot2::theme_minimal(base_size = 12)
+  ggplot2::ggplot(terms, ggplot2::aes(y = .data$term)) +
+    ggplot2::geom_vline(xintercept = 0, colour = "grey70", linewidth = 0.4) +
+    ggplot2::geom_linerange(
+      ggplot2::aes(xmin = .data$hdi_lower, xmax = .data$hdi_upper),
+      colour = "#26a69a", linewidth = 1.2
+    ) +
+    ggplot2::geom_point(ggplot2::aes(x = .data$mean), size = 2.4,
+                        colour = "#26a69a") +
+    ggplot2::labs(
+      title = sprintf("Node '%s': direct local effects", node),
+      x = "posterior (mean and 90% HDI)", y = NULL
+    ) +
+    ggplot2::theme_minimal(base_size = 12) +
+    ggplot2::theme(panel.grid.major.y = ggplot2::element_blank())
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/inference.R
 \name{inference}
 \alias{inference}
-\title{Per-node model fitting via brms}
+\title{Per-node model fitting}
 \description{
-Per-node model fitting via brms
+Per-node model fitting
 }

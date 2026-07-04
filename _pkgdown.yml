@@ -27,7 +27,7 @@ reference:
     desc: "Probabilistic models for node conditional distributions."
     contents:
       - Mechanism
-      - LinearMechanism
+      - GPMechanism
   - title: "Effects"
     desc: "Causal effect estimation and results."
     contents:
