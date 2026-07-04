@@ -108,7 +108,8 @@ KaguModel <- R6::R6Class("KaguModel",
     #' @param std_units Logical — if `TRUE`, compute the effect of a 1-SD
     #'   increase centred at the mean.
     #' @param conditions Optional named list of node values to condition on
-    #'   (fixes those nodes at the given values during propagation).
+    #'   (fixes those nodes at the given values during propagation). Can also be
+    #'   a list of such lists to compute and overlay multiple conditions.
     #' @param sweep Logical — if `TRUE`, compute the dose-response curve.
     #' @param sweep_n Integer — number of points in the sweep grid (default 50).
     #' @param sweep_range Numeric vector `c(min, max)` for the sweep grid.
@@ -119,6 +120,35 @@ KaguModel <- R6::R6Class("KaguModel",
                        conditions = NULL, sweep = FALSE, sweep_n = 50L,
                        sweep_range = NULL, hdi = 0.90) {
       if (!self$.fitted) stop("Call $fit() before $effects().")
+
+      is_list_of_lists <- is.list(conditions) && length(conditions) > 0 && is.list(conditions[[1]]) && !is.data.frame(conditions[[1]])
+
+      if (is_list_of_lists) {
+        # Compute the first condition as the base result
+        res <- compute_effect(
+          self, source, target, values, std_units, conditions[[1]],
+          sweep, sweep_n, sweep_range, hdi
+        )
+        
+        label_fn <- function(cond) {
+          paste(paste(names(cond), unlist(cond), sep="="), collapse=", ")
+        }
+        res$conditions_label <- label_fn(conditions[[1]])
+        
+        # Attach the remaining results for automatic comparison plotting
+        res$compare_results <- list()
+        for (i in seq_along(conditions)[-1]) {
+          c_res <- compute_effect(
+            self, source, target, values, std_units, conditions[[i]],
+            sweep, sweep_n, sweep_range, hdi
+          )
+          lbl <- label_fn(conditions[[i]])
+          c_res$conditions_label <- lbl
+          res$compare_results[[lbl]] <- c_res
+        }
+        return(res)
+      }
+
       compute_effect(
         model       = self,
         source      = source,
@@ -236,10 +266,11 @@ KaguModel$load <- function(path) kagu_load(path)
 
 # Static structure-discovery method (called as KaguModel$discover(data, ...)).
 # Delegates to kagu_discover(); see ?kagu_discover for full documentation.
-KaguModel$discover <- function(data, nodes = NULL, disallowed = NULL,
-                               mechanisms = NULL, prior = "uniform", ...) {
+KaguModel$discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
+                               required = NULL, mechanisms = NULL, prior = "uniform",
+                               allow_empty = FALSE, ...) {
   kagu_discover(
-    data, nodes = nodes, disallowed = disallowed, mechanisms = mechanisms,
-    prior = prior, ...
+    data, nodes = nodes, dags = dags, disallowed = disallowed, required = required,
+    mechanisms = mechanisms, prior = prior, allow_empty = allow_empty, ...
   )
 }

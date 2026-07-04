@@ -173,15 +173,20 @@ node_depth <- function(dag) {
 #' @param disallowed Optional list of length-2 character vectors `c(from, to)`,
 #'   each forbidding the directed edge `from -> to`. Directions are independent:
 #'   forbidding `a -> b` still permits `b -> a`.
-#' @return A list of DAG specifications. Over 3 unconstrained nodes there are 25.
+#' @param required Optional list of length-2 character vectors `c(from, to)`,
+#'   each requiring the directed edge `from -> to` to be present in all candidate DAGs.
+#' @param allow_empty Logical — whether to include the completely empty (edgeless)
+#'   graph in the search space. Defaults to `FALSE`.
+#' @return A list of DAG specifications. Over 3 unconstrained nodes there are 24
+#'   (with `allow_empty = FALSE`).
 #' @export
 #'
 #' @examples
-#' length(enumerate_dags(c("a", "b", "c")))            # 25
+#' length(enumerate_dags(c("a", "b", "c")))            # 24
 #' # forbid b -> a and c -> a (e.g. 'a' comes first in time)
 #' enumerate_dags(c("a", "b", "c"),
 #'                disallowed = list(c("b", "a"), c("c", "a")))
-enumerate_dags <- function(nodes, disallowed = NULL) {
+enumerate_dags <- function(nodes, disallowed = NULL, required = NULL, allow_empty = FALSE) {
   if (length(nodes) < 1L) stop("`nodes` must contain at least one node.")
   if (anyDuplicated(nodes)) stop("`nodes` must be unique.")
 
@@ -189,28 +194,52 @@ enumerate_dags <- function(nodes, disallowed = NULL) {
   grid  <- expand.grid(from = nodes, to = nodes, stringsAsFactors = FALSE)
   edges <- grid[grid$from != grid$to, , drop = FALSE]
 
+  .fmt <- function(el) vapply(el, function(e) paste(e[[1]], e[[2]], sep = "\r"), character(1))
+  edge_strs <- paste(edges$from, edges$to, sep = "\r")
+
   if (!is.null(disallowed)) {
-    dis  <- vapply(disallowed, function(e) paste(e[[1]], e[[2]], sep = "\r"),
-                   character(1))
-    keep <- !(paste(edges$from, edges$to, sep = "\r") %in% dis)
+    dis  <- .fmt(disallowed)
+    keep <- !(edge_strs %in% dis)
     edges <- edges[keep, , drop = FALSE]
+    edge_strs <- edge_strs[keep]
+  }
+
+  req_edges <- data.frame(from = character(0), to = character(0), stringsAsFactors = FALSE)
+  if (!is.null(required)) {
+    req <- .fmt(required)
+    is_req <- edge_strs %in% req
+    req_edges <- edges[is_req, , drop = FALSE]
+    edges <- edges[!is_req, , drop = FALSE]
+    
+    if (!.is_acyclic(.edges_to_dag(req_edges, nodes))) {
+       stop("The `required` edges contain a cycle.")
+    }
   }
 
   m <- nrow(edges)
-  if (m > 20L) {
+  if (m > 24L) {
     cli::cli_abort(c(
-      "The search space is too large: {m} candidate directed edges (2^{m} subsets).",
-      "i" = "Add more {.arg disallowed} edges (e.g. a temporal ordering) or
-             reduce {.arg nodes}."
+      "The search space is too large: {m} candidate 'maybe' directed edges (2^{m} subsets).",
+      "i" = "Add more {.arg disallowed} or {.arg required} edges, or reduce {.arg nodes}."
     ))
   }
 
   # Each subset of candidate edges that is acyclic is exactly one DAG.
   powers <- bitwShiftL(1L, seq_len(m) - 1L)
   dags   <- vector("list", 0L)
-  for (mask in seq.int(0L, 2L^m - 1L)) {
-    incl <- bitwAnd(as.integer(mask), powers) != 0L
-    dag  <- .edges_to_dag(edges[incl, , drop = FALSE], nodes)
+  
+  max_mask <- if (m == 0L) 0L else 2L^m - 1L
+  for (mask in seq.int(0L, max_mask)) {
+    if (!allow_empty && mask == 0L && nrow(req_edges) == 0L && (m > 0L || length(nodes) > 1L)) next
+    
+    if (m > 0L) {
+      incl <- bitwAnd(as.integer(mask), powers) != 0L
+      comb_edges <- rbind(req_edges, edges[incl, , drop = FALSE])
+    } else {
+      comb_edges <- req_edges
+    }
+    
+    dag  <- .edges_to_dag(comb_edges, nodes)
     if (.is_acyclic(dag)) dags[[length(dags) + 1L]] <- dag
   }
   dags
@@ -230,7 +259,42 @@ enumerate_dags <- function(nodes, disallowed = NULL) {
 #' Is a DAG specification acyclic? (reuses Kahn's algorithm)
 #' @noRd
 .is_acyclic <- function(dag) {
-  tryCatch({ topological_sort(dag); TRUE }, error = function(e) FALSE)
+  nodes <- names(dag)
+  n_nodes <- length(nodes)
+  
+  # Map nodes to integer indices for speed
+  node_idx <- setNames(seq_len(n_nodes), nodes)
+  
+  in_degree <- integer(n_nodes)
+  # Pre-allocate adj list
+  adj <- vector("list", n_nodes)
+  
+  for (i in seq_len(n_nodes)) {
+    parents <- dag[[i]]
+    in_degree[i] <- length(parents)
+    for (pa in parents) {
+      pa_idx <- node_idx[[pa]]
+      adj[[pa_idx]] <- c(adj[[pa_idx]], i)
+    }
+  }
+  
+  queue <- which(in_degree == 0L)
+  visited <- 0L
+  
+  while (length(queue) > 0L) {
+    u <- queue[1]
+    queue <- queue[-1]
+    visited <- visited + 1L
+    
+    for (v in adj[[u]]) {
+      in_degree[v] <- in_degree[v] - 1L
+      if (in_degree[v] == 0L) {
+        queue <- c(queue, v)
+      }
+    }
+  }
+  
+  visited == n_nodes
 }
 
 .children_map <- function(dag) {

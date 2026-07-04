@@ -58,7 +58,7 @@ kagu_plot_dag(true_dag, node_pos = list(
 ```
 
 ```{r simulate}
-n         <- 200
+n         <- 50
 education <- rnorm(n)
 skill     <- 0.8 * education + rnorm(n, sd = 0.6)
 network   <- 0.6 * education + rnorm(n, sd = 0.6)
@@ -93,6 +93,30 @@ result
 The search evaluated every DAG consistent with that constraint, but — thanks to
 the Markov factorisation — only had to fit each unique `node ~ parents` model
 once (far fewer fits than DAGs).
+
+### Tighter constraints: `required` edges
+
+For larger systems, the number of candidate DAGs can easily exceed Kagu's safety limits (capped at $2^{24}$ subsets, roughly 5 unconstrained nodes). If you have stronger structural beliefs—such as an edge that absolutely *must* exist—you can pass `required`. This shrinks the search space dramatically by removing those edges from the combinatorics.
+
+```r
+# Suppose we know education -> skill and education -> network are certain
+result_req <- KaguModel$discover(
+  df, 
+  disallowed = disallowed, 
+  required = list(c("education", "skill"), c("education", "network"))
+)
+```
+
+### Explicit DAG comparison: `dags`
+
+Sometimes you don't want to search the whole graph space. If you have a few specific, theoretically motivated hypotheses, you can pass them directly via `dags`. Kagu will skip the combinatorial search entirely and just compute the posterior probabilities over your explicit models.
+
+```r
+dag_mediation <- list(education = c(), skill = "education", income = "skill")
+dag_direct    <- list(education = c(), skill = c(), income = "education")
+
+result_explicit <- KaguModel$discover(df, dags = list(dag_mediation, dag_direct))
+```
 
 ## The posterior over DAGs
 
@@ -149,34 +173,36 @@ path to `income` simply contribute a zero effect, exactly as they should.
 ## The limits of observational data
 
 Structure discovery is powerful, but it cannot manufacture information the data
-do not contain — and a good method should tell you so. The sharpest example is
-just two variables. Suppose `a` causes `b`:
+do not contain — and a good method should tell you so. A classic example is a 
+three-variable system with linear relationships. Suppose `x` causes `y`, which in turn causes `z`:
 
-```{r two-node}
-# set.seed(42)
-n <- 20000
-a <- rnorm(n)
-b <- 0.9 * a + rnorm(n, sd = 0.5)
+```{r three-node}
+n <- 500
+x <- rnorm(n)
+y <- 0.8 * x + rnorm(n, sd = 0.5)
+z <- 0.8 * y + rnorm(n, sd = 0.5)
 
-KaguModel$discover(data.frame(a = a, b = b))$summary()
+res_linear <- KaguModel$discover(data.frame(x, y, z))
+head(res_linear$summary())
 ```
 
-The search decisively rejects independence — `a` and `b` are plainly related —
-but it splits almost exactly evenly between `a → b` and `b → a`. And it is
-*right* to: the two graphs imply the identical observational distribution (they
-are **Markov equivalent**), so no quantity of observational data can distinguish
-them. This near-tie is not indecision that more data would resolve; collect a
-million rows and it stays a tie. On any single dataset the split even wobbles
-away from 50/50 by chance — rerun with fresh data and the coin lands the other
-way — because there is genuinely no signal to extract about direction.
+The search decisively rejects independent and fully connected graphs, concentrating 
+all probability mass into just three DAGs. But it splits its confidence across them: 
+the reverse chain (`y → x; z → y`), the fork (`y → x; y → z`), and the true forward chain (`x → y; y → z`). 
 
-The same holds for any Markov-equivalent set, such as the chains `x → y → z`,
-`x ← y ← z`, and the fork `x ← y → z`, which all imply `x ⊥ z | y`. Breaking the
-tie requires stepping outside passive observation: a temporal ordering or other
-domain knowledge (as in the worked example above), or an **intervention** —
-randomising `a` and seeing whether `b` responds. Reporting the tie honestly,
-rather than picking a winner, is exactly what makes the posterior-over-DAGs
-framing trustworthy.
+And it is *right* to: in a linear system, these three graphs imply the identical 
+observational distribution (they are **Markov equivalent**). They all encode that 
+`x` and `z` are independent given `y`, and no quantity of purely observational linear data can 
+distinguish them. Reporting this uncertainty honestly, rather than picking an arbitrary winner, 
+is exactly what makes the posterior-over-DAGs framing trustworthy.
+
+(Note that strict Markov equivalence often relies on linear-Gaussian assumptions. 
+If the underlying relationships were non-linear, Kagu's Gaussian-process mechanisms 
+could often uniquely identify the exact true structure from observational data alone!)
+
+Breaking the tie requires stepping outside passive linear observation: non-linear relationships, 
+temporal ordering or domain knowledge (as in the worked example above), or an **intervention** — 
+randomising `x` and seeing whether `y` and `z` respond.
 
 The uniform prior used here can, in future, be replaced by priors that favour
 sparsity or encode softer structural beliefs — the posterior machinery is

@@ -37,6 +37,10 @@ EffectResult <- R6::R6Class("EffectResult",
     conditions = NULL,
     #' @field sweep_values Numeric vector of sweep grid values, or `NULL`.
     sweep_values = NULL,
+    #' @field conditions_label String representation of conditions (for plotting).
+    conditions_label = NULL,
+    #' @field compare_results List of other `EffectResult`s (for multi-condition plots).
+    compare_results = NULL,
 
     #' @description Create an EffectResult (normally called by `compute_effect`).
     initialize = function(source, target, from_value, to_value, samples,
@@ -115,11 +119,28 @@ EffectResult <- R6::R6Class("EffectResult",
     #' - **Scalar**: density plot with mean point and HDI bar.
     #' - **Sweep**: dose-response line with HDI ribbon.
     #'
+    #' @param compare Optional named list of other `EffectResult` instances to
+    #'   overlay (useful for comparing sweeps under different interactions/conditions).
+    #'   Only valid if this result and all comparison results are `sweep = TRUE`.
+    #'   If this effect was generated with a list of conditions, `compare` is populated automatically.
+    #' @param base_label Optional character string to label this `EffectResult`
+    #'   in the legend when plotting with `compare` (defaults to `"Base"` or the condition label).
     #' @return A `ggplot` object.
-    plot = function() {
+    plot = function(compare = NULL, base_label = NULL) {
       if (self$is_sweep()) {
-        .plot_sweep(self)
+        if (is.null(compare) && !is.null(self$compare_results)) {
+          compare <- self$compare_results
+        }
+        if (is.null(base_label)) {
+          base_label <- if (!is.null(self$conditions_label)) self$conditions_label else "Base"
+        }
+        
+        if (!is.null(compare)) attr(compare, "base_label") <- base_label
+        .plot_sweep(self, compare)
       } else {
+        if (!is.null(compare) || !is.null(self$compare_results)) {
+           stop("Multi-condition plots are only supported for sweeps.")
+        }
         .plot_scalar(self)
       }
     },
@@ -334,32 +355,75 @@ compute_effect <- function(model, source, target,
     )
 }
 
-.plot_sweep <- function(result) {
-  x       <- result$sweep_values
-  n_sweep <- dim(result$samples)[[1]]
-  # Flatten chains and draws: [n_sweep, n_chains * n_draws]
-  flat    <- matrix(result$samples, nrow = n_sweep)
+.plot_sweep <- function(result, compare = NULL) {
+  extract_df <- function(res, label) {
+    x       <- res$sweep_values
+    n_sweep <- dim(res$samples)[[1]]
+    flat    <- matrix(res$samples, nrow = n_sweep)
 
-  means  <- rowMeans(flat)
-  hdi_lo <- apply(flat, 1, function(s) bayestestR::hdi(s, ci = result$hdi_prob)$CI_low)
-  hdi_hi <- apply(flat, 1, function(s) bayestestR::hdi(s, ci = result$hdi_prob)$CI_high)
+    means  <- rowMeans(flat)
+    hdi_lo <- apply(flat, 1, function(s) bayestestR::hdi(s, ci = res$hdi_prob)$CI_low)
+    hdi_hi <- apply(flat, 1, function(s) bayestestR::hdi(s, ci = res$hdi_prob)$CI_high)
 
-  df <- data.frame(x = x, mean = means, lower = hdi_lo, upper = hdi_hi)
+    data.frame(
+      x = x, mean = means, lower = hdi_lo, upper = hdi_hi,
+      condition = label, stringsAsFactors = FALSE
+    )
+  }
+
+  base_label <- if (!is.null(compare) && !is.null(attr(compare, "base_label"))) {
+    attr(compare, "base_label")
+  } else if (!is.null(compare)) {
+    "Base"
+  } else {
+    "Base"
+  }
+
+  df <- extract_df(result, base_label)
+
+  if (!is.null(compare)) {
+    if (is.null(names(compare))) {
+      names(compare) <- paste("Compare", seq_along(compare))
+    }
+    for (nm in names(compare)) {
+      if (!compare[[nm]]$is_sweep()) {
+        stop("All comparison effects must be sweeps.")
+      }
+      df <- rbind(df, extract_df(compare[[nm]], nm))
+    }
+    df$condition <- factor(df$condition, levels = unique(df$condition))
+  }
 
   x_label <- result$source
   y_label <- sprintf("E[%s | do(%s = x)]", result$target, result$source)
   hdi_pct <- sprintf("%.0f%% HDI", result$hdi_prob * 100)
 
-  ggplot2::ggplot(df, ggplot2::aes(x = .data$x)) +
-    ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = .data$lower, ymax = .data$upper),
-      fill = "#b2dfdb", alpha = 0.6
-    ) +
-    ggplot2::geom_line(
-      ggplot2::aes(y = .data$mean),
-      colour = "#26a69a", linewidth = 1
-    ) +
-    ggplot2::labs(x = x_label, y = y_label,
-                  caption = hdi_pct) +
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$x, group = .data$condition))
+
+  if (!is.null(compare)) {
+    p <- p +
+      ggplot2::geom_ribbon(
+        ggplot2::aes(ymin = .data$lower, ymax = .data$upper, fill = .data$condition),
+        alpha = 0.3
+      ) +
+      ggplot2::geom_line(
+        ggplot2::aes(y = .data$mean, colour = .data$condition),
+        linewidth = 1
+      ) +
+      ggplot2::labs(colour = "Condition", fill = "Condition")
+  } else {
+    p <- p +
+      ggplot2::geom_ribbon(
+        ggplot2::aes(ymin = .data$lower, ymax = .data$upper),
+        fill = "#b2dfdb", alpha = 0.6
+      ) +
+      ggplot2::geom_line(
+        ggplot2::aes(y = .data$mean),
+        colour = "#26a69a", linewidth = 1
+      )
+  }
+
+  p +
+    ggplot2::labs(x = x_label, y = y_label, caption = hdi_pct) +
     ggplot2::theme_minimal(base_size = 12)
 }

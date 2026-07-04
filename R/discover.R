@@ -249,12 +249,20 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #' @param data A `data.frame` with one column per variable.
 #' @param nodes Optional character vector of node names. Defaults to all columns
 #'   of `data`.
+#' @param dags Optional explicit list of candidate DAGs to score (each a named
+#'   list of parent vectors). If provided, `disallowed` and `required` are ignored,
+#'   and the search space is restricted exactly to these DAGs.
 #' @param disallowed Optional list of length-2 character vectors `c(from, to)`,
 #'   each forbidding the directed edge `from -> to`. Useful for encoding a known
 #'   temporal ordering and for pruning the search space.
+#' @param required Optional list of length-2 character vectors `c(from, to)`,
+#'   each requiring the directed edge `from -> to` to be present in all candidate DAGs.
 #' @param mechanisms Optional named list of [Mechanism] instances, one per node.
 #'   Any node not specified receives a [GPMechanism].
 #' @param prior Character — prior over DAGs. Only `"uniform"` is supported.
+#' @param allow_empty Logical — whether to include the completely edgeless graph
+#'   in the search space (default `FALSE`). Usually, researchers are looking
+#'   for at least some causal structure, so the empty graph is omitted.
 #' @param ... Additional arguments forwarded to each node's mechanism `$fit()`.
 #' @return A [DiscoveryResult].
 #' @export
@@ -274,8 +282,9 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #' res$edge_probabilities()
 #' res$plot(true_dag = list(a = c(), b = "a", c = "b"))
 #' }
-kagu_discover <- function(data, nodes = NULL, disallowed = NULL,
-                          mechanisms = NULL, prior = "uniform", ...) {
+kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
+                          required = NULL, mechanisms = NULL, prior = "uniform",
+                          allow_empty = FALSE, ...) {
   if (is.null(nodes)) nodes <- names(data)
 
   missing <- setdiff(nodes, names(data))
@@ -293,7 +302,15 @@ kagu_discover <- function(data, nodes = NULL, disallowed = NULL,
   resolved_mech <- stats::setNames(lapply(nodes, mech_for), nodes)
 
   # ---- Enumerate candidate DAGs --------------------------------------------
-  dags     <- enumerate_dags(nodes, disallowed)
+  if (!is.null(dags)) {
+    for (i in seq_along(dags)) {
+      if (!.is_acyclic(dags[[i]])) stop(sprintf("Provided DAG %d contains a cycle.", i))
+      missing_dag_nodes <- setdiff(nodes, names(dags[[i]]))
+      if (length(missing_dag_nodes)) stop(sprintf("Provided DAG %d is missing nodes: %s", i, paste(missing_dag_nodes, collapse=", ")))
+    }
+  } else {
+    dags <- enumerate_dags(nodes, disallowed = disallowed, required = required, allow_empty = allow_empty)
+  }
   n_models <- length(dags)
 
   # ---- Collect unique local models (node, sorted parent set) ---------------
@@ -336,10 +353,18 @@ kagu_discover <- function(data, nodes = NULL, disallowed = NULL,
   }
 
   # ---- Combine via Markov factorisation, add prior, normalise --------------
+  # Pre-calculate the logml for each unique local fit
+  
+  # For each DAG, extract the logml for each node, sum them, and return
   log_marglik <- vapply(dags, function(dag) {
-    comps <- vapply(nodes, function(n) local_logml[[.local_key(n, dag[[n]])]],
-                    numeric(1))
-    if (anyNA(comps)) -Inf else sum(comps)
+    # .local_key(n, dag[[n]]) is fast, but we can just map and sum
+    s <- 0
+    for (n in nodes) {
+      val <- local_logml[[.local_key(n, dag[[n]])]]
+      if (is.na(val)) return(-Inf)
+      s <- s + val
+    }
+    s
   }, numeric(1))
 
   log_prior <- rep(-log(n_models), n_models)          # uniform

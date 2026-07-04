@@ -21,3 +21,4 @@
 # brms compiled Stan models
 *.rds
 !tests/testthat/fixtures/*.rds
+outputs/

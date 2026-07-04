@@ -84,4 +84,5 @@ articles:
     navbar: Examples
     contents:
       - comparison
+      - interactions
       - discovery

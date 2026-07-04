@@ -1,9 +1,14 @@
 # Tests for causal structure discovery (KaguModel$discover / kagu_discover)
 
 test_that("enumerate_dags counts match known values", {
-  expect_equal(length(enumerate_dags(c("a", "b", "c"))), 25L)
-  expect_equal(length(enumerate_dags(c("a", "b", "c", "d"))), 543L)
+  expect_equal(length(enumerate_dags(c("a", "b", "c"))), 24L)
+  expect_equal(length(enumerate_dags(c("a", "b", "c", "d"))), 542L)
   expect_equal(length(enumerate_dags("a")), 1L)
+  
+  # When allow_empty = TRUE, we get the original full combinatorial counts
+  expect_equal(length(enumerate_dags(c("a", "b", "c"), allow_empty = TRUE)), 25L)
+  expect_equal(length(enumerate_dags(c("a", "b", "c", "d"), allow_empty = TRUE)), 543L)
+  expect_equal(length(enumerate_dags("a", allow_empty = TRUE)), 1L)
 })
 
 test_that("enumerate_dags respects disallowed edges and stays acyclic", {
@@ -62,7 +67,7 @@ test_that("discovery yields a valid posterior over DAGs", {
   expect_s3_class(res, "DiscoveryResult")
   expect_equal(sum(res$prob), 1, tolerance = 1e-8)
   expect_true(all(is.finite(res$prob)))
-  expect_equal(res$n_models, 25L)
+  expect_equal(res$n_models, 24L)
   expect_equal(res$n_unique_fits, 12L)          # 3 nodes: 3 * 2^2
 
   ep <- res$edge_probabilities()
