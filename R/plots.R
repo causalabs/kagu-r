@@ -111,6 +111,55 @@ kagu_plot_dag <- function(dag, node_pos = NULL) {
     ggplot2::theme(plot.margin = ggplot2::margin(14, 14, 14, 14))
 }
 
+#' Plot the posterior distribution over DAGs
+#'
+#' Ranked bar chart of the posterior probability of each candidate DAG from a
+#' structure search. If the true (data-generating) DAG is supplied, its bar is
+#' highlighted.
+#'
+#' @param result A [DiscoveryResult] (from `KaguModel$discover()`).
+#' @param top_n Integer — number of top-ranked DAGs to display (default 20).
+#' @param true_dag Optional DAG specification to highlight (matched by its set
+#'   of directed edges).
+#' @return A `ggplot` object.
+#' @export
+kagu_plot_discovery <- function(result, top_n = 20L, true_dag = NULL) {
+  ord <- order(result$prob, decreasing = TRUE)
+  ord <- ord[seq_len(min(top_n, length(ord)))]
+
+  df <- data.frame(
+    rank      = seq_along(ord),
+    prob      = result$prob[ord],
+    highlight = FALSE
+  )
+
+  if (!is.null(true_dag)) {
+    true_edges  <- .dag_edges(true_dag)
+    df$highlight <- vapply(ord, function(i) {
+      identical(.dag_edges(result$dags[[i]]), true_edges)
+    }, logical(1))
+  }
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$rank, y = .data$prob,
+                                        fill = .data$highlight)) +
+    ggplot2::geom_col(width = 0.85, colour = "black", linewidth = 0.3) +
+    ggplot2::scale_fill_manual(
+      values = c(`FALSE` = "grey85", `TRUE` = "#26a69a"), guide = "none"
+    ) +
+    ggplot2::labs(x = "DAG (ranked by posterior)", y = "P(G | data)") +
+    ggplot2::theme_minimal(base_size = 12) +
+    ggplot2::theme(panel.grid.minor = ggplot2::element_blank())
+
+  if (!is.null(true_dag) && any(df$highlight)) {
+    hl <- df[df$highlight, , drop = FALSE]
+    p <- p + ggplot2::annotate(
+      "text", x = hl$rank[[1]], y = hl$prob[[1]],
+      label = "true DAG", vjust = -0.6, size = 3.4, colour = "#1f8e83"
+    )
+  }
+  p
+}
+
 #' Plot the posterior of a fitted node
 #'
 #' Produces a grid of `bayesplot::mcmc_areas()` plots, one per parameter.

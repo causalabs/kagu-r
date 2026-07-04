@@ -219,3 +219,16 @@ KaguModel <- R6::R6Class("KaguModel",
 
 # Static load method (called as KaguModel$load(path))
 KaguModel$load <- function(path) kagu_load(path)
+
+# Static structure-discovery method (called as KaguModel$discover(data, ...)).
+# Delegates to kagu_discover(); see ?kagu_discover for full documentation.
+KaguModel$discover <- function(data, nodes = NULL, disallowed = NULL,
+                               mechanisms = NULL, prior = "uniform",
+                               draws = 2000L, tune = 1000L, chains = 4L,
+                               backend = "cmdstanr", ...) {
+  kagu_discover(
+    data, nodes = nodes, disallowed = disallowed, mechanisms = mechanisms,
+    prior = prior, draws = draws, tune = tune, chains = chains,
+    backend = backend, ...
+  )
+}

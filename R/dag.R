@@ -159,7 +159,79 @@ node_depth <- function(dag) {
   depth
 }
 
+#' Enumerate all DAGs over a set of nodes
+#'
+#' Generates every directed acyclic graph over `nodes`, optionally excluding a
+#' set of disallowed directed edges. Each returned DAG is in the named-list
+#' format used throughout the package (node -> character vector of parents).
+#'
+#' The number of DAGs grows super-exponentially in the number of nodes, so the
+#' search space is only tractable for small problems. Use `disallowed` (e.g. to
+#' encode a known temporal ordering) to prune it.
+#'
+#' @param nodes Character vector of node names.
+#' @param disallowed Optional list of length-2 character vectors `c(from, to)`,
+#'   each forbidding the directed edge `from -> to`. Directions are independent:
+#'   forbidding `a -> b` still permits `b -> a`.
+#' @return A list of DAG specifications. Over 3 unconstrained nodes there are 25.
+#' @export
+#'
+#' @examples
+#' length(enumerate_dags(c("a", "b", "c")))            # 25
+#' # forbid b -> a and c -> a (e.g. 'a' comes first in time)
+#' enumerate_dags(c("a", "b", "c"),
+#'                disallowed = list(c("b", "a"), c("c", "a")))
+enumerate_dags <- function(nodes, disallowed = NULL) {
+  if (length(nodes) < 1L) stop("`nodes` must contain at least one node.")
+  if (anyDuplicated(nodes)) stop("`nodes` must be unique.")
+
+  # All candidate directed edges (ordered pairs), minus the disallowed ones.
+  grid  <- expand.grid(from = nodes, to = nodes, stringsAsFactors = FALSE)
+  edges <- grid[grid$from != grid$to, , drop = FALSE]
+
+  if (!is.null(disallowed)) {
+    dis  <- vapply(disallowed, function(e) paste(e[[1]], e[[2]], sep = "\r"),
+                   character(1))
+    keep <- !(paste(edges$from, edges$to, sep = "\r") %in% dis)
+    edges <- edges[keep, , drop = FALSE]
+  }
+
+  m <- nrow(edges)
+  if (m > 20L) {
+    cli::cli_abort(c(
+      "The search space is too large: {m} candidate directed edges (2^{m} subsets).",
+      "i" = "Add more {.arg disallowed} edges (e.g. a temporal ordering) or
+             reduce {.arg nodes}."
+    ))
+  }
+
+  # Each subset of candidate edges that is acyclic is exactly one DAG.
+  powers <- bitwShiftL(1L, seq_len(m) - 1L)
+  dags   <- vector("list", 0L)
+  for (mask in seq.int(0L, 2L^m - 1L)) {
+    incl <- bitwAnd(as.integer(mask), powers) != 0L
+    dag  <- .edges_to_dag(edges[incl, , drop = FALSE], nodes)
+    if (.is_acyclic(dag)) dags[[length(dags) + 1L]] <- dag
+  }
+  dags
+}
+
 # --- Internal helpers --------------------------------------------------------
+
+#' Build a DAG (named parent-list) from an edge data.frame
+#' @noRd
+.edges_to_dag <- function(edges, nodes) {
+  setNames(
+    lapply(nodes, function(n) as.character(edges$from[edges$to == n])),
+    nodes
+  )
+}
+
+#' Is a DAG specification acyclic? (reuses Kahn's algorithm)
+#' @noRd
+.is_acyclic <- function(dag) {
+  tryCatch({ topological_sort(dag); TRUE }, error = function(e) FALSE)
+}
 
 .children_map <- function(dag) {
   nodes    <- names(dag)

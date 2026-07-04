@@ -33,6 +33,13 @@ reference:
     contents:
       - EffectResult
       - compute_effect
+  - title: "Structure discovery"
+    desc: "Posterior over DAGs via marginal-likelihood model comparison."
+    contents:
+      - kagu_discover
+      - DiscoveryResult
+      - enumerate_dags
+      - kagu_plot_discovery
   - title: "DAG utilities"
     desc: "Graph operations on DAG specifications."
     contents:
@@ -60,6 +67,7 @@ reference:
     desc: "File-level documentation pages."
     contents:
       - dag
+      - discover
       - effects
       - inference
       - io
@@ -76,3 +84,4 @@ articles:
     navbar: Examples
     contents:
       - comparison
+      - discovery

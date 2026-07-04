@@ -37,7 +37,8 @@ R/
   inference.R      # fit_node() — wraps brms::brm()
   model.R          # KaguModel R6 class
   effects.R        # EffectResult R6 class + compute_effect() + .propagate()
-  plots.R          # kagu_plot_dag(), kagu_plot_posterior()
+  discover.R       # kagu_discover() + DiscoveryResult (posterior over DAGs)
+  plots.R          # kagu_plot_dag(), kagu_plot_posterior(), kagu_plot_discovery()
   summary.R        # build_summary_table()
   io.R             # kagu_save(), kagu_load()
 tests/testthat/
@@ -45,10 +46,12 @@ tests/testthat/
   test-dag.R
   test-mechanisms.R
   test-effects.R
+  test-discover.R
   test-model.R
 vignettes/
   quickstart.Rmd   # whistle-stop tour
   comparison.Rmd   # confounder/mediator/collider/M-bias vs OLS
+  discovery.Rmd    # structure discovery — posterior over DAGs
 _pkgdown.yml       # pkgdown site config
 .github/workflows/
   ci.yml           # R-CMD-check on push/PR
@@ -211,7 +214,11 @@ descendants. Keeps the dependency footprint small.
 - [x] Save/load with data (saveRDS/readRDS)
 - [x] Documentation site (pkgdown)
 - [x] CI/CD (GitHub Actions)
+- [x] Causal structure discovery — posterior over DAGs via bridge-sampled
+  marginal likelihoods (`KaguModel$discover` / `kagu_discover`)
 - [ ] GLM mechanisms (LogNormal, Gamma, Poisson, NegBinom, Bernoulli, Beta, Ordered)
-- [ ] User-defined priors via mechanism configuration
+- [ ] User-defined priors via mechanism configuration (incl. priors over DAGs)
+- [ ] Bayesian model averaging of effects over the DAG posterior
+- [ ] Analytic linear-Gaussian marginal likelihood (fast-path for discovery)
 - [ ] Model fit diagnostics (posterior predictive checks, LOO)
 - [ ] Model comparison per node (WAIC / LOO)

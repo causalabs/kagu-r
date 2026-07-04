@@ -14,6 +14,7 @@ fit_node(
   chains = 4L,
   backend = "cmdstanr",
   silent = 2L,
+  save_all = FALSE,
   ...
 )
 }
@@ -38,6 +39,9 @@ cmdstanr is not installed.}
 
 \item{silent}{Integer passed to \code{brms::brm()} — 2 suppresses all output
 (default), 0 shows everything.}
+
+\item{save_all}{Logical — if \code{TRUE}, fit with \code{save_pars = save_pars(all = TRUE)} so the fit is suitable for bridge sampling (marginal likelihood).
+Required by \code{\link[=.node_log_marglik]{.node_log_marglik()}}; off by default.}
 
 \item{...}{Additional arguments forwarded to \code{brms::brm()}.}
 }

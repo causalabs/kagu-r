@@ -1,0 +1,163 @@
+---
+title: "Causal structure discovery"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Causal structure discovery}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 6, fig.height = 4,
+  message   = FALSE
+)
+library(kagu)
+set.seed(42)
+```
+
+The other vignettes take the DAG as given. But the DAG is itself a *hypothesis*
+about how a system works, and often it is exactly what we want to learn. Kagu
+can treat structure discovery as Bayesian inference over graphs: fit a GCM to
+every candidate DAG, and turn the marginal likelihoods into a posterior
+distribution over structures,
+
+$$
+P(G \mid X) \;\propto\; P(X \mid G)\, P(G).
+$$
+
+Here $P(X \mid G)$ is the marginal likelihood of the data under graph $G$
+(computed by bridge-sampling the per-node fits) and $P(G)$ is a prior over
+structures (currently uniform). Rather than returning a single "best" graph,
+this returns a full probability distribution — an honest representation of what
+the data can and cannot tell us about causal structure.
+
+## A worked example
+
+We simulate a four-variable system with a known structure. `education` is a root
+cause of both `skill` and `network`; `income` is driven by `skill` and
+`network`. There is **no** direct `education → income` edge, and `skill` and
+`network` are not directly linked.
+
+```{r truth, fig.height = 3.5}
+true_dag <- list(
+  education = c(),
+  skill     = "education",
+  network   = "education",
+  income    = c("skill", "network")
+)
+
+kagu_plot_dag(true_dag, node_pos = list(
+  education = c(0,  0),
+  skill     = c(1, -1),
+  network   = c(1,  1),
+  income    = c(2,  0)
+))
+```
+
+```{r simulate}
+n         <- 400
+education <- rnorm(n)
+skill     <- 0.8 * education + rnorm(n, sd = 0.5)
+network   <- 0.6 * education + rnorm(n, sd = 0.5)
+income    <- 1.0 * skill + 0.7 * network + rnorm(n, sd = 0.5)
+
+df <- data.frame(education, skill, network, income)
+```
+
+## Running the search
+
+The number of DAGs grows explosively with the number of variables, so we narrow
+the space with background knowledge. Here we know a **temporal ordering** —
+education comes before skill and professional network, which come before income
+— and encode it through `disallowed`, forbidding any edge that would point
+backwards in time. This is exactly the kind of domain knowledge a researcher
+brings to a problem, and it makes the search tractable.
+
+```{r discover}
+disallowed <- list(
+  c("skill",   "education"), 
+  c("network", "education"), 
+  c("income", "education")
+)
+
+result <- KaguModel$discover(df, disallowed = disallowed)
+```
+
+```{r print-result}
+result
+```
+
+The search evaluated every DAG consistent with the ordering, but — thanks to the
+Markov factorisation — only had to fit each unique `node ~ parents` model once
+(far fewer fits than DAGs).
+
+## The posterior over DAGs
+
+`$summary()` ranks the structures by posterior probability. Each row is a whole
+DAG; `posterior_prob` is $P(G \mid X)$.
+
+```{r summary}
+result$summary()
+```
+
+The histogram makes the shape of the posterior clear. With the true
+data-generating DAG highlighted, we can see how much of the probability mass it
+captures.
+
+```{r plot}
+result$plot(true_dag = true_dag)
+```
+
+## Edge probabilities
+
+Often we care less about the single best graph than about *specific* causal
+questions — does this edge exist, and in which direction? `$edge_probabilities()`
+marginalises over the whole posterior to give the probability of each directed
+edge, $P(\text{from} \to \text{to} \mid X) = \sum_{G \ni \text{edge}} P(G \mid X)$.
+
+```{r edges}
+result$edge_probabilities()
+```
+
+The four true edges (`education→skill`, `education→network`, `skill→income`,
+`network→income`) should carry almost all the probability, while spurious edges
+(a direct `education→income`, or `skill→network`) carry very little.
+
+## Effects under structural uncertainty
+
+When the structure is uncertain, committing to a single DAG — even the most
+probable one — throws away that uncertainty. Instead, query the effect directly
+on the `DiscoveryResult`: it averages over the *entire* posterior of DAGs,
+weighting each by $P(G \mid X)$,
+$$
+P(Q \mid X) = \sum_G P(Q \mid X, G)\, P(G \mid X).
+$$
+The call signature and the returned object are exactly those of the single-DAG
+`model$effects()`, so everything downstream — summaries, plots — works the same.
+
+```{r effect}
+result$effects("education", "income")$summary()
+```
+
+This estimate carries both the parameter uncertainty within each model and the
+structural uncertainty between models. DAGs in which `education` has no causal
+path to `income` simply contribute a zero effect, exactly as they should.
+
+## A note on Markov equivalence
+
+Because we supplied a temporal ordering, every candidate DAG shares the same
+variable order, which resolves the ambiguity between statistically equivalent
+structures. Without such constraints, *Markov-equivalent* DAGs — those that
+imply the same conditional independences, such as `x → y → z`, `x ← y ← z`, and
+`x ← y → z` — are indistinguishable from observational data alone, and the
+posterior would (correctly) spread its mass evenly across them. That is not a
+limitation of the method but an honest reflection of what passive observation
+can determine. Distinguishing such structures requires either prior knowledge
+(as here) or interventional data.
+
+The uniform prior used here can, in future, be replaced by priors that favour
+sparsity or encode softer structural beliefs — the posterior machinery is
+unchanged.
