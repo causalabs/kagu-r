@@ -58,11 +58,11 @@ kagu_plot_dag(true_dag, node_pos = list(
 ```
 
 ```{r simulate}
-n         <- 400
+n         <- 200
 education <- rnorm(n)
-skill     <- 0.8 * education + rnorm(n, sd = 0.5)
-network   <- 0.6 * education + rnorm(n, sd = 0.5)
-income    <- 1.0 * skill + 0.7 * network + rnorm(n, sd = 0.5)
+skill     <- 0.8 * education + rnorm(n, sd = 0.6)
+network   <- 0.6 * education + rnorm(n, sd = 0.6)
+income    <- 1.0 * skill + 0.7 * network + rnorm(n, sd = 0.6)
 
 df <- data.frame(education, skill, network, income)
 ```
@@ -70,11 +70,11 @@ df <- data.frame(education, skill, network, income)
 ## Running the search
 
 The number of DAGs grows explosively with the number of variables, so we narrow
-the space with background knowledge. Here we know a **temporal ordering** —
-education comes before skill and professional network, which come before income
-— and encode it through `disallowed`, forbidding any edge that would point
-backwards in time. This is exactly the kind of domain knowledge a researcher
-brings to a problem, and it makes the search tractable.
+the space with background knowledge. Here we know only that `education` comes
+first — nothing causes a person's education in this system — so we use
+`disallowed` to forbid any edge pointing *into* `education`. The ordering among
+`skill`, `network`, and `income` is left for the data to resolve. This is
+exactly the kind of light domain knowledge a researcher can bring to a problem.
 
 ```{r discover}
 disallowed <- list(
@@ -90,9 +90,9 @@ result <- KaguModel$discover(df, disallowed = disallowed)
 result
 ```
 
-The search evaluated every DAG consistent with the ordering, but — thanks to the
-Markov factorisation — only had to fit each unique `node ~ parents` model once
-(far fewer fits than DAGs).
+The search evaluated every DAG consistent with that constraint, but — thanks to
+the Markov factorisation — only had to fit each unique `node ~ parents` model
+once (far fewer fits than DAGs).
 
 ## The posterior over DAGs
 
@@ -146,17 +146,37 @@ This estimate carries both the parameter uncertainty within each model and the
 structural uncertainty between models. DAGs in which `education` has no causal
 path to `income` simply contribute a zero effect, exactly as they should.
 
-## A note on Markov equivalence
+## The limits of observational data
 
-Because we supplied a temporal ordering, every candidate DAG shares the same
-variable order, which resolves the ambiguity between statistically equivalent
-structures. Without such constraints, *Markov-equivalent* DAGs — those that
-imply the same conditional independences, such as `x → y → z`, `x ← y ← z`, and
-`x ← y → z` — are indistinguishable from observational data alone, and the
-posterior would (correctly) spread its mass evenly across them. That is not a
-limitation of the method but an honest reflection of what passive observation
-can determine. Distinguishing such structures requires either prior knowledge
-(as here) or interventional data.
+Structure discovery is powerful, but it cannot manufacture information the data
+do not contain — and a good method should tell you so. The sharpest example is
+just two variables. Suppose `a` causes `b`:
+
+```{r two-node}
+# set.seed(42)
+n <- 20000
+a <- rnorm(n)
+b <- 0.9 * a + rnorm(n, sd = 0.5)
+
+KaguModel$discover(data.frame(a = a, b = b))$summary()
+```
+
+The search decisively rejects independence — `a` and `b` are plainly related —
+but it splits almost exactly evenly between `a → b` and `b → a`. And it is
+*right* to: the two graphs imply the identical observational distribution (they
+are **Markov equivalent**), so no quantity of observational data can distinguish
+them. This near-tie is not indecision that more data would resolve; collect a
+million rows and it stays a tie. On any single dataset the split even wobbles
+away from 50/50 by chance — rerun with fresh data and the coin lands the other
+way — because there is genuinely no signal to extract about direction.
+
+The same holds for any Markov-equivalent set, such as the chains `x → y → z`,
+`x ← y ← z`, and the fork `x ← y → z`, which all imply `x ⊥ z | y`. Breaking the
+tie requires stepping outside passive observation: a temporal ordering or other
+domain knowledge (as in the worked example above), or an **intervention** —
+randomising `a` and seeing whether `b` responds. Reporting the tie honestly,
+rather than picking a winner, is exactly what makes the posterior-over-DAGs
+framing trustworthy.
 
 The uniform prior used here can, in future, be replaced by priors that favour
 sparsity or encode softer structural beliefs — the posterior machinery is

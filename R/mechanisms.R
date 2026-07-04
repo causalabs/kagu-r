@@ -165,10 +165,10 @@ GPMechanism <- R6::R6Class("GPMechanism",
     log_marglik = function(node, parents, data) {
       y <- data[[node]]
       if (length(parents) == 0L) return(.gaussian_evidence(y))
-      .gp_type2_evidence(y, as.matrix(data[parents]),
-                         poly_degree = .cap_poly_degree(self$poly_degree,
-                                                        length(parents)),
-                         a = self$a, b = self$b)
+      .gp_integrated_evidence(y, as.matrix(data[parents]),
+                              poly_degree = .cap_poly_degree(self$poly_degree,
+                                                             length(parents)),
+                              a = self$a, b = self$b)
     },
 
     #' @description Posterior shape (single chain).
@@ -239,7 +239,10 @@ GPMechanism <- R6::R6Class("GPMechanism",
     ldC  <- n * log(s2) + sum(log(t2 * lam)) + 2 * sum(log(diag(ch)))
     0.5 * (n * log(2 * pi) + ldC + quad)
   }
-  opt <- stats::optim(c(log(stats::var(yc)), 0), neg_ll, method = "Nelder-Mead")
+  # Bounded optimisation for the posterior hyperparameters (used for the fitted
+  # function / effects). Bounds prevent the amplitude running away to overfit.
+  opt <- stats::optim(c(log(stats::var(yc)), 0), neg_ll, method = "L-BFGS-B",
+                      lower = c(-20, -8), upper = c(10, 10))
   s2  <- exp(opt$par[[1]]); t2 <- exp(opt$par[[2]])
 
   # Exact Gaussian posterior over theta, and pre-drawn coefficient samples.
@@ -249,12 +252,20 @@ GPMechanism <- R6::R6Class("GPMechanism",
   mu    <- as.vector(Sig %*% Xty) / s2
   theta <- t(mu + backsolve(chP, matrix(stats::rnorm(L * num_results), L, num_results)))
 
-  # Residual-sd draws (scaled inverse chi-square around the type-II noise).
+  # Residual-sd draws (scaled inverse chi-square around the fitted noise).
   sigma_draws <- sqrt(n * s2 / stats::rchisq(num_results, n))
+
+  # The marginal likelihood for discovery is the *integrated* evidence — nuisance
+  # hyperparameters marginalised, not maximised — computed on the standardised
+  # response so it is scale-free, stable, and comparable across parent sets.
+  sdy <- stats::sd(y)
+  ycs <- if (sdy > 0) yc / sdy else yc
+  logml <- .gp_evidence_core(XtX, as.vector(crossprod(Xmat, ycs)),
+                             sum(ycs^2), n, lam)
 
   list(theta = theta, ybar = ybar, sigma_draws = sigma_draws,
        center = bs$center, scale = bs$scale, poly_degree = poly_degree,
-       a = a, b = b, n_draws = num_results, logml = -opt$value)
+       a = a, b = b, n_draws = num_results, logml = logml)
 }
 
 #' Posterior draws of the GP function at query points
@@ -286,41 +297,62 @@ GPMechanism <- R6::R6Class("GPMechanism",
   pd
 }
 
-#' Gaussian marginal evidence of a root node (mean profiled out by centring)
+#' Gaussian marginal evidence of a root node
+#'
+#' Computed on the variable standardised to unit variance (as are the conditional
+#' evidences), so discovery scores are scale-free and comparable across nodes.
 #' @noRd
 .gaussian_evidence <- function(y) {
-  yc <- y - mean(y)
-  n  <- length(yc)
-  s2 <- mean(yc^2)
-  if (s2 <= 0) s2 <- .Machine$double.eps
-  -0.5 * (n * log(2 * pi) + n * log(s2) + n)
+  n <- length(y)
+  -0.5 * n * (log(2 * pi) + 1)          # evidence of a standardised Normal
 }
 
-#' Type-II (empirical-Bayes) log marginal likelihood of the basis-linear GP model
+#' Integrated log marginal likelihood of the basis-linear GP model
 #'
-#' Evidence of `y ~ N(0, sigma2 I + tau2 * Xmat diag(lambda) Xmat^T)` with the
-#' node mean removed by centring and `(sigma2, tau2)` maximised. Uses the
-#' matrix-determinant lemma / Woodbury so the cost is O(L^3) rather than O(n^3).
+#' A proper marginal likelihood for the model
+#' `y ~ N(Xmat theta, sigma2)`, `theta_k ~ N(0, tau2 lambda_k)`, with the node
+#' mean removed by centring. The coefficients `theta` and the noise `sigma2` are
+#' integrated in closed form (Normal-Inverse-Gamma conjugacy); the amplitude
+#' `tau2` is integrated over a log-spaced grid. Marginalising the nuisance
+#' hyperparameters — rather than maximising them (type-II ML) — avoids the
+#' numerical instability and overconfidence that maximisation produces.
 #' @noRd
-.gp_type2_evidence <- function(y, x, poly_degree = 10L, a = 0.01, b = 1) {
+.gp_integrated_evidence <- function(y, x, poly_degree = 10L, a = 0.01, b = 1) {
   bs   <- .gp_basis(x, poly_degree, a, b)
-  Xmat <- bs$Psi; lam <- bs$lambda
-  yc  <- y - mean(y)
-  n   <- length(yc); L <- ncol(Xmat)
-  XtX <- crossprod(Xmat); Xty <- as.vector(crossprod(Xmat, yc)); yty <- sum(yc^2)
+  Xmat <- bs$Psi
+  # Standardise the response so discovery scores are scale-free and comparable
+  # across nodes / parent sets (numerically stabilising, and restores approximate
+  # score equivalence for Markov-equivalent structures).
+  sdy  <- stats::sd(y)
+  yc   <- if (sdy > 0) (y - mean(y)) / sdy else y - mean(y)
+  .gp_evidence_core(crossprod(Xmat), as.vector(crossprod(Xmat, yc)),
+                    sum(yc^2), length(yc), bs$lambda)
+}
 
-  neg_ll <- function(par) {
-    s2 <- exp(par[[1]]); t2 <- exp(par[[2]])
-    M  <- diag(1 / (t2 * lam), L) + XtX / s2
-    ch <- tryCatch(chol(M), error = function(e) NULL)
-    if (is.null(ch)) return(1e10)
-    sol  <- backsolve(ch, forwardsolve(t(ch), Xty))
-    quad <- (yty - sum(Xty * sol) / s2) / s2
-    ldC  <- n * log(s2) + sum(log(t2 * lam)) + 2 * sum(log(diag(ch)))
-    0.5 * (n * log(2 * pi) + ldC + quad)
-  }
-  opt <- stats::optim(c(log(stats::var(yc)), 0), neg_ll, method = "Nelder-Mead")
-  -opt$value
+#' Integrated evidence from precomputed sufficient statistics
+#'
+#' `theta`/`sigma2` integrated analytically (Normal-Inverse-Gamma) for each
+#' `tau2` on a log grid, then `tau2` integrated numerically. Cost is O(L^3) via
+#' the Cholesky of `XtX + prior precision`.
+#' @noRd
+.gp_evidence_core <- function(XtX, Xty, yty, n, lam,
+                              a0 = 1e-2, b0 = 1e-2, ngrid = 25L) {
+  L  <- length(lam)
+  lg <- seq(-6, 6, length.out = ngrid)          # log-tau2 grid
+  ll <- vapply(lg, function(l) {
+    g  <- exp(l)
+    A  <- XtX + diag(1 / (g * lam), L)
+    ch <- tryCatch(chol(A), error = function(e) NULL)
+    if (is.null(ch)) return(-Inf)
+    mn   <- backsolve(ch, forwardsolve(t(ch), Xty))
+    quad <- yty - sum(Xty * mn)
+    an   <- a0 + n / 2
+    bn   <- b0 + 0.5 * quad
+    -(n / 2) * log(2 * pi) +
+      0.5 * (-sum(log(g * lam)) - 2 * sum(log(diag(ch)))) +
+      a0 * log(b0) - an * log(bn) + lgamma(an) - lgamma(a0)
+  }, numeric(1))
+  .logsumexp(ll) + log(mean(diff(lg)))          # flat prior over the grid
 }
 
 #' Summarise a vector of posterior draws into one summary-table row
