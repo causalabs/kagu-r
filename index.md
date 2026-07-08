@@ -1,8 +1,11 @@
 <div class="kagu-hero">
 <div class="kagu-hero__inner">
 <h1 class="kagu-hero__title">Kagu</h1>
-<p class="kagu-hero__tagline">Bayesian graphical causal models in R — specify a DAG, fit it with full Bayesian inference, and read off interventional effects.</p>
-<div class="kagu-hero__install"><code>remotes::install_github("your-org/kagu-r")</code></div>
+<p class="kagu-hero__tagline">Bayesian graphical causal models in R. Specify a causal DAG, fit each node with a Gaussian process, and estimate interventional effects with full posterior uncertainty.</p>
+<div class="kagu-hero__install">
+<code id="kagu-install-cmd" data-cmd='remotes::install_github("causalabs/kagu-r")'>remotes::install_github("causalabs/kagu-r")</code>
+<button class="kagu-hero__copy" type="button" data-copy-target="kagu-install-cmd" aria-label="Copy install command">Copy</button>
+</div>
 <div class="kagu-hero__actions">
 <a class="kagu-btn kagu-btn--primary" href="articles/quickstart.html">Get started →</a>
 <a class="kagu-btn kagu-btn--ghost" href="reference/index.html">Reference</a>

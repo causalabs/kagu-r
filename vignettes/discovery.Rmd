@@ -121,11 +121,29 @@ result_explicit <- KaguModel$discover(df, dags = list(dag_mediation, dag_direct)
 ## The posterior over DAGs
 
 `$summary()` ranks the structures by posterior probability. Each row is a whole
-DAG; `posterior_prob` is $P(G \mid X)$.
+DAG, referenced by a short `id` (here the enumerated graphs get ids `"A"`, `"B"`,
+`"C"`, …; had we passed a *named* list of DAGs, those names would be used
+instead). `posterior_prob` is $P(G \mid X)$.
 
 ```{r summary}
 result$summary()
 ```
+
+To see what a given structure actually is, look it up by its id with
+`result$get_dag(id)`, or plot it directly:
+
+```{r inspect-dag, fig.height = 3.5}
+top_id <- result$summary()$id[1]
+result$plot_dag(top_id)
+```
+
+No single DAG runs away with the posterior — the top few structures each hold
+only around a sixth of the mass. That is not a defect: with a handful of
+variables and this much noise, the data simply cannot single out one graph. What
+it *can* do is concentrate the mass onto a small cluster of closely-related
+structures that all agree on the important causal edges, and rule the rest out.
+We can't always name the one true DAG, but we can zoom in on the handful that
+matter.
 
 The histogram makes the shape of the posterior clear. With the true
 data-generating DAG highlighted, we can see how much of the probability mass it
@@ -146,9 +164,16 @@ edge, $P(\text{from} \to \text{to} \mid X) = \sum_{G \ni \text{edge}} P(G \mid X
 result$edge_probabilities()
 ```
 
-The four true edges (`education→skill`, `education→network`, `skill→income`,
-`network→income`) should carry almost all the probability, while spurious edges
-(a direct `education→income`, or `skill→network`) carry very little.
+This is where the posterior becomes genuinely useful. The four true edges
+(`education→skill`, `education→network`, `skill→income`, `network→income`) each
+carry almost all of the probability — the data is confident they exist and point
+the way they do — and the clearest edge *reversals* are correctly assigned low
+probability. What lingers is a redundant direct `education→income` edge: even
+though education's effect on income is *fully mediated* by skill and network,
+observational data at this sample size cannot completely exclude a direct path,
+so that edge keeps a moderate probability rather than collapsing to zero. Kagu
+reports the residual ambiguity honestly instead of pretending the edge is ruled
+out.
 
 ## Effects under structural uncertainty
 
@@ -186,15 +211,20 @@ res_linear <- KaguModel$discover(data.frame(x, y, z))
 head(res_linear$summary())
 ```
 
-The search decisively rejects independent and fully connected graphs, concentrating 
-all probability mass into just three DAGs. But it splits its confidence across them: 
-the reverse chain (`y → x; z → y`), the fork (`y → x; y → z`), and the true forward chain (`x → y; y → z`). 
+The search decisively rejects the independent graph and any structure that
+violates the data's conditional independencies, but it does **not** collapse onto
+a single winner. Instead the mass is shared across a cluster of closely-related
+graphs: the reverse chain (`y → x; z → y`), the fork (`y → x; y → z`), and the
+true forward chain (`x → y; y → z`) — plus versions of each carrying one
+redundant extra edge that the data cannot rule out.
 
-And it is *right* to: in a linear system, these three graphs imply the identical 
-observational distribution (they are **Markov equivalent**). They all encode that 
-`x` and `z` are independent given `y`, and no quantity of purely observational linear data can 
-distinguish them. Reporting this uncertainty honestly, rather than picking an arbitrary winner, 
-is exactly what makes the posterior-over-DAGs framing trustworthy.
+And it is *right* to spread out. In a linear system, the three chains imply the
+identical observational distribution (they are **Markov equivalent**). They all
+encode that `x` and `z` are independent given `y`, and no quantity of purely
+observational linear data can distinguish them — nor can it exclude a weak extra
+edge that adds nothing to the fit. Reporting this uncertainty honestly, rather
+than picking an arbitrary winner, is exactly what makes the posterior-over-DAGs
+framing trustworthy.
 
 (Note that strict Markov equivalence often relies on linear-Gaussian assumptions. 
 If the underlying relationships were non-linear, Kagu's Gaussian-process mechanisms 

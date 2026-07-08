@@ -4,17 +4,22 @@
 \alias{GPMechanism}
 \title{Gaussian-process mechanism (default)}
 \description{
-Models each node's conditional mean as a Gaussian process of its parents. The
-GP is a Bayesian linear model over the smooth eigen-basis of the \pkg{BayesGPfit}
-package, fitted in closed form (conjugate Normal posterior, with the noise and
-amplitude hyperparameters set by type-II maximum likelihood). A node with no
-parents is modelled by its marginal (a Normal). This is Kagu's default and
-only mechanism.
+Models each node's conditional mean as an \strong{exact Gaussian process} of its
+parents, with a squared-exponential (ARD) kernel — one lengthscale per parent,
+which captures non-linearity and interactions automatically. Kernel
+hyperparameters (lengthscales, signal and noise variance) are set by type-II
+maximum likelihood; there is no MCMC. A node with no parents is modelled by
+its marginal (a Normal). This is Kagu's default and only mechanism.
 
-Because the posterior over the fitted function is exact and Gaussian, full
-posterior uncertainty — not merely a credible interval — flows through effect
-propagation, and the log marginal likelihood used by structure discovery is
-available in closed form (no MCMC, no bridge sampling).
+Structure discovery uses the \strong{exact} GP log marginal likelihood, which — in
+contrast to fast basis/eigenfunction approximations — is well calibrated: for
+a genuinely unidentifiable (e.g. linear-Gaussian) edge it does not manufacture
+spurious confidence about direction.
+
+Posterior function samples for effect propagation are drawn by \strong{pathwise /
+decoupled sampling} (a random-feature prior plus the exact data update), so
+each draw is a coherent function evaluable at any point — giving correctly
+correlated uncertainty for do-calculus contrasts.
 }
 \examples{
 mech <- GPMechanism$new()
@@ -25,13 +30,12 @@ mech <- GPMechanism$new()
 \section{Public fields}{
   \if{html}{\out{<div class="r6-fields">}}
   \describe{
-    \item{\code{poly_degree}}{Integer — GP basis polynomial degree (default 10).}
-
     \item{\code{num_results}}{Integer — number of posterior draws to keep (default 1000).}
 
-    \item{\code{a, b}}{Numeric — GP kernel hyperparameters (defaults 0.01, 1).}
+    \item{\code{n_features}}{Integer — random Fourier features for pathwise sampling
+(default 300).}
 
-    \item{\code{b}}{b kernel hyperparameter.}
+    \item{\code{jitter}}{Numeric — diagonal jitter for numerical stability (default 1e-6).}
   }
   \if{html}{\out{</div>}}
 }
@@ -54,15 +58,15 @@ mech <- GPMechanism$new()
   Create a new GPMechanism.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{GPMechanism$new(poly_degree = 10L, num_results = 1000L, a = 0.01, b = 1)}
+    \preformatted{GPMechanism$new(num_results = 1000L, n_features = 300L, jitter = 1e-06)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{poly_degree}}{Integer — GP basis polynomial degree.}
       \item{\code{num_results}}{Integer — number of posterior draws to keep.}
-      \item{\code{a, b}}{Numeric — GP kernel hyperparameters.}
+      \item{\code{n_features}}{Integer — number of random Fourier features.}
+      \item{\code{jitter}}{Numeric — diagonal jitter added to the kernel.}
     }
     \if{html}{\out{</div>}}
   }
@@ -72,7 +76,7 @@ mech <- GPMechanism$new()
 \if{html}{\out{<a id="method-GPMechanism-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-GPMechanism-fit}{}}}
 \subsection{\code{GPMechanism$fit()}}{
-  Fit the node (GP if it has parents, marginal Normal if not).
+  Fit the node (exact GP if it has parents, marginal Normal if not).
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{GPMechanism$fit(node, parents, data, ...)}
@@ -117,7 +121,7 @@ parent, giving the parent values for each posterior draw.}
 \if{html}{\out{<a id="method-GPMechanism-log_marglik"></a>}}
 \if{latex}{\out{\hypertarget{method-GPMechanism-log_marglik}{}}}
 \subsection{\code{GPMechanism$log_marglik()}}{
-  Type-II log marginal likelihood (see \link{Mechanism}).
+  Exact GP log marginal likelihood (see \link{Mechanism}).
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{GPMechanism$log_marglik(node, parents, data)}

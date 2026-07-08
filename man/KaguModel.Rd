@@ -131,7 +131,8 @@ the explicit intervention contrast.}
       \item{\code{std_units}}{Logical — if \code{TRUE}, compute the effect of a 1-SD
 increase centred at the mean.}
       \item{\code{conditions}}{Optional named list of node values to condition on
-(fixes those nodes at the given values during propagation).}
+(fixes those nodes at the given values during propagation). Can also be
+a list of such lists to compute and overlay multiple conditions.}
       \item{\code{sweep}}{Logical — if \code{TRUE}, compute the dose-response curve.}
       \item{\code{sweep_n}}{Integer — number of points in the sweep grid (default 50).}
       \item{\code{sweep_range}}{Numeric vector \code{c(min, max)} for the sweep grid.

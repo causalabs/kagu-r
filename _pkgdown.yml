@@ -1,4 +1,4 @@
-url: https://your-org.github.io/kagu-r/
+url: https://causalabs.github.io/kagu-r/
 
 template:
   bootstrap: 5
@@ -84,5 +84,6 @@ articles:
     navbar: Examples
     contents:
       - comparison
+      - ecology_case_study
       - interactions
       - discovery

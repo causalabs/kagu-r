@@ -14,7 +14,7 @@
 .kagu-hero .page-header { margin: 0; padding: 0; border: 0; min-height: 0; }
 .kagu-hero .page-header .anchor { display: none; }
 
-/* ---- Hero banner ---- */
+/* ---- Hero banner (dark, cool gradient) ---- */
 .kagu-hero {
   position: relative;
   overflow: hidden;
@@ -22,27 +22,14 @@
   padding: 6rem 1.5rem 6.5rem;
   border-radius: 22px;
   text-align: center;
-  border: 1px solid #ece7dd;
+  border: 1px solid rgba(255, 255, 255, 0.06);
   background:
-    radial-gradient(1100px 520px at 50% -12%, #e3f3f0 0%, rgba(227,243,240,0) 62%),
-    linear-gradient(180deg, #fbfaf7 0%, #f4f1ea 100%);
+    radial-gradient(900px 480px at 78% -20%, rgba(38, 166, 154, 0.38) 0%, rgba(38, 166, 154, 0) 55%),
+    radial-gradient(760px 460px at 8% 118%, rgba(38, 166, 154, 0.16) 0%, rgba(38, 166, 154, 0) 60%),
+    linear-gradient(158deg, #15302b 0%, #10201d 58%, #0c1715 100%);
   box-shadow:
-    0 1px 2px rgba(28, 40, 38, .04),
-    0 28px 56px -28px rgba(28, 40, 38, .20);
-}
-
-/* DAG-constellation art, served as a background so pandoc never rewrites it.
-   Faded toward the centre with a radial mask so the headline stays crisp. */
-.kagu-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%201200%20600'%20preserveAspectRatio='xMidYMid%20slice'%3E%3Cdefs%3E%3Cmarker%20id='a'%20viewBox='0%200%2010%2010'%20refX='9'%20refY='5'%20markerWidth='6'%20markerHeight='6'%20orient='auto-start-reverse'%3E%3Cpath%20d='M0,0%20L10,5%20L0,10%20z'%20fill='%2326a69a'/%3E%3C/marker%3E%3C/defs%3E%3Cg%20stroke='%2326a69a'%20stroke-width='1.4'%20fill='none'%20marker-end='url(%23a)'%20opacity='0.16'%3E%3Cline%20x1='150'%20y1='150'%20x2='280'%20y2='300'/%3E%3Cline%20x1='150'%20y1='150'%20x2='320'%20y2='110'/%3E%3Cline%20x1='320'%20y1='110'%20x2='470'%20y2='240'/%3E%3Cline%20x1='280'%20y1='300'%20x2='470'%20y2='240'/%3E%3Cline%20x1='280'%20y1='300'%20x2='230'%20y2='470'/%3E%3Cline%20x1='470'%20y1='240'%20x2='430'%20y2='470'/%3E%3Cline%20x1='930'%20y1='120'%20x2='1060'%20y2='260'/%3E%3Cline%20x1='930'%20y1='120'%20x2='780'%20y2='200'/%3E%3Cline%20x1='780'%20y1='200'%20x2='900'%20y2='380'/%3E%3Cline%20x1='1060'%20y1='260'%20x2='900'%20y2='380'/%3E%3Cline%20x1='900'%20y1='380'%20x2='970'%20y2='520'/%3E%3Cline%20x1='780'%20y1='200'%20x2='720'%20y2='430'/%3E%3C/g%3E%3Cg%20fill='%2326a69a'%20opacity='0.22'%3E%3Ccircle%20cx='150'%20cy='150'%20r='7'/%3E%3Ccircle%20cx='320'%20cy='110'%20r='6'/%3E%3Ccircle%20cx='280'%20cy='300'%20r='8'/%3E%3Ccircle%20cx='470'%20cy='240'%20r='7'/%3E%3Ccircle%20cx='230'%20cy='470'%20r='6'/%3E%3Ccircle%20cx='430'%20cy='470'%20r='6'/%3E%3Ccircle%20cx='930'%20cy='120'%20r='7'/%3E%3Ccircle%20cx='780'%20cy='200'%20r='8'/%3E%3Ccircle%20cx='1060'%20cy='260'%20r='6'/%3E%3Ccircle%20cx='900'%20cy='380'%20r='7'/%3E%3Ccircle%20cx='970'%20cy='520'%20r='6'/%3E%3Ccircle%20cx='720'%20cy='430'%20r='6'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: cover;
-  background-position: center;
-  -webkit-mask-image: radial-gradient(620px 360px at 50% 46%, transparent 0%, #000 78%);
-          mask-image: radial-gradient(620px 360px at 50% 46%, transparent 0%, #000 78%);
+    0 1px 2px rgba(0, 0, 0, .18),
+    0 30px 60px -28px rgba(0, 0, 0, .55);
 }
 
 .kagu-hero__inner {
@@ -59,34 +46,33 @@
   font-size: clamp(2.9rem, 6.2vw, 4.6rem);
   line-height: 1.02;
   letter-spacing: -0.025em;
-  color: #1c2826;
+  color: #f5f3ee;
   margin: 0 0 1.1rem;
 }
 
 .kagu-hero__tagline {
   font-size: clamp(1.05rem, 1.9vw, 1.3rem);
   line-height: 1.55;
-  color: #4a5754;
-  max-width: 560px;
+  color: #aebfba;
+  max-width: 580px;
   margin: 0 auto 2.25rem;
 }
 
 .kagu-hero__install {
   display: inline-flex;
   align-items: center;
-  gap: .6rem;
-  background: #1c2826;
-  color: #f4f1ea;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .5rem .8rem;
+  max-width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #eaf3f1;
   font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
-  font-size: .95rem;
-  padding: .8rem 1.15rem;
-  border-radius: 11px;
-  box-shadow: 0 14px 34px -16px rgba(28, 40, 38, .55);
-}
-.kagu-hero__install::before {
-  content: "›";
-  color: #26a69a;
-  font-weight: 700;
+  font-size: clamp(.82rem, 2.3vw, .95rem);
+  padding: .6rem .7rem .6rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px -22px rgba(0, 0, 0, .7);
 }
 .kagu-hero__install code {
   background: none;
@@ -94,6 +80,29 @@
   padding: 0;
   color: inherit;
   font-size: inherit;
+  white-space: nowrap;
+}
+.kagu-hero__copy {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #dfeae7;
+  font: 600 .8rem/1 'IBM Plex Sans', system-ui, sans-serif;
+  padding: .5rem .75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.kagu-hero__copy:hover {
+  background: rgba(38, 166, 154, .92);
+  border-color: transparent;
+  color: #fff;
+}
+.kagu-hero__copy.is-copied {
+  background: #26a69a;
+  border-color: transparent;
+  color: #fff;
 }
 
 .kagu-hero__actions {
@@ -124,13 +133,13 @@
   box-shadow: 0 18px 32px -12px rgba(38, 166, 154, .85);
 }
 .kagu-btn--ghost {
-  background: transparent;
-  color: #1c2826;
-  border: 1px solid #d6cfc1;
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef4f2;
+  border: 1px solid rgba(255, 255, 255, 0.22);
 }
 .kagu-btn--ghost:hover {
-  background: #fff;
-  color: #1c2826;
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
   transform: translateY(-1px);
 }
 

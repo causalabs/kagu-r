@@ -7,9 +7,12 @@
 kagu_discover(
   data,
   nodes = NULL,
+  dags = NULL,
   disallowed = NULL,
+  required = NULL,
   mechanisms = NULL,
   prior = "uniform",
+  allow_empty = FALSE,
   ...
 )
 }
@@ -19,14 +22,25 @@ kagu_discover(
 \item{nodes}{Optional character vector of node names. Defaults to all columns
 of \code{data}.}
 
+\item{dags}{Optional explicit list of candidate DAGs to score (each a named
+list of parent vectors). If provided, \code{disallowed} and \code{required} are ignored,
+and the search space is restricted exactly to these DAGs.}
+
 \item{disallowed}{Optional list of length-2 character vectors \code{c(from, to)},
 each forbidding the directed edge \code{from -> to}. Useful for encoding a known
 temporal ordering and for pruning the search space.}
+
+\item{required}{Optional list of length-2 character vectors \code{c(from, to)},
+each requiring the directed edge \code{from -> to} to be present in all candidate DAGs.}
 
 \item{mechanisms}{Optional named list of \link{Mechanism} instances, one per node.
 Any node not specified receives a \link{GPMechanism}.}
 
 \item{prior}{Character — prior over DAGs. Only \code{"uniform"} is supported.}
+
+\item{allow_empty}{Logical — whether to include the completely edgeless graph
+in the search space (default \code{FALSE}). Usually, researchers are looking
+for at least some causal structure, so the empty graph is omitted.}
 
 \item{...}{Additional arguments forwarded to each node's mechanism \verb{$fit()}.}
 }

@@ -22,3 +22,4 @@
 *.rds
 !tests/testthat/fixtures/*.rds
 outputs/
+.DS_Store

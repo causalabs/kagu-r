@@ -5,7 +5,7 @@ Authors@R:
     person("Jordan", role = c("aut", "cre"), email = "jordan@example.com")
 Description: Fit Bayesian graphical causal models specified as directed acyclic
     graphs (DAGs). Each node's conditional distribution is modelled as a
-    Gaussian process of its parents (via BayesGPfit), exploiting the Markov
+    Gaussian process of its parents, exploiting the Markov
     blanket factorisation. Causal effects are estimated by propagating
     interventions forward through the structural model using the do-operator,
     and causal structure can be discovered as a posterior distribution over
@@ -17,7 +17,6 @@ Depends:
     R (>= 4.2.0)
 Imports:
     R6,
-    BayesGPfit,
     cli,
     stats,
     posterior (>= 1.4.0),
@@ -34,6 +33,6 @@ Suggests:
     withr
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://github.com/your-org/kagu-r
-BugReports: https://github.com/your-org/kagu-r/issues
+URL: https://github.com/causalabs/kagu-r, https://causalabs.github.io/kagu-r/
+BugReports: https://github.com/causalabs/kagu-r/issues
 Config/roxygen2/version: 8.0.0

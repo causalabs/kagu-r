@@ -1,4 +1,4 @@
-library(kagu)
+suppressMessages(devtools::load_all(".", quiet = TRUE))
 library(dplyr)
 library(ggplot2)
 
@@ -7,15 +7,18 @@ library(ggplot2)
 
 # --- Configuration ---
 n_iters <- 50
-n_samples <- 300
-nodes_range <- 10:20
-n_candidate_dags <- 100
+n_samples_range <- 50:150   # exact GP is O(n^3): draw a modest sample per scenario
+nodes_range <- 5:20
+# Competitors are fully random DAGs (not near-miss mutations), so every candidate
+# has a different parent set per node and the unique-fit cache barely helps —
+# hence a modest candidate pool.
+n_candidate_dags <- 20
 edge_prob <- 0.15 # Keep sparsity reasonable for 20 nodes
 noise_sd <- 0.5
 
 cli::cli_alert_info("Starting discovery benchmark: {n_iters} random scenarios")
 cli::cli_bullets(c(
-  "*" = "Samples per scenario: {n_samples}",
+  "*" = "Samples per scenario: {min(n_samples_range)}-{max(n_samples_range)} (random)",
   "*" = "Nodes: {min(nodes_range)} to {max(nodes_range)}",
   "*" = "Candidate DAGs per scenario: {n_candidate_dags} (including the true one)"
 ))
@@ -67,24 +70,12 @@ generate_dag_and_data <- function(p, n, edge_prob, noise_sd) {
     }
   }
 
-  # Format the true edges string to match Kagu's formatting
-  # Kagu sorts parents alphabetically and joins by semicolon
-  # e.g., "x1->x2; x1->x3"
-  edges <- character(0)
-  for (node in nodes) {
-    for (pa in dag[[node]]) {
-      edges <- c(edges, paste0(pa, "→", node)) # using the right arrow char
-    }
-  }
-  edges <- sort(edges)
-  true_edges_str <- if (length(edges) > 0) paste(edges, collapse = "; ") else "(empty graph)"
-  
   dag_to_string <- function(d) {
     e <- character(0)
     for (n in names(d)) {
       for (pa in d[[n]]) e <- c(e, paste0(pa, "->", n))
     }
-    if (length(e) == 0) return("")
+    if (length(e) == 0) return("<empty>")
     paste(sort(e), collapse = ";")
   }
 
@@ -92,46 +83,35 @@ generate_dag_and_data <- function(p, n, edge_prob, noise_sd) {
   seen_strs <- new.env(parent = emptyenv())
   seen_strs[[true_str]] <- TRUE
 
-  # Generate (K-1) alternative maximally difficult DAGs
-  # We do this by randomly perturbing the true DAG by exactly 1 or 2 edges (add, remove, reverse)
-  alt_dags <- list()
-  while (length(alt_dags) < (n_candidate_dags - 1)) {
-    new_dag <- dag
-    
-    n_changes <- sample(1:2, 1)
-    for (c in 1:n_changes) {
-      from <- sample(nodes, 1)
-      to <- sample(nodes, 1)
-      if (from != to) {
-        if (from %in% new_dag[[to]]) {
-          if (runif(1) < 0.5) {
-            new_dag[[to]] <- setdiff(new_dag[[to]], from) # Remove
-          } else {
-            new_dag[[to]] <- setdiff(new_dag[[to]], from) # Reverse
-            new_dag[[from]] <- c(new_dag[[from]], to)
-          }
-        } else if (to %in% new_dag[[from]]) {
-          new_dag[[from]] <- setdiff(new_dag[[from]], to) # Reverse
-          new_dag[[to]] <- c(new_dag[[to]], from)
-        } else {
-          new_dag[[to]] <- c(new_dag[[to]], from)         # Add
-        }
+  # Generate (K-1) competitors as *fully random* DAGs over the same nodes: a
+  # random topological order plus random edges. These are structurally unrelated
+  # to the true DAG, so this asks whether the true structure stands out from an
+  # arbitrary field rather than from near-identical twins.
+  random_dag <- function() {
+    perm <- sample(nodes)
+    d <- setNames(rep(list(character(0)), length(nodes)), nodes)
+    for (j in 2:length(perm)) {
+      for (i in 1:(j - 1)) {
+        if (runif(1) < edge_prob) d[[perm[j]]] <- c(d[[perm[j]]], perm[i])
       }
     }
-    
-    # Check cyclicity and uniqueness
-    if (kagu:::.is_acyclic(new_dag)) {
-      new_str <- dag_to_string(new_dag)
-      if (is.null(seen_strs[[new_str]])) {
-        seen_strs[[new_str]] <- TRUE
-        alt_dags[[length(alt_dags) + 1]] <- new_dag
-      }
+    d
+  }
+  alt_dags <- list()
+  attempts <- 0L
+  while (length(alt_dags) < (n_candidate_dags - 1) && attempts < 10000L) {
+    attempts <- attempts + 1L
+    new_dag  <- random_dag()
+    new_str  <- dag_to_string(new_dag)
+    if (is.null(seen_strs[[new_str]])) {          # random_dag is acyclic by construction
+      seen_strs[[new_str]] <- TRUE
+      alt_dags[[length(alt_dags) + 1]] <- new_dag
     }
   }
-  
+
   candidate_dags <- c(list(dag), alt_dags)
-  
-  list(dag = dag, data = data, true_edges_str = true_edges_str, p = p, candidates = candidate_dags)
+
+  list(dag = dag, data = data, p = p, candidates = candidate_dags)
 }
 
 # --- Run Benchmark ---
@@ -143,32 +123,31 @@ for (i in 1:n_iters) {
   pb$tick()
 
   p <- sample(nodes_range, 1)
+  n_samples <- sample(n_samples_range, 1)
   sim <- generate_dag_and_data(p, n_samples, edge_prob, noise_sd)
 
-  # Run discovery by passing the explicit list of Dags
-  # We must use devtools::load_all() internally since the script relies on the package namespace
-  # Actually, we already loaded the library at the top, but the new code might not be installed.
-  # Let's ensure it calls the local version
-  res <- withr::with_options(list(kagu.quiet = TRUE), kagu_discover(sim$data, dags = sim$candidates))
+  # Run discovery by passing the explicit list of DAGs (local package version).
+  res <- suppressMessages(kagu_discover(sim$data, dags = sim$candidates))
 
-  summ <- res$summary(top_n = res$n_models)
-
-  true_edges <- sim$true_edges_str
-
-  # Find where the true DAG ranks
-  match_idx <- which(summ$edges == true_edges)
-
-  if (length(match_idx) == 0) {
+  # Locate the true DAG by its edge set (the summary references DAGs by id now,
+  # so we match on structure rather than a formatted edge string) and read off
+  # its rank and posterior probability.
+  true_edges <- kagu:::.dag_edges(sim$dag)
+  true_i     <- which(vapply(res$dags, function(d)
+                      identical(kagu:::.dag_edges(d), true_edges), logical(1)))[1]
+  if (is.na(true_i)) {
     rank <- NA
     prob <- 0
   } else {
-    rank <- summ$rank[match_idx]
-    prob <- summ$posterior_prob[match_idx]
+    ord  <- order(res$prob, decreasing = TRUE)
+    rank <- which(ord == true_i)
+    prob <- res$prob[true_i]
   }
 
   results[[i]] <- data.frame(
     iter = i,
     nodes = p,
+    n_samples = n_samples,
     n_edges = length(unlist(sim$dag)),
     true_rank = rank,
     true_prob = prob,

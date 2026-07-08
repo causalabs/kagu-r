@@ -87,17 +87,22 @@ Mechanism <- R6::R6Class("Mechanism",
 #' Gaussian-process mechanism (default)
 #'
 #' @description
-#' Models each node's conditional mean as a Gaussian process of its parents. The
-#' GP is a Bayesian linear model over the smooth eigen-basis of the \pkg{BayesGPfit}
-#' package, fitted in closed form (conjugate Normal posterior, with the noise and
-#' amplitude hyperparameters set by type-II maximum likelihood). A node with no
-#' parents is modelled by its marginal (a Normal). This is Kagu's default and
-#' only mechanism.
+#' Models each node's conditional mean as an **exact Gaussian process** of its
+#' parents, with a squared-exponential (ARD) kernel — one lengthscale per parent,
+#' which captures non-linearity and interactions automatically. Kernel
+#' hyperparameters (lengthscales, signal and noise variance) are set by type-II
+#' maximum likelihood; there is no MCMC. A node with no parents is modelled by
+#' its marginal (a Normal). This is Kagu's default and only mechanism.
 #'
-#' Because the posterior over the fitted function is exact and Gaussian, full
-#' posterior uncertainty — not merely a credible interval — flows through effect
-#' propagation, and the log marginal likelihood used by structure discovery is
-#' available in closed form (no MCMC, no bridge sampling).
+#' Structure discovery uses the **exact** GP log marginal likelihood, which — in
+#' contrast to fast basis/eigenfunction approximations — is well calibrated: for
+#' a genuinely unidentifiable (e.g. linear-Gaussian) edge it does not manufacture
+#' spurious confidence about direction.
+#'
+#' Posterior function samples for effect propagation are drawn by **pathwise /
+#' decoupled sampling** (a random-feature prior plus the exact data update), so
+#' each draw is a coherent function evaluable at any point — giving correctly
+#' correlated uncertainty for do-calculus contrasts.
 #'
 #' @export
 #'
@@ -106,46 +111,39 @@ Mechanism <- R6::R6Class("Mechanism",
 GPMechanism <- R6::R6Class("GPMechanism",
   inherit = Mechanism,
   public = list(
-    #' @field poly_degree Integer — GP basis polynomial degree (default 10).
-    poly_degree = 10L,
     #' @field num_results Integer — number of posterior draws to keep (default 1000).
     num_results = 1000L,
-    #' @field a,b Numeric — GP kernel hyperparameters (defaults 0.01, 1).
-    a = 0.01,
-    #' @field b b kernel hyperparameter.
-    b = 1,
+    #' @field n_features Integer — random Fourier features for pathwise sampling
+    #'   (default 300).
+    n_features = 300L,
+    #' @field jitter Numeric — diagonal jitter for numerical stability (default 1e-6).
+    jitter = 1e-6,
 
     #' @description Create a new GPMechanism.
-    #' @param poly_degree Integer — GP basis polynomial degree.
     #' @param num_results Integer — number of posterior draws to keep.
-    #' @param a,b Numeric — GP kernel hyperparameters.
-    initialize = function(poly_degree = 10L, num_results = 1000L,
-                          a = 0.01, b = 1) {
-      self$poly_degree <- as.integer(poly_degree)
+    #' @param n_features Integer — number of random Fourier features.
+    #' @param jitter Numeric — diagonal jitter added to the kernel.
+    initialize = function(num_results = 1000L, n_features = 300L, jitter = 1e-6) {
       self$num_results <- as.integer(num_results)
-      self$a <- a
-      self$b <- b
+      self$n_features  <- as.integer(n_features)
+      self$jitter      <- jitter
     },
 
-    #' @description Fit the node (GP if it has parents, marginal Normal if not).
+    #' @description Fit the node (exact GP if it has parents, marginal Normal if not).
     fit = function(node, parents, data, ...) {
       y <- data[[node]]
 
       if (length(parents) == 0L) {
-        # Root node: model the marginal as a Normal with a flat prior on the
-        # mean, giving posterior draws of the mean and the residual sd.
+        # Root node: marginal Normal with a flat prior on the mean.
         n   <- length(y)
         mu  <- stats::rnorm(self$num_results, mean(y), stats::sd(y) / sqrt(n))
         sig <- sqrt((n - 1) * stats::var(y) / stats::rchisq(self$num_results, n - 1))
         return(list(kind = "root", n_draws = self$num_results,
-                    mu_draws = mu, sigma_draws = sig,
-                    logml = .gaussian_evidence(y)))
+                    mu_draws = mu, sigma_draws = sig, logml = .gaussian_evidence(y)))
       }
 
-      pd  <- .cap_poly_degree(self$poly_degree, length(parents))
-      fit <- .gp_conj_fit(y, as.matrix(data[parents]), poly_degree = pd,
-                          a = self$a, b = self$b, num_results = self$num_results)
-      fit$kind    <- "gp"
+      fit <- .gp_core(y, as.matrix(data[parents]), self$jitter)
+      fit <- .gp_add_sampler(fit, self$num_results, self$n_features)
       fit$parents <- parents
       fit
     },
@@ -155,20 +153,16 @@ GPMechanism <- R6::R6Class("GPMechanism",
       if (identical(fit$kind, "root")) {
         return(matrix(fit$mu_draws, nrow = 1L))
       }
-      n_draws <- ncol(parent_values[[parents[[1]]]])
-      # One query point per posterior draw: row d = parent values at draw d.
+      # One query point per posterior draw; evaluate the matched pathwise sample.
       Q <- do.call(cbind, lapply(parents, function(p) as.vector(parent_values[[p]])))
-      matrix(.gp_function_draws(fit, Q, matched = TRUE, n_draws = n_draws), nrow = 1L)
+      matrix(.gp_eval(fit, Q, matched = TRUE), nrow = 1L)
     },
 
-    #' @description Type-II log marginal likelihood (see [Mechanism]).
+    #' @description Exact GP log marginal likelihood (see [Mechanism]).
     log_marglik = function(node, parents, data) {
       y <- data[[node]]
       if (length(parents) == 0L) return(.gaussian_evidence(y))
-      .gp_integrated_evidence(y, as.matrix(data[parents]),
-                              poly_degree = .cap_poly_degree(self$poly_degree,
-                                                             length(parents)),
-                              a = self$a, b = self$b)
+      .gp_core(y, as.matrix(data[parents]), self$jitter)$logml
     },
 
     #' @description Posterior shape (single chain).
@@ -179,18 +173,23 @@ GPMechanism <- R6::R6Class("GPMechanism",
     #' @description Per-node summary rows: each parent's direct local effect
     #'   (function gradient at the parent means) plus the residual noise sd.
     node_terms = function(node, parents, data, fit) {
-      rows <- list(.term_row(node, "sigma (noise)", fit$sigma_draws))
+      sigma_draws <- if (identical(fit$kind, "root")) {
+        fit$sigma_draws
+      } else {
+        s2 <- fit$sn2 * fit$sy^2                       # noise variance, original scale
+        sqrt(fit$n * s2 / stats::rchisq(fit$n_draws, fit$n))
+      }
+      rows <- list(.term_row(node, "sigma (noise)", sigma_draws))
 
       if (length(parents) > 0L) {
         means <- vapply(parents, function(p) mean(data[[p]]), numeric(1))
         eps   <- vapply(parents, function(p) stats::sd(data[[p]]) * 1e-3, numeric(1))
-        base  <- matrix(means, nrow = 1L)                       # [1 x d]
-        f0    <- .gp_function_draws(fit, base, matched = FALSE)  # [1 x n_draws]
+        base  <- matrix(means, nrow = 1L)
+        f0    <- as.vector(.gp_eval(fit, base, matched = FALSE))
         for (j in seq_along(parents)) {
-          pert      <- base; pert[, j] <- pert[, j] + eps[[j]]
-          f1        <- .gp_function_draws(fit, pert, matched = FALSE)
-          grad      <- as.vector(f1 - f0) / eps[[j]]
-          rows[[length(rows) + 1L]] <- .term_row(node, parents[[j]], grad)
+          pert <- base; pert[, j] <- pert[, j] + eps[[j]]
+          f1   <- as.vector(.gp_eval(fit, pert, matched = FALSE))
+          rows[[length(rows) + 1L]] <- .term_row(node, parents[[j]], (f1 - f0) / eps[[j]])
         }
       }
       do.call(rbind, rows)
@@ -199,102 +198,78 @@ GPMechanism <- R6::R6Class("GPMechanism",
 )
 
 # =============================================================================
-# Internal GP helpers
+# Internal exact-GP helpers
 # =============================================================================
 
-#' Build the standardised GP eigen-basis for inputs `x`
+#' Squared-exponential (ARD) kernel on standardised inputs
 #' @noRd
-.gp_basis <- function(x, poly_degree, a, b, center = NULL, scale = NULL) {
-  x      <- cbind(x)
-  if (is.null(center)) center <- colMeans(x)
-  if (is.null(scale))  scale  <- apply(x, 2, stats::sd)
-  wx  <- BayesGPfit::GP.std.grids(x, center = center, scale = scale, max_range = 6)
-  Psi <- BayesGPfit::GP.eigen.funcs.fast(wx, poly_degree, a, b)
-  list(Psi = Psi, center = center, scale = scale,
-       lambda = BayesGPfit::GP.eigen.value(poly_degree, a, b, d = ncol(x)))
+.rbf <- function(X1, X2, ls, sf2) {
+  Z1 <- sweep(X1, 2, ls, "/"); Z2 <- sweep(X2, 2, ls, "/")
+  d2 <- outer(rowSums(Z1^2), rowSums(Z2^2), "+") - 2 * tcrossprod(Z1, Z2)
+  sf2 * exp(-0.5 * pmax(d2, 0))
 }
 
-#' Conjugate Bayesian linear regression on the GP eigen-basis
-#'
-#' Fits `y = Xmat theta + noise`, `theta_k ~ N(0, tau2 lambda_k)`, with
-#' `(sigma2, tau2)` set by type-II maximum likelihood. Returns the exact Gaussian
-#' posterior over `theta`, pre-drawn coefficient samples (for coherent per-draw
-#' propagation), the residual-sd draws, and the log marginal likelihood.
+#' Fit an exact GP by type-II ML; return hypers, Cholesky, and log evidence
 #' @noRd
-.gp_conj_fit <- function(y, x, poly_degree = 10L, a = 0.01, b = 1,
-                         num_results = 1000L) {
-  bs   <- .gp_basis(x, poly_degree, a, b)
-  Xmat <- bs$Psi; lam <- bs$lambda
-  ybar <- mean(y); yc <- y - ybar
-  n <- length(yc); L <- ncol(Xmat)
-  XtX <- crossprod(Xmat); Xty <- as.vector(crossprod(Xmat, yc)); yty <- sum(yc^2)
+.gp_core <- function(y, X, jitter = 1e-6) {
+  X <- as.matrix(X); n <- nrow(X); d <- ncol(X)
+  mx <- colMeans(X); sx <- apply(X, 2, stats::sd); sx[sx == 0] <- 1
+  Xs <- sweep(sweep(X, 2, mx, "-"), 2, sx, "/")
+  my <- mean(y); sy <- stats::sd(y); if (sy == 0) sy <- 1
+  ys <- (y - my) / sy
 
-  neg_ll <- function(par) {
-    s2 <- exp(par[[1]]); t2 <- exp(par[[2]])
-    M  <- XtX / s2 + diag(1 / (t2 * lam), L)
-    ch <- tryCatch(chol(M), error = function(e) NULL)
-    if (is.null(ch)) return(1e10)
-    sol  <- backsolve(ch, forwardsolve(t(ch), Xty))
-    quad <- (yty - sum(Xty * sol) / s2) / s2
-    ldC  <- n * log(s2) + sum(log(t2 * lam)) + 2 * sum(log(diag(ch)))
-    0.5 * (n * log(2 * pi) + ldC + quad)
+  nll <- function(p) {
+    ls <- exp(p[seq_len(d)]); sf2 <- exp(p[d + 1]); sn2 <- exp(p[d + 2])
+    K  <- .rbf(Xs, Xs, ls, sf2) + diag(sn2 + jitter, n)
+    ch <- tryCatch(chol(K), error = function(e) NULL); if (is.null(ch)) return(1e10)
+    al <- backsolve(ch, forwardsolve(t(ch), ys))
+    0.5 * sum(ys * al) + sum(log(diag(ch))) + 0.5 * n * log(2 * pi)
   }
-  # Bounded optimisation for the posterior hyperparameters (used for the fitted
-  # function / effects). Bounds prevent the amplitude running away to overfit.
-  opt <- stats::optim(c(log(stats::var(yc)), 0), neg_ll, method = "L-BFGS-B",
-                      lower = c(-20, -8), upper = c(10, 10))
-  s2  <- exp(opt$par[[1]]); t2 <- exp(opt$par[[2]])
+  opt <- stats::optim(c(rep(0, d), 0, -1), nll, method = "L-BFGS-B",
+                      lower = c(rep(-3, d), -4, -6), upper = c(rep(4, d), 4, 2))
+  ls <- exp(opt$par[seq_len(d)]); sf2 <- exp(opt$par[d + 1]); sn2 <- exp(opt$par[d + 2])
+  K  <- .rbf(Xs, Xs, ls, sf2) + diag(sn2 + jitter, n)
+  ch <- chol(K); alpha <- backsolve(ch, forwardsolve(t(ch), ys))
 
-  # Exact Gaussian posterior over theta, and pre-drawn coefficient samples.
-  Prec  <- XtX / s2 + diag(1 / (t2 * lam), L)
-  chP   <- chol(Prec)
-  Sig   <- chol2inv(chP)
-  mu    <- as.vector(Sig %*% Xty) / s2
-  theta <- t(mu + backsolve(chP, matrix(stats::rnorm(L * num_results), L, num_results)))
-
-  # Residual-sd draws (scaled inverse chi-square around the fitted noise).
-  sigma_draws <- sqrt(n * s2 / stats::rchisq(num_results, n))
-
-  # The marginal likelihood for discovery is the *integrated* evidence — nuisance
-  # hyperparameters marginalised, not maximised — computed on the standardised
-  # response so it is scale-free, stable, and comparable across parent sets.
-  sdy <- stats::sd(y)
-  ycs <- if (sdy > 0) yc / sdy else yc
-  logml <- .gp_evidence_core(XtX, as.vector(crossprod(Xmat, ycs)),
-                             sum(ycs^2), n, lam)
-
-  list(theta = theta, ybar = ybar, sigma_draws = sigma_draws,
-       center = bs$center, scale = bs$scale, poly_degree = poly_degree,
-       a = a, b = b, n_draws = num_results, logml = logml)
+  list(kind = "gp", Xs = Xs, ys = ys, ch = ch, alpha = alpha,
+       ls = ls, sf2 = sf2, sn2 = sn2, mx = mx, sx = sx, my = my, sy = sy,
+       n = n, d = d, logml = -opt$value)
 }
 
-#' Posterior draws of the GP function at query points
+#' Attach pathwise (decoupled) sampling state to an exact-GP fit
 #'
-#' `matched = TRUE` pairs query-point row `d` with coefficient draw `d` (coherent
-#' per-draw propagation); otherwise every draw is evaluated at every point.
+#' Random-feature prior + exact data update (Matheron's rule), giving `S`
+#' coherent posterior function samples evaluable at any query point.
 #' @noRd
-.gp_function_draws <- function(fit, newx, matched = FALSE, n_draws = NULL) {
-  bs  <- .gp_basis(newx, fit$poly_degree, fit$a, fit$b,
-                   center = fit$center, scale = fit$scale)
-  Psi <- bs$Psi                                    # [m x L]
+.gp_add_sampler <- function(fit, S, R) {
+  n <- fit$n; d <- fit$d
+  Om <- matrix(stats::rnorm(R * d), R, d) / rep(fit$ls, each = R)   # spectral freqs
+  bb <- stats::runif(R, 0, 2 * pi)
+  W  <- matrix(stats::rnorm(R * S), R, S)                          # prior weights
+  phi_tr <- sqrt(2 * fit$sf2 / R) * cos(fit$Xs %*% t(Om) + rep(bb, each = n))
+  eps    <- matrix(stats::rnorm(n * S, sd = sqrt(fit$sn2)), n, S)
+  resid  <- fit$ys - phi_tr %*% W - eps
+  fit$V  <- backsolve(fit$ch, forwardsolve(t(fit$ch), resid))       # K^{-1}(y - prior)
+  fit$Om <- Om; fit$bb <- bb; fit$W <- W; fit$R <- R; fit$n_draws <- S
+  fit
+}
 
+#' Evaluate the pathwise samples at query points (original scale)
+#'
+#' `matched = TRUE`: `Xnew` has one row per draw; returns the length-S vector
+#' `f^(s)(Xnew[s, ])` (coherent per-draw propagation). `matched = FALSE`: returns
+#' the full `[nrow(Xnew) x S]` matrix (every draw at every point).
+#' @noRd
+.gp_eval <- function(fit, Xnew, matched = FALSE) {
+  Xn  <- sweep(sweep(as.matrix(Xnew), 2, fit$mx, "-"), 2, fit$sx, "/")
+  Phi <- sqrt(2 * fit$sf2 / fit$R) * cos(Xn %*% t(fit$Om) + rep(fit$bb, each = nrow(Xn)))
+  Ks  <- .rbf(Xn, fit$Xs, fit$ls, fit$sf2)
   if (matched) {
-    theta <- fit$theta[seq_len(n_draws), , drop = FALSE]
-    return(fit$ybar + rowSums(Psi * theta))        # f^(d)(point_d), length n_draws
+    val <- rowSums(Phi * t(fit$W)) + rowSums(Ks * t(fit$V))          # [S]
+  } else {
+    val <- Phi %*% fit$W + Ks %*% fit$V                              # [m x S]
   }
-  fit$ybar + Psi %*% t(fit$theta)                  # [m x n_draws]
-}
-
-#' Cap the polynomial degree so the basis size stays manageable in high dims
-#'
-#' The eigen-basis has `choose(poly_degree + d, d)` functions (monomials of total
-#' degree <= poly_degree in `d` inputs), which grows fast with the number of
-#' parents; shrink `poly_degree` until it is under `max_basis`.
-#' @noRd
-.cap_poly_degree <- function(poly_degree, d, max_basis = 400L) {
-  pd <- as.integer(poly_degree)
-  while (pd > 2L && choose(pd + d, d) > max_basis) pd <- pd - 1L
-  pd
+  fit$my + fit$sy * val
 }
 
 #' Gaussian marginal evidence of a root node
@@ -304,55 +279,7 @@ GPMechanism <- R6::R6Class("GPMechanism",
 #' @noRd
 .gaussian_evidence <- function(y) {
   n <- length(y)
-  -0.5 * n * (log(2 * pi) + 1)          # evidence of a standardised Normal
-}
-
-#' Integrated log marginal likelihood of the basis-linear GP model
-#'
-#' A proper marginal likelihood for the model
-#' `y ~ N(Xmat theta, sigma2)`, `theta_k ~ N(0, tau2 lambda_k)`, with the node
-#' mean removed by centring. The coefficients `theta` and the noise `sigma2` are
-#' integrated in closed form (Normal-Inverse-Gamma conjugacy); the amplitude
-#' `tau2` is integrated over a log-spaced grid. Marginalising the nuisance
-#' hyperparameters — rather than maximising them (type-II ML) — avoids the
-#' numerical instability and overconfidence that maximisation produces.
-#' @noRd
-.gp_integrated_evidence <- function(y, x, poly_degree = 10L, a = 0.01, b = 1) {
-  bs   <- .gp_basis(x, poly_degree, a, b)
-  Xmat <- bs$Psi
-  # Standardise the response so discovery scores are scale-free and comparable
-  # across nodes / parent sets (numerically stabilising, and restores approximate
-  # score equivalence for Markov-equivalent structures).
-  sdy  <- stats::sd(y)
-  yc   <- if (sdy > 0) (y - mean(y)) / sdy else y - mean(y)
-  .gp_evidence_core(crossprod(Xmat), as.vector(crossprod(Xmat, yc)),
-                    sum(yc^2), length(yc), bs$lambda)
-}
-
-#' Integrated evidence from precomputed sufficient statistics
-#'
-#' `theta`/`sigma2` integrated analytically (Normal-Inverse-Gamma) for each
-#' `tau2` on a log grid, then `tau2` integrated numerically. Cost is O(L^3) via
-#' the Cholesky of `XtX + prior precision`.
-#' @noRd
-.gp_evidence_core <- function(XtX, Xty, yty, n, lam,
-                              a0 = 1e-2, b0 = 1e-2, ngrid = 25L) {
-  L  <- length(lam)
-  lg <- seq(-6, 6, length.out = ngrid)          # log-tau2 grid
-  ll <- vapply(lg, function(l) {
-    g  <- exp(l)
-    A  <- XtX + diag(1 / (g * lam), L)
-    ch <- tryCatch(chol(A), error = function(e) NULL)
-    if (is.null(ch)) return(-Inf)
-    mn   <- backsolve(ch, forwardsolve(t(ch), Xty))
-    quad <- yty - sum(Xty * mn)
-    an   <- a0 + n / 2
-    bn   <- b0 + 0.5 * quad
-    -(n / 2) * log(2 * pi) +
-      0.5 * (-sum(log(g * lam)) - 2 * sum(log(diag(ch)))) +
-      a0 * log(b0) - an * log(bn) + lgamma(an) - lgamma(a0)
-  }, numeric(1))
-  .logsumexp(ll) + log(mean(diff(lg)))          # flat prior over the grid
+  -0.5 * n * (log(2 * pi) + 1)
 }
 
 #' Summarise a vector of posterior draws into one summary-table row

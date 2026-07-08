@@ -31,6 +31,10 @@ causal effect along with metadata.
     \item{\code{conditions}}{Named list of conditioned node values, or \code{NULL}.}
 
     \item{\code{sweep_values}}{Numeric vector of sweep grid values, or \code{NULL}.}
+
+    \item{\code{conditions_label}}{String representation of conditions (for plotting).}
+
+    \item{\code{compare_results}}{List of other \code{EffectResult}s (for multi-condition plots).}
   }
   \if{html}{\out{</div>}}
 }
@@ -133,7 +137,19 @@ columns use the same \code{hdi_lower} / \code{hdi_upper} naming as
 }
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{EffectResult$plot()}
+    \preformatted{EffectResult$plot(compare = NULL, base_label = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{compare}}{Optional named list of other \code{EffectResult} instances to
+overlay (useful for comparing sweeps under different interactions/conditions).
+Only valid if this result and all comparison results are \code{sweep = TRUE}.
+If this effect was generated with a list of conditions, \code{compare} is populated automatically.}
+      \item{\code{base_label}}{Optional character string to label this \code{EffectResult}
+in the legend when plotting with \code{compare} (defaults to \code{"Base"} or the condition label).}
+    }
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{

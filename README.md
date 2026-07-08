@@ -12,7 +12,7 @@ structural model, carrying the full posterior throughout.
 
 ```r
 # install.packages("remotes")
-remotes::install_github("your-org/kagu-r")
+remotes::install_github("causalabs/kagu-r")
 ```
 
 ---
@@ -106,10 +106,12 @@ Effects are computed via the *do-operator*:
 |---|---|---|
 | `GPMechanism` | `X_i ~ GaussianProcess(Pa(X_i))` | Continuous; linear or nonlinear |
 
-Each mechanism is a Gaussian process over a smooth eigen-basis of its parents,
-fitted in closed form (conjugate Normal posterior; noise and amplitude set by
-type-II maximum likelihood). This gives full posterior uncertainty on effects
-and a closed-form marginal likelihood for structure discovery — no MCMC.
+Each mechanism is an **exact Gaussian process** with a squared-exponential (ARD)
+kernel — one lengthscale per parent, capturing non-linearity and interactions
+automatically. Hyperparameters are set by type-II maximum likelihood (no MCMC).
+The exact GP log marginal likelihood gives well-calibrated structure discovery,
+and pathwise (decoupled) sampling provides coherent posterior draws for
+do-calculus effect propagation.
 
 ---
 

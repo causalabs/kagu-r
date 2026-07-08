@@ -4,7 +4,7 @@
 \alias{enumerate_dags}
 \title{Enumerate all DAGs over a set of nodes}
 \usage{
-enumerate_dags(nodes, disallowed = NULL)
+enumerate_dags(nodes, disallowed = NULL, required = NULL, allow_empty = FALSE)
 }
 \arguments{
 \item{nodes}{Character vector of node names.}
@@ -12,9 +12,16 @@ enumerate_dags(nodes, disallowed = NULL)
 \item{disallowed}{Optional list of length-2 character vectors \code{c(from, to)},
 each forbidding the directed edge \code{from -> to}. Directions are independent:
 forbidding \code{a -> b} still permits \code{b -> a}.}
+
+\item{required}{Optional list of length-2 character vectors \code{c(from, to)},
+each requiring the directed edge \code{from -> to} to be present in all candidate DAGs.}
+
+\item{allow_empty}{Logical — whether to include the completely empty (edgeless)
+graph in the search space. Defaults to \code{FALSE}.}
 }
 \value{
-A list of DAG specifications. Over 3 unconstrained nodes there are 25.
+A list of DAG specifications. Over 3 unconstrained nodes there are 24
+(with \code{allow_empty = FALSE}).
 }
 \description{
 Generates every directed acyclic graph over \code{nodes}, optionally excluding a
@@ -27,7 +34,7 @@ search space is only tractable for small problems. Use \code{disallowed} (e.g. t
 encode a known temporal ordering) to prune it.
 }
 \examples{
-length(enumerate_dags(c("a", "b", "c")))            # 25
+length(enumerate_dags(c("a", "b", "c")))            # 24
 # forbid b -> a and c -> a (e.g. 'a' comes first in time)
 enumerate_dags(c("a", "b", "c"),
                disallowed = list(c("b", "a"), c("c", "a")))

@@ -13,6 +13,11 @@ per-graph log marginal likelihoods and the cache of unique local fits.
   \describe{
     \item{\code{dags}}{List of candidate DAG specifications evaluated.}
 
+    \item{\code{labels}}{Character vector of short ids (one per DAG) — user-supplied
+names if the \code{dags} list was named, otherwise spreadsheet-style ids
+(\code{"A"}, \code{"B"}, ..., \code{"AA"}). Used to reference DAGs in summaries and in
+\verb{$get_dag()} / \verb{$plot_dag()}.}
+
     \item{\code{nodes}}{Character vector of node names.}
 
     \item{\code{data}}{The data used for the search (for refitting via \verb{$as_model()}).}
@@ -45,6 +50,8 @@ model (reused for effect propagation; same keys as \code{local_logml}).}
     \item \href{#method-DiscoveryResult-initialize}{\code{DiscoveryResult$new()}}
     \item \href{#method-DiscoveryResult-summary}{\code{DiscoveryResult$summary()}}
     \item \href{#method-DiscoveryResult-probabilities}{\code{DiscoveryResult$probabilities()}}
+    \item \href{#method-DiscoveryResult-get_dag}{\code{DiscoveryResult$get_dag()}}
+    \item \href{#method-DiscoveryResult-plot_dag}{\code{DiscoveryResult$plot_dag()}}
     \item \href{#method-DiscoveryResult-edge_probabilities}{\code{DiscoveryResult$edge_probabilities()}}
     \item \href{#method-DiscoveryResult-effects}{\code{DiscoveryResult$effects()}}
     \item \href{#method-DiscoveryResult-map}{\code{DiscoveryResult$map()}}
@@ -64,6 +71,7 @@ model (reused for effect propagation; same keys as \code{local_logml}).}
     \if{html}{\out{<div class="r">}}
     \preformatted{DiscoveryResult$new(
   dags,
+  labels,
   nodes,
   data,
   log_marglik,
@@ -80,7 +88,7 @@ model (reused for effect propagation; same keys as \code{local_logml}).}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{dags, nodes, data, log_marglik, log_prior, log_posterior, prob, local_logml, local_fits, mechanisms, n_unique_fits}}{Internal fields (see the corresponding \verb{$field} documentation).}
+      \item{\code{dags, labels, nodes, data, log_marglik, log_prior, log_posterior, prob, local_logml, local_fits, mechanisms, n_unique_fits}}{Internal fields (see the corresponding \verb{$field} documentation).}
     }
     \if{html}{\out{</div>}}
   }
@@ -91,6 +99,10 @@ model (reused for effect propagation; same keys as \code{local_logml}).}
 \if{latex}{\out{\hypertarget{method-DiscoveryResult-summary}{}}}
 \subsection{\code{DiscoveryResult$summary()}}{
   Ranked summary table of the most probable DAGs.
+
+Each DAG is referenced by its short \code{id} (see \verb{$labels}) rather than by a
+full edge listing — inspect a structure with \verb{$get_dag(id)} or
+\verb{$plot_dag(id)}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{DiscoveryResult$summary(top_n = 10L)}
@@ -104,7 +116,7 @@ model (reused for effect propagation; same keys as \code{local_logml}).}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \code{tibble} with \code{rank}, \code{edges}, \code{n_edges}, \code{log_marglik},
+    A \code{tibble} with \code{rank}, \code{id}, \code{n_edges}, \code{log_marglik},
 \code{posterior_prob}.
   }
 }
@@ -120,7 +132,54 @@ model (reused for effect propagation; same keys as \code{local_logml}).}
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    A \code{tibble} with \code{rank}, \code{edges}, \code{posterior_prob} (all DAGs).
+    A \code{tibble} with \code{rank}, \code{id}, \code{n_edges}, \code{log_marglik},
+\code{posterior_prob} (all DAGs).
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DiscoveryResult-get_dag"></a>}}
+\if{latex}{\out{\hypertarget{method-DiscoveryResult-get_dag}{}}}
+\subsection{\code{DiscoveryResult$get_dag()}}{
+  Look up a candidate DAG by its \code{id} (see \verb{$labels}).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DiscoveryResult$get_dag(id)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{id}}{Character scalar — a DAG id from \verb{$summary()} / \verb{$labels}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A DAG specification (named list of parent vectors).
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DiscoveryResult-plot_dag"></a>}}
+\if{latex}{\out{\hypertarget{method-DiscoveryResult-plot_dag}{}}}
+\subsection{\code{DiscoveryResult$plot_dag()}}{
+  Plot a candidate DAG by its \code{id} (see \verb{$labels}).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{DiscoveryResult$plot_dag(id, node_pos = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{id}}{Character scalar — a DAG id from \verb{$summary()} / \verb{$labels}.}
+      \item{\code{node_pos}}{Optional named list of \code{c(row, col)} node positions,
+passed to \code{\link[=kagu_plot_dag]{kagu_plot_dag()}}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \code{ggplot} object.
   }
 }
 

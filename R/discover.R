@@ -19,6 +19,11 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
   public = list(
     #' @field dags List of candidate DAG specifications evaluated.
     dags = NULL,
+    #' @field labels Character vector of short ids (one per DAG) — user-supplied
+    #'   names if the `dags` list was named, otherwise spreadsheet-style ids
+    #'   (`"A"`, `"B"`, ..., `"AA"`). Used to reference DAGs in summaries and in
+    #'   `$get_dag()` / `$plot_dag()`.
+    labels = NULL,
     #' @field nodes Character vector of node names.
     nodes = NULL,
     #' @field data The data used for the search (for refitting via `$as_model()`).
@@ -45,12 +50,13 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     n_unique_fits = NULL,
 
     #' @description Create a DiscoveryResult (normally called by `kagu_discover`).
-    #' @param dags,nodes,data,log_marglik,log_prior,log_posterior,prob,local_logml,local_fits,mechanisms,n_unique_fits
+    #' @param dags,labels,nodes,data,log_marglik,log_prior,log_posterior,prob,local_logml,local_fits,mechanisms,n_unique_fits
     #'   Internal fields (see the corresponding `$field` documentation).
-    initialize = function(dags, nodes, data, log_marglik, log_prior,
+    initialize = function(dags, labels, nodes, data, log_marglik, log_prior,
                           log_posterior, prob, local_logml, local_fits,
                           mechanisms, n_unique_fits) {
       self$dags          <- dags
+      self$labels        <- labels
       self$nodes         <- nodes
       self$data          <- data
       self$log_marglik   <- log_marglik
@@ -65,16 +71,19 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     },
 
     #' @description Ranked summary table of the most probable DAGs.
+    #'
+    #' Each DAG is referenced by its short `id` (see `$labels`) rather than by a
+    #' full edge listing — inspect a structure with `$get_dag(id)` or
+    #' `$plot_dag(id)`.
     #' @param top_n Integer — number of top DAGs to return (default 10).
-    #' @return A `tibble` with `rank`, `edges`, `n_edges`, `log_marglik`,
+    #' @return A `tibble` with `rank`, `id`, `n_edges`, `log_marglik`,
     #'   `posterior_prob`.
     summary = function(top_n = 10L) {
       ord <- order(self$prob, decreasing = TRUE)
       ord <- ord[seq_len(min(top_n, length(ord)))]
       tibble::tibble(
         rank           = seq_along(ord),
-        edges          = vapply(ord, function(i) .format_edges(self$dags[[i]]),
-                                character(1)),
+        id             = self$labels[ord],
         n_edges        = vapply(ord, function(i) length(.dag_edges(self$dags[[i]])),
                                 integer(1)),
         log_marglik    = self$log_marglik[ord],
@@ -83,8 +92,30 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     },
 
     #' @description Posterior probability of every candidate DAG.
-    #' @return A `tibble` with `rank`, `edges`, `posterior_prob` (all DAGs).
+    #' @return A `tibble` with `rank`, `id`, `n_edges`, `log_marglik`,
+    #'   `posterior_prob` (all DAGs).
     probabilities = function() self$summary(top_n = self$n_models),
+
+    #' @description Look up a candidate DAG by its `id` (see `$labels`).
+    #' @param id Character scalar — a DAG id from `$summary()` / `$labels`.
+    #' @return A DAG specification (named list of parent vectors).
+    get_dag = function(id) {
+      i <- match(id, self$labels)
+      if (is.na(i)) {
+        stop(sprintf("No DAG with id '%s'. Available ids: %s",
+                     id, paste(self$labels, collapse = ", ")))
+      }
+      self$dags[[i]]
+    },
+
+    #' @description Plot a candidate DAG by its `id` (see `$labels`).
+    #' @param id Character scalar — a DAG id from `$summary()` / `$labels`.
+    #' @param node_pos Optional named list of `c(row, col)` node positions,
+    #'   passed to [kagu_plot_dag()].
+    #' @return A `ggplot` object.
+    plot_dag = function(id, node_pos = NULL) {
+      kagu_plot_dag(self$get_dag(id), node_pos = node_pos)
+    },
 
     #' @description Marginal posterior probability of each directed edge.
     #'
@@ -313,6 +344,13 @@ kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
   }
   n_models <- length(dags)
 
+  # Stable short id per DAG: user-supplied names if the list was fully named
+  # (unique, non-empty), otherwise spreadsheet-style ids "A", "B", ..., "AA".
+  labels <- names(dags)
+  if (is.null(labels) || any(!nzchar(labels)) || anyDuplicated(labels)) {
+    labels <- vapply(seq_len(n_models), .letter_id, character(1))
+  }
+
   # ---- Collect unique local models (node, sorted parent set) ---------------
   registry <- list()
   for (dag in dags) {
@@ -379,7 +417,7 @@ kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
   cli::cli_alert_success("Done — posterior over {n_models} DAG{?s}.")
 
   DiscoveryResult$new(
-    dags = dags, nodes = nodes, data = data,
+    dags = dags, labels = labels, nodes = nodes, data = data,
     log_marglik = log_marglik, log_prior = log_prior,
     log_posterior = log_post, prob = prob,
     local_logml = local_logml, local_fits = local_fits,
@@ -390,6 +428,18 @@ kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
 # =============================================================================
 # Internal helpers
 # =============================================================================
+
+#' Column-letter id for an index: 1 -> "A", 26 -> "Z", 27 -> "AA"
+#' @noRd
+.letter_id <- function(i) {
+  out <- ""
+  while (i > 0) {
+    r   <- (i - 1L) %% 26L
+    out <- paste0(LETTERS[[r + 1L]], out)
+    i   <- (i - 1L) %/% 26L
+  }
+  out
+}
 
 #' Cache key for a local model: "node|sorted,parents"
 #' @noRd

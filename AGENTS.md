@@ -16,8 +16,8 @@ This is the R port of Kagu. The Python version lives in a separate repo.
 ## Stack
 
 - **R ≥ 4.2**, managed with `renv` or direct `remotes`
-- **BayesGPfit** — supplies the smooth eigen-basis; each node is a Gaussian
-  process fitted as a conjugate Bayesian linear model on that basis (no MCMC)
+- **exact GP** — each node is an exact Gaussian process (RBF-ARD kernel),
+  hand-rolled in base R (`optim` + Cholesky), hyperparameters by type-II ML (no MCMC)
 - **posterior** — chain/draw structure, r-hat, ESS
 - **bayestestR** — HDI computation
 - **ggplot2** — all plots
@@ -34,7 +34,7 @@ R/
   kagu-package.R   # package-level docs and namespace imports
   dag.R            # validate_dag, topological_sort, ancestors, descendants, node_depth
   utils.R          # .chain_draw_shape, .to_draws_array, .quietly (internal only)
-  mechanisms.R     # Mechanism R6 ABC + GPMechanism (+ conjugate GP internals)
+  mechanisms.R     # Mechanism R6 ABC + GPMechanism (exact RBF-ARD GP internals)
   inference.R      # fit_node() dispatcher + .fit_and_marglik()
   model.R          # KaguModel R6 class
   effects.R        # EffectResult R6 class + compute_effect() + .propagate()
@@ -96,23 +96,23 @@ Backend-agnostic interface (a mechanism owns its full lifecycle):
 - `$posterior_shape(fit)` → `c(n_chains=1, n_draws)`
 - `$node_terms(node, parents, data, fit)` → summary rows
 
-`GPMechanism` (default and only): each node is a Gaussian process over the
-`BayesGPfit` eigen-basis, fitted as a **conjugate Bayesian linear regression**
-(`.gp_conj_fit`) with the noise/amplitude hyperparameters set by type-II ML.
-Root nodes (no parents) use a marginal Normal. Key internals:
-- `.gp_basis()` — standardise inputs + build eigen-basis (`GP.std.grids`,
-  `GP.eigen.funcs.fast`, `GP.eigen.value`).
-- `.gp_conj_fit()` — exact Gaussian posterior over basis coefficients, pre-drawn
-  coefficient samples (for matched-draw propagation), residual-sd draws, and the
-  log marginal likelihood.
-- `.gp_type2_evidence()` — closed-form type-II marginal likelihood (Woodbury /
-  matrix-determinant lemma); used by discovery.
+`GPMechanism` (default and only): each node is an **exact Gaussian process** with
+a squared-exponential ARD kernel (one lengthscale per parent → non-linearity and
+interactions for free), hyperparameters by type-II ML. Root nodes (no parents)
+use a marginal Normal. Key internals:
+- `.rbf()` — squared-exponential ARD kernel on standardised inputs.
+- `.gp_core()` — type-II ML fit (`optim`/L-BFGS-B), Cholesky of `K + σ²I`, and
+  the **exact** log marginal likelihood (used by discovery — well calibrated).
+- `.gp_add_sampler()` / `.gp_eval()` — **pathwise (decoupled) sampling**: a
+  random-Fourier-feature prior + exact data update (Matheron's rule), giving `S`
+  coherent function samples evaluable at any point. `matched = TRUE` returns the
+  diagonal `f^(s)(Xnew[s, ])` for per-draw propagation.
 
-**Important:** BayesGPfit's own `GP.fast.Bayes.fit` sampler is **not** used for
-fitting — its noise/uncertainty quantification is designed for dense imaging
-grids and is wrong for scattered regression (sigma scales with n; 1D degenerate).
-We use only its (exported) basis functions and do the Bayesian regression
-ourselves.
+**Why exact, not a basis approximation:** we previously used the BayesGPfit
+eigen-basis, but benchmarking showed truncated basis approximations are
+**over-confident** for structure discovery (they manufacture spurious direction
+preference on linear-Gaussian edges that a proper GP correctly can't identify).
+The exact GP is O(n^3) but fine for the small-data setting kagu targets.
 
 ### `EffectResult` (`R/effects.R`)
 
@@ -145,8 +145,8 @@ calls `mechanism$predict_mean()` for all others, stops at target.
 All posterior samples use `(n_chains, n_draws)` matrices throughout. The GP is a
 single "chain" (`n_chains = 1`); get the shape via
 `mechanism$posterior_shape(fit)`. `predict_mean()` draws the GP function at
-matched draw indices — `f^(d)(parent^(d))` — from the pre-drawn coefficient
-samples, preserving coherent per-draw propagation.
+matched draw indices — `f^(d)(parent^(d))` — from the pathwise (decoupled)
+posterior samples, preserving coherent per-draw propagation.
 
 `EffectResult$diagnostics()` still uses `.to_draws_array()` (in `utils.R`), but
 with a single chain r-hat is not meaningful — treat the effect `sd`/HDI as the
@@ -191,17 +191,18 @@ testthat::test_package("kagu")
 
 ## Design decisions (R-specific)
 
-**GP via conjugate Bayesian linear regression, not the Gibbs sampler**
-BayesGPfit's `GP.fast.Bayes.fit` is built for dense imaging grids; its noise and
-uncertainty are wrong for scattered regression (sigma scales with n, 1D is
-degenerate). We use only its exported basis functions and do a conjugate Normal
-regression ourselves — exact posterior, correct uncertainty, closed-form
-evidence, and it fits in milliseconds.
+**Exact GP, not a basis approximation**
+Benchmarking the 2-node `a→b` vs `b→a` task (a Markov-equivalent, unidentifiable
+linear edge, so the answer must be ~50/50) showed the fast eigen-basis GP was
+**over-confident** — it gave confident directional verdicts on 7–37% of datasets
+despite being right only half the time. A proper full-covariance GP stays at
+~0–7% confidence. So the mechanism uses an exact RBF-ARD GP; the calibration of
+discovery matters more than the speed. See `/tmp`-style benchmarks in git history.
 
-**Type-II marginal likelihood for discovery**
-Each node's evidence is the closed-form empirical-Bayes marginal likelihood of
-the basis-linear GP model (`.gp_type2_evidence`). No bridge sampling, no MCMC —
-discovery over a few variables runs in a fraction of a second.
+**Type-II ML for hyperparameters, exact marginal likelihood for discovery**
+`.gp_core()` maximises the exact log marginal likelihood over (lengthscales,
+signal var, noise var) with L-BFGS-B; that exact evidence is the discovery score.
+No MCMC.
 
 **`posterior` package for effect diagnostics only**
 `.to_draws_array()` reconstructs a `draws_array` from the `[1, n_draws]` effect

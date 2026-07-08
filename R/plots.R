@@ -129,9 +129,11 @@ kagu_plot_discovery <- function(result, top_n = 20L, true_dag = NULL) {
 
   df <- data.frame(
     rank      = seq_along(ord),
+    id        = result$labels[ord],
     prob      = result$prob[ord],
     highlight = FALSE
   )
+  df$id <- factor(df$id, levels = df$id)   # keep posterior order on the axis
 
   if (!is.null(true_dag)) {
     true_edges  <- .dag_edges(true_dag)
@@ -140,13 +142,13 @@ kagu_plot_discovery <- function(result, top_n = 20L, true_dag = NULL) {
     }, logical(1))
   }
 
-  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$rank, y = .data$prob,
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$id, y = .data$prob,
                                         fill = .data$highlight)) +
     ggplot2::geom_col(width = 0.85, colour = "black", linewidth = 0.3) +
     ggplot2::scale_fill_manual(
       values = c(`FALSE` = "grey85", `TRUE` = "#26a69a"), guide = "none"
     ) +
-    ggplot2::labs(x = "DAG (ranked by posterior)", y = "P(G | data)") +
+    ggplot2::labs(x = "DAG (id, ranked by posterior)", y = "P(G | data)") +
     ggplot2::theme_minimal(base_size = 12) +
     ggplot2::theme(panel.grid.minor = ggplot2::element_blank())
 
