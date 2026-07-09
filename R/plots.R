@@ -9,9 +9,9 @@ NULL
 #' automatically from topological depth; individual nodes can be repositioned
 #' via `node_pos`.
 #'
-#' @param dag Named list — the DAG specification.
+#' @param dag Named list - the DAG specification.
 #' @param node_pos Optional named list of `c(row, col)` coordinates for manual
-#'   node placement. Partial overrides are supported — unspecified nodes keep
+#'   node placement. Partial overrides are supported - unspecified nodes keep
 #'   the auto-layout position.
 #' @return A `ggplot` object.
 #' @export
@@ -118,7 +118,7 @@ kagu_plot_dag <- function(dag, node_pos = NULL) {
 #' highlighted.
 #'
 #' @param result A [DiscoveryResult] (from `KaguModel$discover()`).
-#' @param top_n Integer — number of top-ranked DAGs to display (default 20).
+#' @param top_n Integer - number of top-ranked DAGs to display (default 20).
 #' @param true_dag Optional DAG specification to highlight (matched by its set
 #'   of directed edges).
 #' @return A `ggplot` object.
@@ -169,7 +169,7 @@ kagu_plot_discovery <- function(result, top_n = 20L, true_dag = NULL) {
 #'
 #' @param terms A `tibble` of node terms (from a mechanism's `$node_terms()`),
 #'   with columns `term`, `mean`, `hdi_lower`, `hdi_upper`.
-#' @param node Character scalar — node name (used for the plot title).
+#' @param node Character scalar - node name (used for the plot title).
 #' @return A `ggplot` object.
 #' @export
 kagu_plot_posterior <- function(terms, node) {

@@ -19,19 +19,19 @@ NULL
 #' @export
 EffectResult <- R6::R6Class("EffectResult",
   public = list(
-    #' @field source Character — the intervention node.
+    #' @field source Character - the intervention node.
     source = NULL,
-    #' @field target Character — the outcome node.
+    #' @field target Character - the outcome node.
     target = NULL,
-    #' @field from_value Numeric — intervention baseline value (or sweep grid).
+    #' @field from_value Numeric - intervention baseline value (or sweep grid).
     from_value = NULL,
-    #' @field to_value Numeric — intervention target value (or sweep grid).
+    #' @field to_value Numeric - intervention target value (or sweep grid).
     to_value = NULL,
-    #' @field samples Numeric array — posterior effect samples.
+    #' @field samples Numeric array - posterior effect samples.
     samples = NULL,
-    #' @field hdi_prob Numeric — HDI probability used for summaries and plots.
+    #' @field hdi_prob Numeric - HDI probability used for summaries and plots.
     hdi_prob = NULL,
-    #' @field std_units Logical — whether the effect is in SD units.
+    #' @field std_units Logical - whether the effect is in SD units.
     std_units = NULL,
     #' @field conditions Named list of conditioned node values, or `NULL`.
     conditions = NULL,
@@ -43,13 +43,13 @@ EffectResult <- R6::R6Class("EffectResult",
     compare_results = NULL,
 
     #' @description Create an EffectResult (normally called by `compute_effect`).
-    #' @param source Character — the intervention node.
-    #' @param target Character — the outcome node.
-    #' @param from_value Numeric — intervention baseline value.
-    #' @param to_value Numeric — intervention target value.
-    #' @param samples Numeric array — posterior effect samples.
-    #' @param hdi Numeric — HDI probability.
-    #' @param std_units Logical — whether the effect is in SD units.
+    #' @param source Character - the intervention node.
+    #' @param target Character - the outcome node.
+    #' @param from_value Numeric - intervention baseline value.
+    #' @param to_value Numeric - intervention target value.
+    #' @param samples Numeric array - posterior effect samples.
+    #' @param hdi Numeric - HDI probability.
+    #' @param std_units Logical - whether the effect is in SD units.
     #' @param conditions Named list of conditioned node values.
     #' @param sweep_values Numeric vector of sweep grid values.
     initialize = function(source, target, from_value, to_value, samples,
@@ -170,7 +170,7 @@ EffectResult <- R6::R6Class("EffectResult",
       posterior::summarise_draws(draws)
     },
 
-    #' @description Print method — shows the summary table.
+    #' @description Print method - shows the summary table.
     #' @description Print summary of the effect result.
     #' @param ... Ignored.
     print = function(...) {
@@ -192,13 +192,13 @@ EffectResult <- R6::R6Class("EffectResult",
 #' Called internally by `KaguModel$effects()`. Not usually called directly.
 #'
 #' @param model A fitted `KaguModel`.
-#' @param source,target Character scalars — intervention and outcome nodes.
+#' @param source,target Character scalars - intervention and outcome nodes.
 #' @param values Optional `c(from, to)` intervention contrast.
-#' @param std_units Logical — 1-SD effect.
+#' @param std_units Logical - 1-SD effect.
 #' @param conditions Optional named list of fixed node values.
-#' @param sweep Logical — compute dose-response curve.
+#' @param sweep Logical - compute dose-response curve.
 #' @param sweep_n,sweep_range Sweep grid parameters.
-#' @param hdi Numeric — HDI probability.
+#' @param hdi Numeric - HDI probability.
 #' @return An `EffectResult`.
 #' @export
 compute_effect <- function(model, source, target,
@@ -295,7 +295,7 @@ compute_effect <- function(model, source, target,
 #'
 #' @param model Fitted KaguModel.
 #' @param source,target Intervention and outcome node names.
-#' @param value Numeric scalar — fixed value for the source node.
+#' @param value Numeric scalar - fixed value for the source node.
 #' @param conditions Named list of additional fixed nodes.
 #' @param n_chains,n_draws Posterior dimensions.
 #' @return `[n_chains, n_draws]` matrix of target node values.

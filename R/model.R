@@ -1,4 +1,4 @@
-#' KaguModel — Bayesian graphical causal model
+#' KaguModel - Bayesian graphical causal model
 #'
 #' @description
 #' The main user-facing class. Specify a DAG, optionally assign mechanisms
@@ -25,7 +25,7 @@
 #' @export
 KaguModel <- R6::R6Class("KaguModel",
   public = list(
-    #' @field dag Named list — the DAG specification.
+    #' @field dag Named list - the DAG specification.
     dag = NULL,
     #' @field mechanisms Named list of `Mechanism` instances, one per node.
     mechanisms = NULL,
@@ -33,7 +33,7 @@ KaguModel <- R6::R6Class("KaguModel",
     data = NULL,
     #' @field traces Named list of mechanism fit objects, one per node (after fit).
     traces = NULL,
-    #' @field .fitted Logical — whether `$fit()` has been called.
+    #' @field .fitted Logical - whether `$fit()` has been called.
     .fitted = FALSE,
 
     # -------------------------------------------------------------------------
@@ -101,20 +101,20 @@ KaguModel <- R6::R6Class("KaguModel",
     # Causal effects
 
     #' @description Estimate the causal effect of `source` on `target`.
-    #' @param source Character scalar — the intervention (treatment) node.
-    #' @param target Character scalar — the outcome node.
+    #' @param source Character scalar - the intervention (treatment) node.
+    #' @param target Character scalar - the outcome node.
     #' @param values Optional numeric vector of length 2 `c(from, to)` giving
     #'   the explicit intervention contrast.
-    #' @param std_units Logical — if `TRUE`, compute the effect of a 1-SD
+    #' @param std_units Logical - if `TRUE`, compute the effect of a 1-SD
     #'   increase centred at the mean.
     #' @param conditions Optional named list of node values to condition on
     #'   (fixes those nodes at the given values during propagation). Can also be
     #'   a list of such lists to compute and overlay multiple conditions.
-    #' @param sweep Logical — if `TRUE`, compute the dose-response curve.
-    #' @param sweep_n Integer — number of points in the sweep grid (default 50).
+    #' @param sweep Logical - if `TRUE`, compute the dose-response curve.
+    #' @param sweep_n Integer - number of points in the sweep grid (default 50).
     #' @param sweep_range Numeric vector `c(min, max)` for the sweep grid.
     #'   Defaults to the observed range of `source`.
-    #' @param hdi Numeric in (0, 1) — HDI probability (default 0.90).
+    #' @param hdi Numeric in (0, 1) - HDI probability (default 0.90).
     #' @return An `EffectResult` object.
     effects = function(source, target, values = NULL, std_units = FALSE,
                        conditions = NULL, sweep = FALSE, sweep_n = 50L,
@@ -169,10 +169,10 @@ KaguModel <- R6::R6Class("KaguModel",
     #' @description Per-node summary table.
     #'
     #' For each node, reports the direct local effect of each parent (the
-    #' function's gradient at the parents' means — comparable to a regression
+    #' function's gradient at the parents' means - comparable to a regression
     #' coefficient) and the residual noise sd, each with posterior mean, sd and
     #' HDI.
-    #' @param hdi_prob Numeric — HDI probability (default 0.90; currently fixed).
+    #' @param hdi_prob Numeric - HDI probability (default 0.90; currently fixed).
     #' @return A `tibble` with columns `node`, `term`, `mean`, `sd`,
     #'   `hdi_lower`, `hdi_upper`.
     summary = function(hdi_prob = 0.90) {
@@ -218,7 +218,7 @@ KaguModel <- R6::R6Class("KaguModel",
     #'
     #' Shows the node's direct local effects (each parent's gradient at the
     #' means) and residual noise, as posterior means with HDI intervals.
-    #' @param node Character scalar — the node to plot.
+    #' @param node Character scalar - the node to plot.
     #' @return A `ggplot` object.
     plot_posterior = function(node) {
       if (!self$.fitted) stop("Call $fit() before $plot_posterior().")
@@ -233,7 +233,7 @@ KaguModel <- R6::R6Class("KaguModel",
 
     #' @description Save the fitted model to disk.
     #' @param path File path (e.g. `"model.rds"`).
-    #' @param include_data Logical — whether to save the training data alongside
+    #' @param include_data Logical - whether to save the training data alongside
     #'   the model (default `TRUE`, so `$effects()` works immediately on load).
     save = function(path, include_data = TRUE) {
       kagu_save(self, path, include_data = include_data)

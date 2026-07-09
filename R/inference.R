@@ -8,7 +8,7 @@ NULL
 #' Thin dispatcher that delegates to the node's [Mechanism]. Kept as a
 #' convenience/entry point; `KaguModel$fit()` calls it once per node.
 #'
-#' @param node Character scalar — name of the node to fit.
+#' @param node Character scalar - name of the node to fit.
 #' @param parents Character vector of parent node names (empty for root nodes).
 #' @param data A `data.frame` with columns for all nodes.
 #' @param mechanism A `Mechanism` instance (defaults to [GPMechanism] in

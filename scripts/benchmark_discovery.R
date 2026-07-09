@@ -10,7 +10,7 @@ n_iters <- 50
 n_samples_range <- 50:150   # exact GP is O(n^3): draw a modest sample per scenario
 nodes_range <- 5:20
 # Competitors are fully random DAGs (not near-miss mutations), so every candidate
-# has a different parent set per node and the unique-fit cache barely helps —
+# has a different parent set per node and the unique-fit cache barely helps -
 # hence a modest candidate pool.
 n_candidate_dags <- 20
 edge_prob <- 0.15 # Keep sparsity reasonable for 20 nodes

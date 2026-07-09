@@ -15,7 +15,7 @@ NULL
 #'
 #' @examples
 #' dag <- list(x = c(), y = c("x"), z = c("x", "y"))
-#' validate_dag(dag)  # silent — DAG is valid
+#' validate_dag(dag)  # silent - DAG is valid
 validate_dag <- function(dag) {
   nodes <- names(dag)
   if (is.null(nodes) || length(nodes) == 0) {
@@ -33,7 +33,7 @@ validate_dag <- function(dag) {
     }
   }
 
-  # Cycle detection via topological sort — will error if cycle found
+  # Cycle detection via topological sort - will error if cycle found
   tryCatch(
     topological_sort(dag),
     error = function(e) stop("DAG contains a cycle.")
@@ -88,7 +88,7 @@ topological_sort <- function(dag) {
 #' Descendants of a node
 #'
 #' @param dag Named list as described in [validate_dag()].
-#' @param node Character scalar — the node to query.
+#' @param node Character scalar - the node to query.
 #' @return Character vector of all nodes reachable from `node` following
 #'   directed edges (i.e. the node's causal descendants).
 #' @export
@@ -111,7 +111,7 @@ descendants <- function(dag, node) {
 #' Ancestors of a node
 #'
 #' @param dag Named list as described in [validate_dag()].
-#' @param node Character scalar — the node to query.
+#' @param node Character scalar - the node to query.
 #' @return Character vector of all nodes with a directed path to `node`
 #'   (i.e. the node's causal ancestors).
 #' @export
@@ -133,8 +133,8 @@ ancestors <- function(dag, node) {
 #' Test whether one node is an ancestor of another
 #'
 #' @param dag Named list as described in [validate_dag()].
-#' @param source Character scalar — the potential ancestor.
-#' @param target Character scalar — the potential descendant.
+#' @param source Character scalar - the potential ancestor.
+#' @param target Character scalar - the potential descendant.
 #' @return Logical scalar.
 #' @export
 is_ancestor <- function(dag, source, target) {
@@ -175,7 +175,7 @@ node_depth <- function(dag) {
 #'   forbidding `a -> b` still permits `b -> a`.
 #' @param required Optional list of length-2 character vectors `c(from, to)`,
 #'   each requiring the directed edge `from -> to` to be present in all candidate DAGs.
-#' @param allow_empty Logical — whether to include the completely empty (edgeless)
+#' @param allow_empty Logical - whether to include the completely empty (edgeless)
 #'   graph in the search space. Defaults to `FALSE`.
 #' @return A list of DAG specifications. Over 3 unconstrained nodes there are 24
 #'   (with `allow_empty = FALSE`).

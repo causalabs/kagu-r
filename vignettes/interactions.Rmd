@@ -64,7 +64,7 @@ If we ask Kagu for the effect of `a` on `y` without specifying anything else, it
 mod$effects("a", "y")$summary()
 ```
 
-The average effect is positive (around 1.5), which matches the main effect of `a` in our simulation. However, the standard deviation/HDI is quite wide. That's because the "true" effect of `a` is not a single number—it's highly variable depending on `b`.
+The average effect is positive (around 1.5), which matches the main effect of `a` in our simulation. However, the standard deviation/HDI is quite wide. That's because the "true" effect of `a` is not a single number-it's highly variable depending on `b`.
 
 ## Conditioning to reveal the interaction
 

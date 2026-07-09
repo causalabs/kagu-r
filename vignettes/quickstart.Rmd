@@ -22,7 +22,7 @@ and read off causal effects with full posterior uncertainty.
 
 ## Define the causal structure
 
-A Kagu model is a DAG — a named list mapping each node to its parent nodes.
+A Kagu model is a DAG - a named list mapping each node to its parent nodes.
 Here `income` is caused by both `education` and `experience`, which have no
 parents of their own (they are *root* nodes, written as `c()`).
 
@@ -74,7 +74,7 @@ model$fit(data)
 
 ## Causal effects
 
-The default `effects()` call returns the **local causal effect at the mean** —
+The default `effects()` call returns the **local causal effect at the mean** -
 the instantaneous slope of `target` with respect to `source`, holding the
 intervention central. For a linear mechanism this is directly comparable to a
 regression coefficient, and here it recovers the data-generating value of ≈ 500.
@@ -86,10 +86,10 @@ effect$summary()
 
 The summary is a tidy tibble. Reading the columns:
 
-- `from` / `to` — the two intervention values being contrasted.
-- `mean` — the posterior mean effect (our point estimate).
-- `sd` — the posterior standard deviation (how uncertain that estimate is).
-- `hdi_lower` / `hdi_upper` — the bounds of the 90% **highest density interval**
+- `from` / `to` - the two intervention values being contrasted.
+- `mean` - the posterior mean effect (our point estimate).
+- `sd` - the posterior standard deviation (how uncertain that estimate is).
+- `hdi_lower` / `hdi_upper` - the bounds of the 90% **highest density interval**
   (HDI): the narrowest interval containing 90% of the posterior probability.
   It is the Bayesian analogue of a confidence interval, but with the
   interpretation people usually *want*: there is a 90% probability the effect
@@ -123,7 +123,7 @@ under a linear mechanism.
 
 ### Visualising the posterior
 
-`plot()` shows the full posterior distribution of the effect — the point is the
+`plot()` shows the full posterior distribution of the effect - the point is the
 mean and the bar beneath is the HDI. The spread *is* the uncertainty.
 
 ```{r plot-effect}
@@ -145,7 +145,7 @@ sweep$plot()
 ## Model summary
 
 `summary()` returns a table across every node. For each parent it reports the
-**direct local effect** — the gradient of the node's fitted function with respect
+**direct local effect** - the gradient of the node's fitted function with respect
 to that parent, evaluated at the parents' means. For a linear relationship this
 is exactly the slope, so here `education` and `experience` recover ≈ 500 and
 ≈ 200. Each node also gets a `sigma (noise)` row for its residual scale, and

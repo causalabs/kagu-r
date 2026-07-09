@@ -1,4 +1,4 @@
-# Kagu (R) — Developer Guide
+# Kagu (R) - Developer Guide
 
 This is the R port of Kagu. The Python version lives in a separate repo.
 
@@ -7,7 +7,7 @@ This is the R port of Kagu. The Python version lives in a separate repo.
 ## Project identity
 
 - **Package name**: `kagu`
-- **Import convention**: `library(kagu)` — all classes exported at top level
+- **Import convention**: `library(kagu)` - all classes exported at top level
 - **CRAN**: not yet submitted
 - **Companion**: Python version at `../pangolin/` (or `kagu` on GitHub)
 
@@ -16,14 +16,14 @@ This is the R port of Kagu. The Python version lives in a separate repo.
 ## Stack
 
 - **R ≥ 4.2**, managed with `renv` or direct `remotes`
-- **exact GP** — each node is an exact Gaussian process (RBF-ARD kernel),
+- **exact GP** - each node is an exact Gaussian process (RBF-ARD kernel),
   hand-rolled in base R (`optim` + Cholesky), hyperparameters by type-II ML (no MCMC)
-- **posterior** — chain/draw structure, r-hat, ESS
-- **bayestestR** — HDI computation
-- **ggplot2** — all plots
-- **R6** — OO class system (mirrors Python's class design)
-- **pkgdown** — documentation site
-- **testthat 3** — testing
+- **posterior** - chain/draw structure, r-hat, ESS
+- **bayestestR** - HDI computation
+- **ggplot2** - all plots
+- **R6** - OO class system (mirrors Python's class design)
+- **pkgdown** - documentation site
+- **testthat 3** - testing
 
 ---
 
@@ -52,7 +52,7 @@ tests/testthat/
 vignettes/
   quickstart.Rmd   # whistle-stop tour
   comparison.Rmd   # confounder/mediator/collider/M-bias vs OLS
-  discovery.Rmd    # structure discovery — posterior over DAGs
+  discovery.Rmd    # structure discovery - posterior over DAGs
 _pkgdown.yml       # pkgdown site config
 .github/workflows/
   ci.yml           # R-CMD-check on push/PR
@@ -84,7 +84,7 @@ model$plot_dag(node_pos=NULL)
 model$plot_posterior(node)
 model$save(path, include_data=TRUE)
 KaguModel$load(path)                        # static method on the generator
-KaguModel$discover(data, nodes, dags, disallowed, required, allow_empty, ...) # static method — structure discovery
+KaguModel$discover(data, nodes, dags, disallowed, required, allow_empty, ...) # static method - structure discovery
 ```
 
 ### `Mechanism` ABC + `GPMechanism` (`R/mechanisms.R`)
@@ -100,10 +100,10 @@ Backend-agnostic interface (a mechanism owns its full lifecycle):
 a squared-exponential ARD kernel (one lengthscale per parent → non-linearity and
 interactions for free), hyperparameters by type-II ML. Root nodes (no parents)
 use a marginal Normal. Key internals:
-- `.rbf()` — squared-exponential ARD kernel on standardised inputs.
-- `.gp_core()` — type-II ML fit (`optim`/L-BFGS-B), Cholesky of `K + σ²I`, and
-  the **exact** log marginal likelihood (used by discovery — well calibrated).
-- `.gp_add_sampler()` / `.gp_eval()` — **pathwise (decoupled) sampling**: a
+- `.rbf()` - squared-exponential ARD kernel on standardised inputs.
+- `.gp_core()` - type-II ML fit (`optim`/L-BFGS-B), Cholesky of `K + σ²I`, and
+  the **exact** log marginal likelihood (used by discovery - well calibrated).
+- `.gp_add_sampler()` / `.gp_eval()` - **pathwise (decoupled) sampling**: a
   random-Fourier-feature prior + exact data update (Matheron's rule), giving `S`
   coherent function samples evaluable at any point. `matched = TRUE` returns the
   diagonal `f^(s)(Xnew[s, ])` for per-draw propagation.
@@ -130,7 +130,7 @@ Methods: `$summary()`, `$plot()`, `$diagnostics()`, `$is_sweep()`.
 Intervention modes (same as Python):
 - `values = c(a, b)`: explicit contrast
 - `std_units = TRUE`: 1-SD effect centred at mean
-- Default: epsilon central-difference gradient — `eps = sd * 1e-5`,
+- Default: epsilon central-difference gradient - `eps = sd * 1e-5`,
   `scale = 1/(2*eps)`. Display shows `mean → mean+1`.
 
 ### `.propagate()` (`R/effects.R`)
@@ -145,20 +145,20 @@ calls `mechanism$predict_mean()` for all others, stops at target.
 All posterior samples use `(n_chains, n_draws)` matrices throughout. The GP is a
 single "chain" (`n_chains = 1`); get the shape via
 `mechanism$posterior_shape(fit)`. `predict_mean()` draws the GP function at
-matched draw indices — `f^(d)(parent^(d))` — from the pathwise (decoupled)
+matched draw indices - `f^(d)(parent^(d))` - from the pathwise (decoupled)
 posterior samples, preserving coherent per-draw propagation.
 
 `EffectResult$diagnostics()` still uses `.to_draws_array()` (in `utils.R`), but
-with a single chain r-hat is not meaningful — treat the effect `sd`/HDI as the
+with a single chain r-hat is not meaningful - treat the effect `sd`/HDI as the
 uncertainty summary.
 
 ---
 
 ## Documentation
 
-- **pkgdown** with Bootstrap 5 — dark navbar (`#212529`), teal accent (`#26a69a`)
+- **pkgdown** with Bootstrap 5 - dark navbar (`#212529`), teal accent (`#26a69a`)
 - IBM Plex Sans body font, IBM Plex Mono code font (both via Google Fonts in `_pkgdown.yml`)
-- Vignettes in `vignettes/` — rendered by knitr, shown under "Articles" in pkgdown
+- Vignettes in `vignettes/` - rendered by knitr, shown under "Articles" in pkgdown
 
 **Deploy locally:**
 ```r
@@ -185,7 +185,7 @@ testthat::test_package("kagu")
 - Fitting-dependent tests use `skip_on_cran()`.
 - Fitting is fast (closed-form, no MCMC), so the whole suite runs in ~1s.
 - `helper.R` provides `make_chain_data()`, `CHAIN_DAG`, `CONFOUNDED_DAG`
-  (`SAMPLE_KWARGS` is now an empty list — the GP mechanism has no sampling knobs).
+  (`SAMPLE_KWARGS` is now an empty list - the GP mechanism has no sampling knobs).
 
 ---
 
@@ -194,7 +194,7 @@ testthat::test_package("kagu")
 **Exact GP, not a basis approximation**
 Benchmarking the 2-node `a→b` vs `b→a` task (a Markov-equivalent, unidentifiable
 linear edge, so the answer must be ~50/50) showed the fast eigen-basis GP was
-**over-confident** — it gave confident directional verdicts on 7–37% of datasets
+**over-confident** - it gave confident directional verdicts on 7–37% of datasets
 despite being right only half the time. A proper full-covariance GP stays at
 ~0–7% confidence. So the mechanism uses an exact RBF-ARD GP; the calibration of
 discovery matters more than the speed. See `/tmp`-style benchmarks in git history.
@@ -215,7 +215,7 @@ Mirrors the Python class design closely. Users coming from Python or the R
 so users write `KaguModel$new(...)` after `library(kagu)`.
 
 **No `igraph` / `tidygraph` dependency**
-DAG utilities are ~80 lines of pure R — Kahn's algorithm, BFS ancestors/
+DAG utilities are ~80 lines of pure R - Kahn's algorithm, BFS ancestors/
 descendants. Keeps the dependency footprint small.
 
 ---
@@ -229,7 +229,7 @@ descendants. Keeps the dependency footprint small.
 - [x] Save/load with data (saveRDS/readRDS)
 - [x] Documentation site (pkgdown)
 - [x] CI/CD (GitHub Actions)
-- [x] Causal structure discovery — posterior over DAGs via exact GP marginal likelihoods (`KaguModel$discover` / `kagu_discover`)
+- [x] Causal structure discovery - posterior over DAGs via exact GP marginal likelihoods (`KaguModel$discover` / `kagu_discover`)
 - [x] Domain knowledge constraints in discovery (`disallowed`, `required`, explicit `dags`)
 - [x] Bayesian model averaging of effects over the DAG posterior (`DiscoveryResult$effects`)
 - [ ] Non-Gaussian outcome families (counts, binary, bounded)

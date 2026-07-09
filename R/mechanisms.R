@@ -17,65 +17,65 @@ NULL
 #' @description
 #' A mechanism owns the full lifecycle of a node's conditional model, decoupled
 #' from any particular inference backend. Subclasses implement:
-#' - `$fit(node, parents, data, ...)` — fit the local model, returning an opaque
+#' - `$fit(node, parents, data, ...)` - fit the local model, returning an opaque
 #'   fit object.
-#' - `$predict_mean(node, parents, parent_values, fit)` — the conditional mean
+#' - `$predict_mean(node, parents, parent_values, fit)` - the conditional mean
 #'   `E[node | parents]` for each posterior draw, as a `[n_chains, n_draws]`
 #'   matrix (Gaussian processes use a single chain, so `n_chains = 1`).
-#' - `$log_marglik(node, parents, data)` — the log marginal likelihood
+#' - `$log_marglik(node, parents, data)` - the log marginal likelihood
 #'   `log P(node | parents)`, used by structure discovery.
-#' - `$posterior_shape(fit)` — `c(n_chains, n_draws)` for the fit.
-#' - `$node_terms(node, parents, data, fit)` — summary rows for `model$summary()`.
+#' - `$posterior_shape(fit)` - `c(n_chains, n_draws)` for the fit.
+#' - `$node_terms(node, parents, data, fit)` - summary rows for `model$summary()`.
 #'
 #' @export
 Mechanism <- R6::R6Class("Mechanism",
   public = list(
     #' @description Fit the node's local model.
-    #' @param node Character scalar — the node name (response).
+    #' @param node Character scalar - the node name (response).
     #' @param parents Character vector of parent node names.
     #' @param data A `data.frame` with columns for the node and its parents.
     #' @param ... Backend-specific arguments.
     #' @return An opaque fit object.
     fit = function(node, parents, data, ...) {
-      stop("Mechanism$fit() is abstract — implement in a subclass.")
+      stop("Mechanism$fit() is abstract - implement in a subclass.")
     },
 
     #' @description Conditional mean for each posterior draw.
-    #' @param node Character scalar — the node name.
+    #' @param node Character scalar - the node name.
     #' @param parents Character vector of parent node names.
     #' @param parent_values Named list of `[n_chains, n_draws]` matrices, one per
     #'   parent, giving the parent values for each posterior draw.
     #' @param fit A fit object from `$fit()`.
     #' @return A `[n_chains, n_draws]` numeric matrix.
     predict_mean = function(node, parents, parent_values, fit) {
-      stop("Mechanism$predict_mean() is abstract — implement in a subclass.")
+      stop("Mechanism$predict_mean() is abstract - implement in a subclass.")
     },
 
     #' @description Log marginal likelihood `log P(node | parents)`.
-    #' @param node Character scalar — the node name.
+    #' @param node Character scalar - the node name.
     #' @param parents Character vector of parent node names.
     #' @param data A `data.frame`.
     #' @return A single numeric.
     log_marglik = function(node, parents, data) {
-      stop("Mechanism$log_marglik() is abstract — implement in a subclass.")
+      stop("Mechanism$log_marglik() is abstract - implement in a subclass.")
     },
 
     #' @description Posterior shape of a fit.
     #' @param fit A fit object from `$fit()`.
     #' @return Named integer vector `c(n_chains, n_draws)`.
     posterior_shape = function(fit) {
-      stop("Mechanism$posterior_shape() is abstract — implement in a subclass.")
+      stop("Mechanism$posterior_shape() is abstract - implement in a subclass.")
     },
 
     #' @description Summary rows for this node (used by `model$summary()`).
-    #' @param node Character scalar — the node name.
+    #' @param node Character scalar - the node name.
     #' @param parents Character vector of parent node names.
     #' @param data A `data.frame`.
     #' @param fit A fit object from `$fit()`.
     #' @return A `tibble` with columns `node`, `term`, `mean`, `sd`,
     #'   `hdi_lower`, `hdi_upper`.
     node_terms = function(node, parents, data, fit) {
-      stop("Mechanism$node_terms() is abstract — implement in a subclass.")
+      stop("Mechanism$node_terms() is abstract - implement in a subclass.")
     }
   )
 )
@@ -88,20 +88,20 @@ Mechanism <- R6::R6Class("Mechanism",
 #'
 #' @description
 #' Models each node's conditional mean as an **exact Gaussian process** of its
-#' parents, with a squared-exponential (ARD) kernel — one lengthscale per parent,
+#' parents, with a squared-exponential (ARD) kernel - one lengthscale per parent,
 #' which captures non-linearity and interactions automatically. Kernel
 #' hyperparameters (lengthscales, signal and noise variance) are set by type-II
 #' maximum likelihood; there is no MCMC. A node with no parents is modelled by
 #' its marginal (a Normal). This is Kagu's default and only mechanism.
 #'
-#' Structure discovery uses the **exact** GP log marginal likelihood, which — in
-#' contrast to fast basis/eigenfunction approximations — is well calibrated: for
+#' Structure discovery uses the **exact** GP log marginal likelihood, which - in
+#' contrast to fast basis/eigenfunction approximations - is well calibrated: for
 #' a genuinely unidentifiable (e.g. linear-Gaussian) edge it does not manufacture
 #' spurious confidence about direction.
 #'
 #' Posterior function samples for effect propagation are drawn by **pathwise /
 #' decoupled sampling** (a random-feature prior plus the exact data update), so
-#' each draw is a coherent function evaluable at any point — giving correctly
+#' each draw is a coherent function evaluable at any point - giving correctly
 #' correlated uncertainty for do-calculus contrasts.
 #'
 #' @export
@@ -111,18 +111,18 @@ Mechanism <- R6::R6Class("Mechanism",
 GPMechanism <- R6::R6Class("GPMechanism",
   inherit = Mechanism,
   public = list(
-    #' @field num_results Integer — number of posterior draws to keep (default 1000).
+    #' @field num_results Integer - number of posterior draws to keep (default 1000).
     num_results = 1000L,
-    #' @field n_features Integer — random Fourier features for pathwise sampling
+    #' @field n_features Integer - random Fourier features for pathwise sampling
     #'   (default 300).
     n_features = 300L,
-    #' @field jitter Numeric — diagonal jitter for numerical stability (default 1e-6).
+    #' @field jitter Numeric - diagonal jitter for numerical stability (default 1e-6).
     jitter = 1e-6,
 
     #' @description Create a new GPMechanism.
-    #' @param num_results Integer — number of posterior draws to keep.
-    #' @param n_features Integer — number of random Fourier features.
-    #' @param jitter Numeric — diagonal jitter added to the kernel.
+    #' @param num_results Integer - number of posterior draws to keep.
+    #' @param n_features Integer - number of random Fourier features.
+    #' @param jitter Numeric - diagonal jitter added to the kernel.
     initialize = function(num_results = 1000L, n_features = 300L, jitter = 1e-6) {
       self$num_results <- as.integer(num_results)
       self$n_features  <- as.integer(n_features)

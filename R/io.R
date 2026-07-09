@@ -7,7 +7,7 @@ NULL
 #'
 #' @param model A fitted `KaguModel`.
 #' @param path File path to write to (e.g. `"model.rds"`).
-#' @param include_data Logical — whether to save the training data alongside
+#' @param include_data Logical - whether to save the training data alongside
 #'   the model. Defaults to `TRUE` so that `$effects()` works immediately
 #'   after loading without needing to reattach the data.
 #' @return Invisible `NULL`.

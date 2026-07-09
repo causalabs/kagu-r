@@ -19,7 +19,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
   public = list(
     #' @field dags List of candidate DAG specifications evaluated.
     dags = NULL,
-    #' @field labels Character vector of short ids (one per DAG) — user-supplied
+    #' @field labels Character vector of short ids (one per DAG) - user-supplied
     #'   names if the `dags` list was named, otherwise spreadsheet-style ids
     #'   (`"A"`, `"B"`, ..., `"AA"`). Used to reference DAGs in summaries and in
     #'   `$get_dag()` / `$plot_dag()`.
@@ -28,25 +28,25 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     nodes = NULL,
     #' @field data The data used for the search (for refitting via `$as_model()`).
     data = NULL,
-    #' @field log_marglik Numeric vector — log marginal likelihood per DAG.
+    #' @field log_marglik Numeric vector - log marginal likelihood per DAG.
     log_marglik = NULL,
-    #' @field log_prior Numeric vector — log prior per DAG.
+    #' @field log_prior Numeric vector - log prior per DAG.
     log_prior = NULL,
-    #' @field log_posterior Numeric vector — normalised log posterior per DAG.
+    #' @field log_posterior Numeric vector - normalised log posterior per DAG.
     log_posterior = NULL,
-    #' @field prob Numeric vector — posterior probability per DAG (sums to 1).
+    #' @field prob Numeric vector - posterior probability per DAG (sums to 1).
     prob = NULL,
-    #' @field local_logml Named numeric — cached log marginal likelihood of each
+    #' @field local_logml Named numeric - cached log marginal likelihood of each
     #'   unique local model, keyed by `"node|sorted,parents"`.
     local_logml = NULL,
-    #' @field local_fits Named list — the fitted model for each unique local
+    #' @field local_fits Named list - the fitted model for each unique local
     #'   model (reused for effect propagation; same keys as `local_logml`).
     local_fits = NULL,
     #' @field mechanisms Named list of `Mechanism` instances, one per node.
     mechanisms = NULL,
-    #' @field n_models Integer — number of candidate DAGs.
+    #' @field n_models Integer - number of candidate DAGs.
     n_models = NULL,
-    #' @field n_unique_fits Integer — number of unique local models fitted.
+    #' @field n_unique_fits Integer - number of unique local models fitted.
     n_unique_fits = NULL,
 
     #' @description Create a DiscoveryResult (normally called by `kagu_discover`).
@@ -73,9 +73,9 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     #' @description Ranked summary table of the most probable DAGs.
     #'
     #' Each DAG is referenced by its short `id` (see `$labels`) rather than by a
-    #' full edge listing — inspect a structure with `$get_dag(id)` or
+    #' full edge listing - inspect a structure with `$get_dag(id)` or
     #' `$plot_dag(id)`.
-    #' @param top_n Integer — number of top DAGs to return (default 10).
+    #' @param top_n Integer - number of top DAGs to return (default 10).
     #' @return A `tibble` with `rank`, `id`, `n_edges`, `log_marglik`,
     #'   `posterior_prob`.
     summary = function(top_n = 10L) {
@@ -97,7 +97,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     probabilities = function() self$summary(top_n = self$n_models),
 
     #' @description Look up a candidate DAG by its `id` (see `$labels`).
-    #' @param id Character scalar — a DAG id from `$summary()` / `$labels`.
+    #' @param id Character scalar - a DAG id from `$summary()` / `$labels`.
     #' @return A DAG specification (named list of parent vectors).
     get_dag = function(id) {
       i <- match(id, self$labels)
@@ -109,7 +109,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     },
 
     #' @description Plot a candidate DAG by its `id` (see `$labels`).
-    #' @param id Character scalar — a DAG id from `$summary()` / `$labels`.
+    #' @param id Character scalar - a DAG id from `$summary()` / `$labels`.
     #' @param node_pos Optional named list of `c(row, col)` node positions,
     #'   passed to [kagu_plot_dag()].
     #' @return A `ggplot` object.
@@ -157,12 +157,12 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     #' identical to the single-DAG workflow. DAGs in which `source` has no causal
     #' path to `target` contribute a zero effect, exactly as they should.
     #'
-    #' @param source,target Character scalars — intervention and outcome nodes.
+    #' @param source,target Character scalars - intervention and outcome nodes.
     #' @param values,std_units,conditions,sweep,sweep_n,sweep_range,hdi Passed to
     #'   `KaguModel$effects()` (identical meaning).
-    #' @param prob_threshold Numeric — DAGs with posterior probability below this
+    #' @param prob_threshold Numeric - DAGs with posterior probability below this
     #'   are skipped for efficiency (default 1e-3).
-    #' @param n_samples Integer — size of the pooled mixture posterior (default 4000).
+    #' @param n_samples Integer - size of the pooled mixture posterior (default 4000).
     #' @return An [EffectResult].
     effects = function(source, target, values = NULL, std_units = FALSE,
                        conditions = NULL, sweep = FALSE, sweep_n = 50L,
@@ -222,7 +222,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     },
 
     #' @description Plot the posterior over DAGs.
-    #' @param top_n Integer — number of top DAGs to show (default 20).
+    #' @param top_n Integer - number of top DAGs to show (default 20).
     #' @param true_dag Optional DAG specification to highlight (e.g. the known
     #'   data-generating structure).
     #' @return A `ggplot` object.
@@ -243,7 +243,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 )
 
 # =============================================================================
-# kagu_discover — the engine behind KaguModel$discover()
+# kagu_discover - the engine behind KaguModel$discover()
 # =============================================================================
 
 #' Discover causal structure from data
@@ -262,13 +262,13 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #' \eqn{\log P(X \mid G) = \sum_i \log P(X_i \mid \mathrm{Pa}_G(X_i))}, so a
 #' graph's score is a sum of independent per-node terms. Second, the same
 #' `(node, parent-set)` local model recurs across many DAGs, so each unique
-#' local model is fitted only once and cached — collapsing the work from
+#' local model is fitted only once and cached - collapsing the work from
 #' `#DAGs` fits to at most `p * 2^(p-1)`.
 #'
 #' @section Priors:
 #' Only a uniform prior over DAGs is currently supported (`prior = "uniform"`),
 #' so the posterior is driven entirely by the marginal likelihoods. The `prior`
-#' argument is reserved for future options — e.g. sparsity-favouring priors,
+#' argument is reserved for future options - e.g. sparsity-favouring priors,
 #' edge/temporal constraints, or fully custom priors over structures.
 #'
 #' @section Marginal likelihoods and Markov equivalence:
@@ -276,7 +276,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #' evidence of its Gaussian-process model, so discovery involves no bridge
 #' sampling and no Stan compilation. Note that Markov-equivalent DAGs are
 #' statistically indistinguishable from observational data and will therefore
-#' receive (near-)equal posterior mass — a faithful representation of structural
+#' receive (near-)equal posterior mass - a faithful representation of structural
 #' uncertainty, not a defect.
 #'
 #' @param data A `data.frame` with one column per variable.
@@ -292,8 +292,8 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
 #'   each requiring the directed edge `from -> to` to be present in all candidate DAGs.
 #' @param mechanisms Optional named list of [Mechanism] instances, one per node.
 #'   Any node not specified receives a [GPMechanism].
-#' @param prior Character — prior over DAGs. Only `"uniform"` is supported.
-#' @param allow_empty Logical — whether to include the completely edgeless graph
+#' @param prior Character - prior over DAGs. Only `"uniform"` is supported.
+#' @param allow_empty Logical - whether to include the completely edgeless graph
 #'   in the search space (default `FALSE`). Usually, researchers are looking
 #'   for at least some causal structure, so the empty graph is omitted.
 #' @param ... Additional arguments forwarded to each node's mechanism `$fit()`.
@@ -378,7 +378,7 @@ kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
     eta <- ""
     if (i > 1L) {
       per <- as.numeric(difftime(Sys.time(), t_start, units = "secs")) / (i - 1L)
-      eta <- sprintf(" — ~%s remaining", .fmt_duration(per * (n_unique - i + 1L)))
+      eta <- sprintf(" - ~%s remaining", .fmt_duration(per * (n_unique - i + 1L)))
     }
     cli::cli_alert("[{i}/{n_unique}] fitting {.field {info$node}} ~ {rhs}{eta}")
 
@@ -416,7 +416,7 @@ kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
   log_post <- log_unnorm - log_z
   prob     <- exp(log_post)
 
-  cli::cli_alert_success("Done — posterior over {n_models} DAG{?s}.")
+  cli::cli_alert_success("Done - posterior over {n_models} DAG{?s}.")
 
   DiscoveryResult$new(
     dags = dags, labels = labels, nodes = nodes, data = data,
@@ -488,7 +488,7 @@ kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
 #' Draw a weighted mixture sample from a list of numeric vectors
 #'
 #' Allocates `N` draws across the components in proportion to `weights` and
-#' samples (with replacement) from each — the empirical realisation of a mixture
+#' samples (with replacement) from each - the empirical realisation of a mixture
 #' distribution. Used to combine per-DAG effect posteriors into one.
 #' @noRd
 .mixture_sample <- function(vecs, weights, N) {

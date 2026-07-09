@@ -31,7 +31,7 @@ $$
 Here $P(X \mid G)$ is the marginal likelihood of the data under graph $G$
 (computed in closed form from the per-node Gaussian-process fits) and $P(G)$ is a prior over
 structures (currently uniform). Rather than returning a single "best" graph,
-this returns a full probability distribution — an honest representation of what
+this returns a full probability distribution - an honest representation of what
 the data can and cannot tell us about causal structure.
 
 ## A worked example
@@ -71,7 +71,7 @@ df <- data.frame(education, skill, network, income)
 
 The number of DAGs grows explosively with the number of variables, so we narrow
 the space with background knowledge. Here we know only that `education` comes
-first — nothing causes a person's education in this system — so we use
+first - nothing causes a person's education in this system - so we use
 `disallowed` to forbid any edge pointing *into* `education`. The ordering among
 `skill`, `network`, and `income` is left for the data to resolve. This is
 exactly the kind of light domain knowledge a researcher can bring to a problem.
@@ -90,13 +90,13 @@ result <- KaguModel$discover(df, disallowed = disallowed)
 result
 ```
 
-The search evaluated every DAG consistent with that constraint, but — thanks to
-the Markov factorisation — only had to fit each unique `node ~ parents` model
+The search evaluated every DAG consistent with that constraint, but - thanks to
+the Markov factorisation - only had to fit each unique `node ~ parents` model
 once (far fewer fits than DAGs).
 
 ### Tighter constraints: `required` edges
 
-For larger systems, the number of candidate DAGs can easily exceed Kagu's safety limits (capped at $2^{24}$ subsets, roughly 5 unconstrained nodes). If you have stronger structural beliefs—such as an edge that absolutely *must* exist—you can pass `required`. This shrinks the search space dramatically by removing those edges from the combinatorics.
+For larger systems, the number of candidate DAGs can easily exceed Kagu's safety limits (capped at $2^{24}$ subsets, roughly 5 unconstrained nodes). If you have stronger structural beliefs-such as an edge that absolutely *must* exist-you can pass `required`. This shrinks the search space dramatically by removing those edges from the combinatorics.
 
 ```r
 # Suppose we know education -> skill and education -> network are certain
@@ -137,7 +137,7 @@ top_id <- result$summary()$id[1]
 result$plot_dag(top_id)
 ```
 
-No single DAG runs away with the posterior — the top few structures each hold
+No single DAG runs away with the posterior - the top few structures each hold
 only around a sixth of the mass. That is not a defect: with a handful of
 variables and this much noise, the data simply cannot single out one graph. What
 it *can* do is concentrate the mass onto a small cluster of closely-related
@@ -156,7 +156,7 @@ result$plot(true_dag = true_dag)
 ## Edge probabilities
 
 Often we care less about the single best graph than about *specific* causal
-questions — does this edge exist, and in which direction? `$edge_probabilities()`
+questions - does this edge exist, and in which direction? `$edge_probabilities()`
 marginalises over the whole posterior to give the probability of each directed
 edge, $P(\text{from} \to \text{to} \mid X) = \sum_{G \ni \text{edge}} P(G \mid X)$.
 
@@ -166,8 +166,8 @@ result$edge_probabilities()
 
 This is where the posterior becomes genuinely useful. The four true edges
 (`education→skill`, `education→network`, `skill→income`, `network→income`) each
-carry almost all of the probability — the data is confident they exist and point
-the way they do — and the clearest edge *reversals* are correctly assigned low
+carry almost all of the probability - the data is confident they exist and point
+the way they do - and the clearest edge *reversals* are correctly assigned low
 probability. What lingers is a redundant direct `education→income` edge: even
 though education's effect on income is *fully mediated* by skill and network,
 observational data at this sample size cannot completely exclude a direct path,
@@ -177,15 +177,15 @@ out.
 
 ## Effects under structural uncertainty
 
-When the structure is uncertain, committing to a single DAG — even the most
-probable one — throws away that uncertainty. Instead, query the effect directly
+When the structure is uncertain, committing to a single DAG - even the most
+probable one - throws away that uncertainty. Instead, query the effect directly
 on the `DiscoveryResult`: it averages over the *entire* posterior of DAGs,
 weighting each by $P(G \mid X)$,
 $$
 P(Q \mid X) = \sum_G P(Q \mid X, G)\, P(G \mid X).
 $$
 The call signature and the returned object are exactly those of the single-DAG
-`model$effects()`, so everything downstream — summaries, plots — works the same.
+`model$effects()`, so everything downstream - summaries, plots - works the same.
 
 ```{r effect}
 result$effects("education", "income")$summary()
@@ -198,7 +198,7 @@ path to `income` simply contribute a zero effect, exactly as they should.
 ## The limits of observational data
 
 Structure discovery is powerful, but it cannot manufacture information the data
-do not contain — and a good method should tell you so. A classic example is a 
+do not contain - and a good method should tell you so. A classic example is a 
 three-variable system with linear relationships. Suppose `x` causes `y`, which in turn causes `z`:
 
 ```{r three-node}
@@ -215,13 +215,13 @@ The search decisively rejects the independent graph and any structure that
 violates the data's conditional independencies, but it does **not** collapse onto
 a single winner. Instead the mass is shared across a cluster of closely-related
 graphs: the reverse chain (`y → x; z → y`), the fork (`y → x; y → z`), and the
-true forward chain (`x → y; y → z`) — plus versions of each carrying one
+true forward chain (`x → y; y → z`) - plus versions of each carrying one
 redundant extra edge that the data cannot rule out.
 
 And it is *right* to spread out. In a linear system, the three chains imply the
 identical observational distribution (they are **Markov equivalent**). They all
 encode that `x` and `z` are independent given `y`, and no quantity of purely
-observational linear data can distinguish them — nor can it exclude a weak extra
+observational linear data can distinguish them - nor can it exclude a weak extra
 edge that adds nothing to the fit. Reporting this uncertainty honestly, rather
 than picking an arbitrary winner, is exactly what makes the posterior-over-DAGs
 framing trustworthy.
@@ -231,9 +231,9 @@ If the underlying relationships were non-linear, Kagu's Gaussian-process mechani
 could often uniquely identify the exact true structure from observational data alone!)
 
 Breaking the tie requires stepping outside passive linear observation: non-linear relationships, 
-temporal ordering or domain knowledge (as in the worked example above), or an **intervention** — 
+temporal ordering or domain knowledge (as in the worked example above), or an **intervention** - 
 randomising `x` and seeing whether `y` and `z` respond.
 
 The uniform prior used here can, in future, be replaced by priors that favour
-sparsity or encode softer structural beliefs — the posterior machinery is
+sparsity or encode softer structural beliefs - the posterior machinery is
 unchanged.

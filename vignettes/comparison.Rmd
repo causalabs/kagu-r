@@ -21,21 +21,21 @@ N <- 500
 
 This vignette compares naive OLS against Kagu's do-calculus estimates on four
 canonical graph structures where conditioning on the wrong set of variables
-leads to bias — and a fifth where *nothing* works, to show the method's limits.
+leads to bias - and a fifth where *nothing* works, to show the method's limits.
 
 **How to read each section.** For every structure we print two ordinary
-least-squares estimates of the `x → y` coefficient — one *naive* (`y ~ x`) and
-one *adjusted* (`y ~ x + ...`) — then Kagu's interventional estimate as a tidy
+least-squares estimates of the `x → y` coefficient - one *naive* (`y ~ x`) and
+one *adjusted* (`y ~ x + ...`) - then Kagu's interventional estimate as a tidy
 table. In that table `mean` is the posterior mean effect and
 `hdi_lower`/`hdi_upper` bound the 90% highest density interval (the range
-containing 90% of the posterior probability — the credible values). The lesson
+containing 90% of the posterior probability - the credible values). The lesson
 each time: OLS is right only with the *correct* adjustment set, which you can
 only know from the causal structure; Kagu reads that structure off the DAG and
 applies the do-operator directly.
 
 ---
 
-## 1 — Confounder
+## 1 - Confounder
 
 ```
 z → x → y
@@ -74,7 +74,7 @@ model_confounder$plot_dag(node_pos = list(
 model_confounder$effects("x", "y", values = c(0, 1))$summary()
 ```
 
-Notice the naive OLS estimate sits well above 1.5 — the confounding path
+Notice the naive OLS estimate sits well above 1.5 - the confounding path
 `x ← z → y` leaks association into the slope. The *adjusted* OLS is correct here
 only because we happened to condition on `z`. Kagu's table recovers ≈ 1.5 with a
 90% HDI comfortably around the truth, because the structural model represents
@@ -82,7 +82,7 @@ only because we happened to condition on `z`. Kagu's table recovers ≈ 1.5 with
 
 ---
 
-## 2 — Mediator
+## 2 - Mediator
 
 ```
 x → m → y
@@ -123,18 +123,18 @@ model_mediator$effects("x", "y", values = c(0, 1))$summary()
 Here the roles flip: *naive* OLS is correct and *adjusted* OLS is biased. Adding
 `m` to the regression conditions on the mediator and blocks the very path the
 effect travels along, collapsing the estimate toward zero. Kagu propagates
-through `m` automatically, so its table recovers the total effect ≈ −1.6 — you
+through `m` automatically, so its table recovers the total effect ≈ −1.6 - you
 never have to reason about which covariates to include.
 
 ---
 
-## 3 — Collider
+## 3 - Collider
 
 ```
 x → c ← y
 ```
 
-The collider `c` has two causes. `x` and `y` are independent — the true
+The collider `c` has two causes. `x` and `y` are independent - the true
 effect of `x` on `y` is **0**. Conditioning on `c` opens a spurious path and
 induces bias.
 
@@ -166,14 +166,14 @@ model_collider$effects("x", "y")$summary()
 ```
 
 Naive OLS is correct (≈ 0), but adjusting for the collider `c` induces a
-spurious association — conditioning on a common effect makes its causes appear
+spurious association - conditioning on a common effect makes its causes appear
 related. Kagu returns an effect whose HDI straddles zero, because `x` has no
 directed path to `y` in the DAG and the propagation simply finds nothing to
 carry.
 
 ---
 
-## 4 — M-bias
+## 4 - M-bias
 
 ```
 a → x    b → y
@@ -227,7 +227,7 @@ for `m` during propagation and its table recovers ≈ 1.0.
 
 ---
 
-## 5 — Latent confounder (where everything fails)
+## 5 - Latent confounder (where everything fails)
 
 ```
 u → x → y
@@ -236,10 +236,10 @@ u → y       (u is unobserved)
 
 So far the structural model has always won. This example shows where it
 *cannot*, and why that is the honest answer rather than a shortcoming. The
-common cause `u` is now **latent** — it drives both `x` and `y` but is never
+common cause `u` is now **latent** - it drives both `x` and `y` but is never
 recorded. The true direct effect of `x` on `y` is **+1.5**.
 
-The structure we *wish* we could fit — `u` is the unobserved common cause:
+The structure we *wish* we could fit - `u` is the unobserved common cause:
 
 ```{r latent-dag, fig.height = 3}
 kagu_plot_dag(
@@ -256,14 +256,14 @@ df_latent <- data.frame(x = x, y = y)  # u is NOT included
 ```
 
 With only `x` and `y` recorded, the only regression we can run is the naive one
-— there is no `u` column to adjust for:
+- there is no `u` column to adjust for:
 
 ```{r latent-ols}
 cat("OLS (naive):   ", coef(lm(y ~ x, df_latent))[["x"]], "\n")
-cat("OLS (adjusted): unavailable — 'u' is not measured\n")
+cat("OLS (adjusted): unavailable - 'u' is not measured\n")
 ```
 
-The naive slope is biased upward, exactly as in the confounder example — but
+The naive slope is biased upward, exactly as in the confounder example - but
 this time there is no adjustment available to repair it.
 
 Can the structural model rescue us? Only if we can supply the confounder.
@@ -275,7 +275,7 @@ model_latent$fit(df_latent)
 ```
 
 Kagu refuses to invent data for an unmeasured node, and the message spells out
-the consequence. The alternative is to drop `u` from the DAG so the model fits —
+the consequence. The alternative is to drop `u` from the DAG so the model fits -
 but then it is structurally identical to the naive regression, and just as
 biased:
 
@@ -291,7 +291,7 @@ model_latent_naive$effects("x", "y", values = c(0, 1))$summary()
 The estimate lands near the inflated OLS value, not the true 1.5, and the HDI
 does not cover it. This is the key lesson: **unobserved confounding cannot be
 undone from the data alone.** Neither regression nor a graphical model recovers
-the truth when a common cause is missing — the effect is simply *not
+the truth when a common cause is missing - the effect is simply *not
 identifiable* from these variables. The remedies all live outside the dataset:
 measure the confounder, find a valid instrument, or exploit a front-door path.
 
@@ -308,16 +308,16 @@ measure the confounder, find a valid instrument, or exploit a front-door path.
 | Latent confounder | +1.5        | Biased ↑    | Unavailable    | ⚠ Stops and warns      |
 
 OLS is correct only when it happens to use the right adjustment set. Kagu
-encodes the causal structure explicitly and applies the do-operator — correct
+encodes the causal structure explicitly and applies the do-operator - correct
 by design *whenever the effect is identifiable*.
 
-**Read the last row as a safety feature, not a shortcoming.** No method —
-regression or graphical — can recover an effect that the data simply cannot
+**Read the last row as a safety feature, not a shortcoming.** No method -
+regression or graphical - can recover an effect that the data simply cannot
 identify; that is a property of the problem, not of the tool. The difference is
 in *how each one behaves at that boundary*. OLS hands back a confident,
 biased number with no hint that anything is wrong. Kagu instead detects the
 unmeasured node, **stops before fitting, and emits a clear warning** explaining
 why the estimate would be untrustworthy and what to do about it (measure the
 confounder, find an instrument, or use a front-door path). A loud, actionable
-error is exactly what you want here — it turns a silent statistical trap into a
+error is exactly what you want here - it turns a silent statistical trap into a
 visible, fixable one.

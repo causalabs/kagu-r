@@ -25,7 +25,7 @@ In this vignette, we explore a classic observational study in behavioural ecolog
 
 ## The study system
 
-Imagine a long-term field study of a social mammal population (e.g., macaques, dolphins, or elephants). We have collected observational data on 50 individuals — a small, noisy field dataset typical of hard-to-observe wild populations — measuring five variables:
+Imagine a long-term field study of a social mammal population (e.g., macaques, dolphins, or elephants). We have collected observational data on 50 individuals - a small, noisy field dataset typical of hard-to-observe wild populations - measuring five variables:
 
 - `age`: Age of the individual (standardised).
 - `sex`: Female (`-1`) or Male (`1`).
@@ -90,7 +90,7 @@ kagu_plot_dag(dag_true, node_pos) + ggtitle("True DAG")
 Before estimating effects, researchers often want to verify their causal graph against alternative hypotheses. 
 
 Suppose a reviewer suggests two alternative models:
-1. `Alt1`: Sociality has no measured cause — the apparent `age → sociality` link is just noise.
+1. `Alt1`: Sociality has no measured cause - the apparent `age → sociality` link is just noise.
 2. `Alt2`: Body condition causes sociality (healthier individuals have more energy to socialize).
 
 ```{r plot-alt-dags, fig.height=3, fig.width=8}
@@ -128,9 +128,9 @@ res <- KaguModel$discover(
 res$summary()
 ```
 
-Kagu places most of the posterior (~83%) on `dag_true`, but crucially it does **not** claim certainty. `Alt2` — the hypothesis that body condition *causes* sociality — is decisively rejected (~0%): reversing those edges contradicts the strong, non-linear signature that `sex`, `sociality` and `food_sharing` jointly leave in `condition`. But `Alt1`, which drops the single `age → sociality` edge (claiming sociality has no measured cause), still retains ~17% of the posterior. With only 50 noisy individuals the weak influence of age on sociality is genuinely hard to detect, and Kagu reports that ambiguity honestly rather than papering over it.
+Kagu places most of the posterior (~83%) on `dag_true`, but crucially it does **not** claim certainty. `Alt2` - the hypothesis that body condition *causes* sociality - is decisively rejected (~0%): reversing those edges contradicts the strong, non-linear signature that `sex`, `sociality` and `food_sharing` jointly leave in `condition`. But `Alt1`, which drops the single `age → sociality` edge (claiming sociality has no measured cause), still retains ~17% of the posterior. With only 50 noisy individuals the weak influence of age on sociality is genuinely hard to detect, and Kagu reports that ambiguity honestly rather than papering over it.
 
-Two things are worth noting. First, the parents of `condition` are pinned down with near-certainty across every competitive structure — the strong `sex * sociality` interaction gives the GP a non-linear signature that no reversal of those edges can mimic. Second, the posterior-over-DAGs framing carries the residual structural uncertainty forward rather than discarding it, so we can go on to estimate effects while remaining appropriately humble about which structure generated the data.
+Two things are worth noting. First, the parents of `condition` are pinned down with near-certainty across every competitive structure - the strong `sex * sociality` interaction gives the GP a non-linear signature that no reversal of those edges can mimic. Second, the posterior-over-DAGs framing carries the residual structural uncertainty forward rather than discarding it, so we can go on to estimate effects while remaining appropriately humble about which structure generated the data.
 
 ## The Table II Fallacy
 
@@ -146,7 +146,7 @@ Looking at this table, a researcher would incorrectly conclude:
 1. **Sociality is bad for condition**: its coefficient is negative and statistically significant ($p \approx 0.03$).
 2. The only beneficial pathway is food sharing.
 
-Both conclusions are wrong. This is the **Table II Fallacy**. By including `food_sharing` (a mediator) in the model, the coefficient for `sociality` is stripped of its positive *indirect* effect. What remains is the direct effect — strongly positive for females, strongly negative for males — and, with no `sex * sociality` interaction term in the model, the linear fit collapses those opposing slopes into a single misleading number. Here it lands significantly *negative*, exactly inverting sociality's true (large, positive) effect for half the population.
+Both conclusions are wrong. This is the **Table II Fallacy**. By including `food_sharing` (a mediator) in the model, the coefficient for `sociality` is stripped of its positive *indirect* effect. What remains is the direct effect - strongly positive for females, strongly negative for males - and, with no `sex * sociality` interaction term in the model, the linear fit collapses those opposing slopes into a single misleading number. Here it lands significantly *negative*, exactly inverting sociality's true (large, positive) effect for half the population.
 
 ## Estimating the true effects with Kagu
 
@@ -164,7 +164,7 @@ If we ask Kagu for the total marginal effect of `sociality` on `condition`, it a
 mod$effects("sociality", "condition", hdi = 0.95)$summary()
 ```
 
-The point estimate is modestly positive (~0.38), but the 95% HDI is very wide and straddles zero. This is not a failure — it is Kagu being honest. The population-averaged total effect is pulled in two directions at once: the food-sharing mediation contributes a positive push, while the *direct* effect of sociality is strongly positive in females and strongly negative in males, so on average it nearly cancels and mostly inflates the spread. A single population-averaged number is therefore almost meaningless here; the wide HDI is Kagu's way of telling us the effect is highly heterogeneous across the population. In the next section we split it apart by sex to reveal exactly what that average conceals.
+The point estimate is modestly positive (~0.38), but the 95% HDI is very wide and straddles zero. This is not a failure - it is Kagu being honest. The population-averaged total effect is pulled in two directions at once: the food-sharing mediation contributes a positive push, while the *direct* effect of sociality is strongly positive in females and strongly negative in males, so on average it nearly cancels and mostly inflates the spread. A single population-averaged number is therefore almost meaningless here; the wide HDI is Kagu's way of telling us the effect is highly heterogeneous across the population. In the next section we split it apart by sex to reveal exactly what that average conceals.
 
 ### Examining the mediator
 
@@ -176,7 +176,7 @@ mod$effects("food_sharing", "condition", sweep = TRUE, hdi = 0.95)$plot() +
   ggtitle("Direct effect of Food Sharing on Condition")
 ```
 
-The model recovers the direct effect of food sharing ($\approx 0.85$ here — close to the true value of 0.8, correctly identified as the strongest single pathway, and the one coefficient the flawed linear table got roughly right!).
+The model recovers the direct effect of food sharing ($\approx 0.85$ here - close to the true value of 0.8, correctly identified as the strongest single pathway, and the one coefficient the flawed linear table got roughly right!).
 
 ### Unmasking the interaction
 
@@ -220,7 +220,7 @@ mod$effects("sociality", "condition", conditions = list(sex = -1), hdi = 0.95)$s
 mod$effects("sociality", "condition", conditions = list(sex =  1), hdi = 0.95)$summary()  # Males
 ```
 
-For females the effect is strongly positive ($\approx 1.4$), for males strongly negative ($\approx -0.6$) — two large, opposing effects that the population-averaged estimate above (and the linear regression table) washed out to near zero.
+For females the effect is strongly positive ($\approx 1.4$), for males strongly negative ($\approx -0.6$) - two large, opposing effects that the population-averaged estimate above (and the linear regression table) washed out to near zero.
 
 ## Why classic model selection fails
 

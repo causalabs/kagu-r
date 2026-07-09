@@ -1,4 +1,4 @@
-# Internal utilities — not exported
+# Internal utilities - not exported
 
 #' Check that every DAG node has a matching column in the data
 #'
@@ -7,7 +7,7 @@
 #' column from a genuinely latent variable, since the latter is a substantive
 #' identification problem rather than a typo.
 #'
-#' @param dag Named list — the DAG specification.
+#' @param dag Named list - the DAG specification.
 #' @param data A `data.frame`.
 #' @noRd
 .check_data_nodes <- function(dag, data) {
@@ -21,8 +21,8 @@
       "left out, add {?it/them} as {?a column/columns} and re-fit."
     ),
     "!" = paste(
-      "{cli::qty(missing)}If {?it is/they are} {.emph latent} — an unmeasured",
-      "common cause, for instance — Kagu cannot estimate {?its/their}",
+      "{cli::qty(missing)}If {?it is/they are} {.emph latent} - an unmeasured",
+      "common cause, for instance - Kagu cannot estimate {?its/their}",
       "mechanism, because there are no observations to condition on."
     ),
     "i" = paste(
@@ -41,7 +41,7 @@
 #' `[iteration, chain, variable]` as expected by the `posterior` package.
 #'
 #' @param samples Numeric matrix with dim `[n_chains, n_draws]`.
-#' @param varname Character scalar — name for the variable dimension.
+#' @param varname Character scalar - name for the variable dimension.
 #' @return A `posterior::draws_array`.
 #' @noRd
 .to_draws_array <- function(samples, varname = "effect") {
