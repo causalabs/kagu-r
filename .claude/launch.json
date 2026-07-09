@@ -4,8 +4,8 @@
     {
       "name": "docs",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "4599", "--directory", "docs"],
-      "port": 4599
+      "runtimeArgs": [".claude/nocache_server.py", "5439", "docs"],
+      "port": 5439
     }
   ]
 }

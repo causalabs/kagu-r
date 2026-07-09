@@ -13,6 +13,24 @@ template:
 
 navbar:
   bg: dark
+  structure:
+    left: [intro, reference, articles]
+    right: [github]
+  components:
+    intro:
+      text: "Get started"
+      href: articles/quickstart.html
+    articles:
+      text: "Examples"
+      menu:
+        - text: "Causal discovery"
+          href: articles/discovery.html
+        - text: "Modelling interactions"
+          href: articles/interactions.html
+        - text: "Comparison vs OLS"
+          href: articles/comparison.html
+        - text: "Ecology case study"
+          href: articles/ecology_case_study.html
 
 home:
   title: Kagu
@@ -77,11 +95,9 @@ reference:
 
 articles:
   - title: "Get started"
-    navbar: ~
     contents:
       - quickstart
   - title: "Examples"
-    navbar: Examples
     contents:
       - comparison
       - ecology_case_study

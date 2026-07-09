@@ -35,10 +35,10 @@
   ))
 }
 
-#' Convert a [n_chains, n_draws] matrix to a posterior draws_array
+#' Convert a `[n_chains, n_draws]` matrix to a posterior draws_array
 #'
 #' Produces an array of class `draws_array` with dimensions
-#' [iteration, chain, variable] as expected by the `posterior` package.
+#' `[iteration, chain, variable]` as expected by the `posterior` package.
 #'
 #' @param samples Numeric matrix with dim `[n_chains, n_draws]`.
 #' @param varname Character scalar — name for the variable dimension.

@@ -231,6 +231,8 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     },
 
     #' @description Print method.
+    #' @description Print summary of the discovery result.
+    #' @param ... Ignored.
     print = function(...) {
       cat(sprintf("<DiscoveryResult: %d DAGs, %d unique local fits>\n",
                   self$n_models, self$n_unique_fits))

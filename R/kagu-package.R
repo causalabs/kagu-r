@@ -22,9 +22,7 @@
 
 ## usethis namespace: start
 #' @import R6
-#' @importFrom ggplot2 ggplot aes geom_density geom_ribbon geom_line
-#'   geom_segment geom_point geom_text annotate labs theme_minimal theme_void
-#'   theme element_blank coord_equal
+#' @importFrom ggplot2 ggplot aes geom_density geom_ribbon geom_line geom_segment geom_point geom_text annotate labs theme_minimal theme_void theme element_blank coord_equal
 #' @importFrom posterior summarise_draws
 #' @importFrom bayestestR hdi
 #' @importFrom tibble as_tibble

@@ -24,8 +24,9 @@ effect$summary()
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/your-org/kagu-r}
-  \item Report bugs at \url{https://github.com/your-org/kagu-r/issues}
+  \item \url{https://github.com/causalabs/kagu-r}
+  \item \url{https://causalabs.github.io/kagu-r/}
+  \item Report bugs at \url{https://github.com/causalabs/kagu-r/issues}
 }
 
 }

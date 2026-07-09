@@ -84,7 +84,7 @@ model$plot_dag(node_pos=NULL)
 model$plot_posterior(node)
 model$save(path, include_data=TRUE)
 KaguModel$load(path)                        # static method on the generator
-KaguModel$discover(data, ...)               # static method — structure discovery
+KaguModel$discover(data, nodes, dags, disallowed, required, allow_empty, ...) # static method — structure discovery
 ```
 
 ### `Mechanism` ABC + `GPMechanism` (`R/mechanisms.R`)
@@ -225,13 +225,12 @@ descendants. Keeps the dependency footprint small.
 - [x] Core DAG-based causal modelling (Gaussian-process mechanisms)
 - [x] Do-calculus effect estimation with full posterior
 - [x] Sweep plots with HDI ribbon (ggplot2)
+- [x] Compare sweep interactions efficiently (`EffectResult$plot(compare=...)`)
 - [x] Save/load with data (saveRDS/readRDS)
 - [x] Documentation site (pkgdown)
 - [x] CI/CD (GitHub Actions)
-- [x] Causal structure discovery — posterior over DAGs via closed-form GP
-  marginal likelihoods (`KaguModel$discover` / `kagu_discover`)
-- [x] Bayesian model averaging of effects over the DAG posterior
-  (`DiscoveryResult$effects`)
+- [x] Causal structure discovery — posterior over DAGs via exact GP marginal likelihoods (`KaguModel$discover` / `kagu_discover`)
+- [x] Domain knowledge constraints in discovery (`disallowed`, `required`, explicit `dags`)
+- [x] Bayesian model averaging of effects over the DAG posterior (`DiscoveryResult$effects`)
 - [ ] Non-Gaussian outcome families (counts, binary, bounded)
-- [ ] User-defined priors over DAGs (sparsity, edge/temporal constraints)
 - [ ] Model fit diagnostics (posterior predictive checks, LOO)

@@ -43,6 +43,15 @@ EffectResult <- R6::R6Class("EffectResult",
     compare_results = NULL,
 
     #' @description Create an EffectResult (normally called by `compute_effect`).
+    #' @param source Character — the intervention node.
+    #' @param target Character — the outcome node.
+    #' @param from_value Numeric — intervention baseline value.
+    #' @param to_value Numeric — intervention target value.
+    #' @param samples Numeric array — posterior effect samples.
+    #' @param hdi Numeric — HDI probability.
+    #' @param std_units Logical — whether the effect is in SD units.
+    #' @param conditions Named list of conditioned node values.
+    #' @param sweep_values Numeric vector of sweep grid values.
     initialize = function(source, target, from_value, to_value, samples,
                           hdi = 0.90, std_units = FALSE, conditions = NULL,
                           sweep_values = NULL) {
@@ -162,6 +171,8 @@ EffectResult <- R6::R6Class("EffectResult",
     },
 
     #' @description Print method — shows the summary table.
+    #' @description Print summary of the effect result.
+    #' @param ... Ignored.
     print = function(...) {
       kind <- if (self$is_sweep()) "sweep" else "scalar"
       cat(sprintf("<EffectResult [%s]: %s → %s>\n",

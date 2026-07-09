@@ -75,12 +75,13 @@ causal effect along with metadata.
     \describe{
       \item{\code{source}}{Character — the intervention node.}
       \item{\code{target}}{Character — the outcome node.}
-      \item{\code{from_value}}{Numeric — intervention baseline value (or sweep grid).}
-      \item{\code{to_value}}{Numeric — intervention target value (or sweep grid).}
+      \item{\code{from_value}}{Numeric — intervention baseline value.}
+      \item{\code{to_value}}{Numeric — intervention target value.}
       \item{\code{samples}}{Numeric array — posterior effect samples.}
+      \item{\code{hdi}}{Numeric — HDI probability.}
       \item{\code{std_units}}{Logical — whether the effect is in SD units.}
-      \item{\code{conditions}}{Named list of conditioned node values, or \code{NULL}.}
-      \item{\code{sweep_values}}{Numeric vector of sweep grid values, or \code{NULL}.}
+      \item{\code{conditions}}{Named list of conditioned node values.}
+      \item{\code{sweep_values}}{Numeric vector of sweep grid values.}
     }
     \if{html}{\out{</div>}}
   }
@@ -179,9 +180,19 @@ Chain structure is preserved, so r-hat values are genuine.
 \if{latex}{\out{\hypertarget{method-EffectResult-print}{}}}
 \subsection{\code{EffectResult$print()}}{
   Print method — shows the summary table.
+
+
+  Print summary of the effect result.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{EffectResult$print(...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{...}}{Ignored.}
+    }
     \if{html}{\out{</div>}}
   }
 }

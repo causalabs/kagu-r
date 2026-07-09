@@ -274,9 +274,19 @@ the model (default \code{TRUE}, so \verb{$effects()} works immediately on load).
 \if{latex}{\out{\hypertarget{method-KaguModel-print}{}}}
 \subsection{\code{KaguModel$print()}}{
   Print a concise model summary.
+
+
+  Print summary of the model.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{KaguModel$print(...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{...}}{Ignored.}
+    }
     \if{html}{\out{</div>}}
   }
 }

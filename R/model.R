@@ -243,6 +243,8 @@ KaguModel <- R6::R6Class("KaguModel",
     # Print
 
     #' @description Print a concise model summary.
+    #' @description Print summary of the model.
+    #' @param ... Ignored.
     print = function(...) {
       status <- if (self$.fitted) "fitted" else "unfitted"
       nodes  <- names(self$dag)

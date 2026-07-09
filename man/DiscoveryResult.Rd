@@ -336,9 +336,19 @@ data-generating structure).}
 \if{latex}{\out{\hypertarget{method-DiscoveryResult-print}{}}}
 \subsection{\code{DiscoveryResult$print()}}{
   Print method.
+
+
+  Print summary of the discovery result.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
     \preformatted{DiscoveryResult$print(...)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{...}}{Ignored.}
+    }
     \if{html}{\out{</div>}}
   }
 }
