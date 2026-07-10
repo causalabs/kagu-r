@@ -1,0 +1,217 @@
+/* ============================================================
+   Kagu — pkgdown custom styling
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&display=swap');
+
+/* ---- Home: full-width, no sidebar so the hero can breathe ---- */
+.template-home aside { display: none; }
+/* The hero bleeds to the viewport edge with calc(50% - 50vw) margins. Clip any
+   resulting horizontal overflow at the ROOT — clipping on the page container
+   (as before) cropped the hero to the container width, hence the sharp cut-off.
+   `clip` (not `hidden`) avoids creating a scroll container / breaking sticky. */
+html { overflow-x: clip; }
+/* ...but let code blocks scroll internally rather than being clipped */
+.template-home pre,
+.template-home .sourceCode { overflow-x: auto; }
+@media (min-width: 768px) {
+  .template-home main.col-md-9 { flex: 0 0 100%; max-width: 100%; padding: 0; }
+}
+.template-home main { margin: 0 auto; max-width: 940px; }
+/* the hero supplies its own title; neutralise pkgdown's auto page-header chrome
+   (this must NOT be display:none — that would delete the "Kagu" <h1> it wraps) */
+.kagu-hero .page-header { margin: 0; padding: 0; border: 0; min-height: 0; }
+.kagu-hero .page-header .anchor { display: none; }
+
+/* ---- Hero banner (dark, cool gradient, full-bleed flush band) ---- */
+.kagu-hero {
+  position: relative;
+  overflow: hidden;
+  /* Full-bleed to the viewport edges, and up behind the fixed (opaque) navbar
+     so the dark band meets it seamlessly. The top padding clears the navbar. */
+  margin: 0 calc(50% - 50vw) 3.5rem;
+  padding: 6.5rem 1.5rem 5rem;
+  text-align: center;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(1150px 560px at 50% -25%, rgba(38, 166, 154, 0.30) 0%, rgba(38, 166, 154, 0) 62%),
+    radial-gradient(900px 520px at 84% 4%, rgba(38, 166, 154, 0.20) 0%, rgba(38, 166, 154, 0) 55%),
+    linear-gradient(158deg, #16332d 0%, #10201d 60%, #0c1614 100%);
+}
+
+@media (min-width: 768px) {
+  .kagu-hero {
+    margin: 0 calc(50% - 50vw) 5rem;
+    padding: 9rem 1.5rem 7rem;
+  }
+}
+
+.kagu-hero__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+.kagu-hero__title {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: clamp(3.1rem, 6.6vw, 5rem);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: #f5f3ee;
+  margin: 0 0 1.5rem;
+}
+
+.kagu-hero__tagline {
+  font-size: clamp(1.05rem, 1.9vw, 1.3rem);
+  line-height: 1.6;
+  color: #aebfba;
+  max-width: 580px;
+  margin: 0 auto 2.75rem;
+}
+
+.kagu-hero__install {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .5rem .8rem;
+  max-width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #eaf3f1;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: clamp(.82rem, 2.3vw, .95rem);
+  padding: .7rem .7rem .7rem 1.2rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px -22px rgba(0, 0, 0, .7);
+}
+/* pandoc wraps bare inline HTML (the code+button pair) in a <p>; make it
+   transparent to the box model so code/button remain direct flex items */
+.kagu-hero__install > p {
+  display: contents;
+}
+.kagu-hero__install code {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  white-space: nowrap;
+}
+.kagu-hero__copy {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: #dfeae7;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
+}
+.kagu-hero__copy:hover {
+  background: rgba(38, 166, 154, .92);
+  border-color: transparent;
+  color: #fff;
+}
+.kagu-hero__copy:active {
+  transform: scale(0.92);
+}
+.kagu-hero__copy-check {
+  display: none;
+}
+.kagu-hero__copy.is-copied {
+  background: #26a69a;
+  border-color: transparent;
+  color: #fff;
+}
+.kagu-hero__copy.is-copied .kagu-hero__copy-icon { display: none; }
+.kagu-hero__copy.is-copied .kagu-hero__copy-check { display: inline-flex; }
+
+.kagu-hero__actions {
+  margin-top: 2.75rem;
+  display: flex;
+  gap: .9rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.kagu-hero__actions > p {
+  display: contents;
+}
+
+.kagu-btn {
+  display: inline-block;
+  font-weight: 600;
+  text-decoration: none;
+  padding: .8rem 1.6rem;
+  border-radius: 11px;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease, color .15s ease;
+}
+.kagu-btn--primary {
+  background: #26a69a;
+  color: #fff;
+  box-shadow: 0 14px 26px -12px rgba(38, 166, 154, .75);
+}
+.kagu-btn--primary:hover {
+  background: #1f8e83;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 32px -12px rgba(38, 166, 154, .85);
+}
+.kagu-btn--ghost {
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef4f2;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+.kagu-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* ---- Body headings on the home page in Fraunces, to match the hero ---- */
+.template-home main h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: #1c2826;
+  margin-top: 2.75rem;
+}
+.template-home main h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  color: #2a3835;
+}
+
+/* ---- Restrained, grown-up type sizes ---- */
+/* navbar links a little smaller */
+.navbar .nav-link { font-size: 0.9rem; }
+.navbar .navbar-brand { font-size: 1.05rem; }
+
+/* the right-hand "On this page" contents: a small, quiet sidebar label + links */
+#toc h2 {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6b7a77;
+  margin-bottom: 0.5rem;
+}
+#toc .nav-link {
+  font-size: 0.82rem;
+  padding: 0.15rem 0;
+}
+
+/* body copy: a touch smaller than default, still comfortable to read */
+main { font-size: 0.97rem; }
+main p,
+main li { font-size: 0.97rem; }
