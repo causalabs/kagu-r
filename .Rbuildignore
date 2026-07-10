@@ -5,3 +5,12 @@
 ^docs$
 ^_pkgdown\.yml$
 ^\.github$
+^LICENSE\.md$
+^CONTRIBUTING\.md$
+^AGENTS\.md$
+^scripts$
+^figures$
+^outputs$
+^\.claude$
+^cran-comments\.md$
+^CRAN-SUBMISSION$

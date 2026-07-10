@@ -1,0 +1,36 @@
+name: Version bump
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require DESCRIPTION version to be raised above main
+        run: |
+          pr_ver=$(grep -m1 '^Version:' DESCRIPTION | sed -E 's/^Version:[[:space:]]*//')
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          base_ver=$(git show "origin/${{ github.base_ref }}:DESCRIPTION" | grep -m1 '^Version:' | sed -E 's/^Version:[[:space:]]*//')
+          echo "PR version:   $pr_ver"
+          echo "main version: $base_ver"
+
+          if [ "$pr_ver" = "$base_ver" ]; then
+            echo "::error::DESCRIPTION Version ($pr_ver) is unchanged. Every PR must bump the version above main ($base_ver)."
+            exit 1
+          fi
+
+          # Highest of the two under version sort must be the PR version.
+          highest=$(printf '%s\n%s\n' "$base_ver" "$pr_ver" | sort -V | tail -n1)
+          if [ "$highest" != "$pr_ver" ]; then
+            echo "::error::DESCRIPTION Version ($pr_ver) is lower than main ($base_ver)."
+            exit 1
+          fi
+
+          echo "Version bump OK: $base_ver -> $pr_ver"
