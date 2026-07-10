@@ -5,20 +5,20 @@
 \title{Gaussian-process mechanism (default)}
 \description{
 Models each node's conditional mean as an \strong{exact Gaussian process} of its
-parents, with a squared-exponential (ARD) kernel — one lengthscale per parent,
+parents, with a squared-exponential (ARD) kernel - one lengthscale per parent,
 which captures non-linearity and interactions automatically. Kernel
 hyperparameters (lengthscales, signal and noise variance) are set by type-II
 maximum likelihood; there is no MCMC. A node with no parents is modelled by
 its marginal (a Normal). This is Kagu's default and only mechanism.
 
-Structure discovery uses the \strong{exact} GP log marginal likelihood, which — in
-contrast to fast basis/eigenfunction approximations — is well calibrated: for
+Structure discovery uses the \strong{exact} GP log marginal likelihood, which - in
+contrast to fast basis/eigenfunction approximations - is well calibrated: for
 a genuinely unidentifiable (e.g. linear-Gaussian) edge it does not manufacture
 spurious confidence about direction.
 
 Posterior function samples for effect propagation are drawn by \strong{pathwise /
 decoupled sampling} (a random-feature prior plus the exact data update), so
-each draw is a coherent function evaluable at any point — giving correctly
+each draw is a coherent function evaluable at any point - giving correctly
 correlated uncertainty for do-calculus contrasts.
 }
 \examples{
@@ -30,12 +30,12 @@ mech <- GPMechanism$new()
 \section{Public fields}{
   \if{html}{\out{<div class="r6-fields">}}
   \describe{
-    \item{\code{num_results}}{Integer — number of posterior draws to keep (default 1000).}
+    \item{\code{num_results}}{Integer - number of posterior draws to keep (default 1000).}
 
-    \item{\code{n_features}}{Integer — random Fourier features for pathwise sampling
+    \item{\code{n_features}}{Integer - random Fourier features for pathwise sampling
 (default 300).}
 
-    \item{\code{jitter}}{Numeric — diagonal jitter for numerical stability (default 1e-6).}
+    \item{\code{jitter}}{Numeric - diagonal jitter for numerical stability (default 1e-6).}
   }
   \if{html}{\out{</div>}}
 }
@@ -64,9 +64,9 @@ mech <- GPMechanism$new()
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{num_results}}{Integer — number of posterior draws to keep.}
-      \item{\code{n_features}}{Integer — number of random Fourier features.}
-      \item{\code{jitter}}{Numeric — diagonal jitter added to the kernel.}
+      \item{\code{num_results}}{Integer - number of posterior draws to keep.}
+      \item{\code{n_features}}{Integer - number of random Fourier features.}
+      \item{\code{jitter}}{Numeric - diagonal jitter added to the kernel.}
     }
     \if{html}{\out{</div>}}
   }
@@ -85,7 +85,7 @@ mech <- GPMechanism$new()
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name (response).}
+      \item{\code{node}}{Character scalar - the node name (response).}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{data}}{A \code{data.frame} with columns for the node and its parents.}
       \item{\code{...}}{Backend-specific arguments.}
@@ -107,7 +107,7 @@ mech <- GPMechanism$new()
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name.}
+      \item{\code{node}}{Character scalar - the node name.}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{parent_values}}{Named list of \verb{[n_chains, n_draws]} matrices, one per
 parent, giving the parent values for each posterior draw.}
@@ -130,7 +130,7 @@ parent, giving the parent values for each posterior draw.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name.}
+      \item{\code{node}}{Character scalar - the node name.}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{data}}{A \code{data.frame}.}
     }
@@ -171,7 +171,7 @@ parent, giving the parent values for each posterior draw.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name.}
+      \item{\code{node}}{Character scalar - the node name.}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{data}}{A \code{data.frame}.}
       \item{\code{fit}}{A fit object from \verb{$fit()}.}

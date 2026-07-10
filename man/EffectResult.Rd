@@ -14,19 +14,19 @@ causal effect along with metadata.
 \section{Public fields}{
   \if{html}{\out{<div class="r6-fields">}}
   \describe{
-    \item{\code{source}}{Character — the intervention node.}
+    \item{\code{source}}{Character - the intervention node.}
 
-    \item{\code{target}}{Character — the outcome node.}
+    \item{\code{target}}{Character - the outcome node.}
 
-    \item{\code{from_value}}{Numeric — intervention baseline value (or sweep grid).}
+    \item{\code{from_value}}{Numeric - intervention baseline value (or sweep grid).}
 
-    \item{\code{to_value}}{Numeric — intervention target value (or sweep grid).}
+    \item{\code{to_value}}{Numeric - intervention target value (or sweep grid).}
 
-    \item{\code{samples}}{Numeric array — posterior effect samples.}
+    \item{\code{samples}}{Numeric array - posterior effect samples.}
 
-    \item{\code{hdi_prob}}{Numeric — HDI probability used for summaries and plots.}
+    \item{\code{hdi_prob}}{Numeric - HDI probability used for summaries and plots.}
 
-    \item{\code{std_units}}{Logical — whether the effect is in SD units.}
+    \item{\code{std_units}}{Logical - whether the effect is in SD units.}
 
     \item{\code{conditions}}{Named list of conditioned node values, or \code{NULL}.}
 
@@ -73,13 +73,13 @@ causal effect along with metadata.
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{source}}{Character — the intervention node.}
-      \item{\code{target}}{Character — the outcome node.}
-      \item{\code{from_value}}{Numeric — intervention baseline value.}
-      \item{\code{to_value}}{Numeric — intervention target value.}
-      \item{\code{samples}}{Numeric array — posterior effect samples.}
-      \item{\code{hdi}}{Numeric — HDI probability.}
-      \item{\code{std_units}}{Logical — whether the effect is in SD units.}
+      \item{\code{source}}{Character - the intervention node.}
+      \item{\code{target}}{Character - the outcome node.}
+      \item{\code{from_value}}{Numeric - intervention baseline value.}
+      \item{\code{to_value}}{Numeric - intervention target value.}
+      \item{\code{samples}}{Numeric array - posterior effect samples.}
+      \item{\code{hdi}}{Numeric - HDI probability.}
+      \item{\code{std_units}}{Logical - whether the effect is in SD units.}
       \item{\code{conditions}}{Named list of conditioned node values.}
       \item{\code{sweep_values}}{Numeric vector of sweep grid values.}
     }
@@ -179,7 +179,7 @@ Chain structure is preserved, so r-hat values are genuine.
 \if{html}{\out{<a id="method-EffectResult-print"></a>}}
 \if{latex}{\out{\hypertarget{method-EffectResult-print}{}}}
 \subsection{\code{EffectResult$print()}}{
-  Print method — shows the summary table.
+  Print method - shows the summary table.
 
 
   Print summary of the effect result.

@@ -7,10 +7,10 @@
 kagu_plot_dag(dag, node_pos = NULL)
 }
 \arguments{
-\item{dag}{Named list — the DAG specification.}
+\item{dag}{Named list - the DAG specification.}
 
 \item{node_pos}{Optional named list of \code{c(row, col)} coordinates for manual
-node placement. Partial overrides are supported — unspecified nodes keep
+node placement. Partial overrides are supported - unspecified nodes keep
 the auto-layout position.}
 }
 \value{

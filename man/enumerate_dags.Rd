@@ -16,7 +16,7 @@ forbidding \code{a -> b} still permits \code{b -> a}.}
 \item{required}{Optional list of length-2 character vectors \code{c(from, to)},
 each requiring the directed edge \code{from -> to} to be present in all candidate DAGs.}
 
-\item{allow_empty}{Logical — whether to include the completely empty (edgeless)
+\item{allow_empty}{Logical - whether to include the completely empty (edgeless)
 graph in the search space. Defaults to \code{FALSE}.}
 }
 \value{

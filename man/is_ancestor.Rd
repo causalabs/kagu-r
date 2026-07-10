@@ -9,9 +9,9 @@ is_ancestor(dag, source, target)
 \arguments{
 \item{dag}{Named list as described in \code{\link[=validate_dag]{validate_dag()}}.}
 
-\item{source}{Character scalar — the potential ancestor.}
+\item{source}{Character scalar - the potential ancestor.}
 
-\item{target}{Character scalar — the potential descendant.}
+\item{target}{Character scalar - the potential descendant.}
 }
 \value{
 Logical scalar.

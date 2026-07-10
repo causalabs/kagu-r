@@ -31,11 +31,17 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Jordan \email{jordan@example.com}
+\strong{Maintainer}: Jordan Hart \email{jordan@causa.tech}
 
 Authors:
 \itemize{
-  \item Jordan \email{jordan@example.com}
+  \item Jordan Hart \email{jordan@causa.tech}
+  \item Dan Franks \email{dan@causa.tech}
+}
+
+Other contributors:
+\itemize{
+  \item Causa Ltd [copyright holder]
 }
 
 }

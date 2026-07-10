@@ -10,7 +10,7 @@ kagu_plot_posterior(terms, node)
 \item{terms}{A \code{tibble} of node terms (from a mechanism's \verb{$node_terms()}),
 with columns \code{term}, \code{mean}, \code{hdi_lower}, \code{hdi_upper}.}
 
-\item{node}{Character scalar — node name (used for the plot title).}
+\item{node}{Character scalar - node name (used for the plot title).}
 }
 \value{
 A \code{ggplot} object.

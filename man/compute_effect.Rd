@@ -20,19 +20,19 @@ compute_effect(
 \arguments{
 \item{model}{A fitted \code{KaguModel}.}
 
-\item{source, target}{Character scalars — intervention and outcome nodes.}
+\item{source, target}{Character scalars - intervention and outcome nodes.}
 
 \item{values}{Optional \code{c(from, to)} intervention contrast.}
 
-\item{std_units}{Logical — 1-SD effect.}
+\item{std_units}{Logical - 1-SD effect.}
 
 \item{conditions}{Optional named list of fixed node values.}
 
-\item{sweep}{Logical — compute dose-response curve.}
+\item{sweep}{Logical - compute dose-response curve.}
 
 \item{sweep_n, sweep_range}{Sweep grid parameters.}
 
-\item{hdi}{Numeric — HDI probability.}
+\item{hdi}{Numeric - HDI probability.}
 }
 \value{
 An \code{EffectResult}.

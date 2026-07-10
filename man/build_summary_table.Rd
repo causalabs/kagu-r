@@ -14,7 +14,7 @@ A \code{tibble} with columns \code{node}, \code{term}, \code{mean}, \code{sd}, \
 \code{hdi_upper}.
 }
 \description{
-For each node, the node's mechanism contributes summary rows — for a Gaussian
+For each node, the node's mechanism contributes summary rows - for a Gaussian
 process, the direct local effect of each parent (the fitted function's
 gradient at the parents' means, comparable to a regression coefficient) and
 the residual noise sd.

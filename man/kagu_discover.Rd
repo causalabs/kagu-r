@@ -36,9 +36,9 @@ each requiring the directed edge \code{from -> to} to be present in all candidat
 \item{mechanisms}{Optional named list of \link{Mechanism} instances, one per node.
 Any node not specified receives a \link{GPMechanism}.}
 
-\item{prior}{Character — prior over DAGs. Only \code{"uniform"} is supported.}
+\item{prior}{Character - prior over DAGs. Only \code{"uniform"} is supported.}
 
-\item{allow_empty}{Logical — whether to include the completely edgeless graph
+\item{allow_empty}{Logical - whether to include the completely edgeless graph
 in the search space (default \code{FALSE}). Usually, researchers are looking
 for at least some causal structure, so the empty graph is omitted.}
 
@@ -62,14 +62,14 @@ a DAG's marginal likelihood factorises over nodes,
 \eqn{\log P(X \mid G) = \sum_i \log P(X_i \mid \mathrm{Pa}_G(X_i))}, so a
 graph's score is a sum of independent per-node terms. Second, the same
 \verb{(node, parent-set)} local model recurs across many DAGs, so each unique
-local model is fitted only once and cached — collapsing the work from
+local model is fitted only once and cached - collapsing the work from
 \verb{#DAGs} fits to at most \code{p * 2^(p-1)}.
 }
 \section{Priors}{
 
 Only a uniform prior over DAGs is currently supported (\code{prior = "uniform"}),
 so the posterior is driven entirely by the marginal likelihoods. The \code{prior}
-argument is reserved for future options — e.g. sparsity-favouring priors,
+argument is reserved for future options - e.g. sparsity-favouring priors,
 edge/temporal constraints, or fully custom priors over structures.
 }
 
@@ -79,7 +79,7 @@ Each node's marginal likelihood is the closed-form type-II (empirical-Bayes)
 evidence of its Gaussian-process model, so discovery involves no bridge
 sampling and no Stan compilation. Note that Markov-equivalent DAGs are
 statistically indistinguishable from observational data and will therefore
-receive (near-)equal posterior mass — a faithful representation of structural
+receive (near-)equal posterior mass - a faithful representation of structural
 uncertainty, not a defect.
 }
 

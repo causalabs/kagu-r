@@ -9,7 +9,7 @@ kagu_plot_discovery(result, top_n = 20L, true_dag = NULL)
 \arguments{
 \item{result}{A \link{DiscoveryResult} (from \code{KaguModel$discover()}).}
 
-\item{top_n}{Integer — number of top-ranked DAGs to display (default 20).}
+\item{top_n}{Integer - number of top-ranked DAGs to display (default 20).}
 
 \item{true_dag}{Optional DAG specification to highlight (matched by its set
 of directed edges).}

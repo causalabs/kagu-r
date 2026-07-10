@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.R
 \name{KaguModel}
 \alias{KaguModel}
-\title{KaguModel — Bayesian graphical causal model}
+\title{KaguModel - Bayesian graphical causal model}
 \description{
 The main user-facing class. Specify a DAG, optionally assign mechanisms
 to nodes, fit to data, and extract causal effects.
@@ -29,7 +29,7 @@ effect$summary()
 \section{Public fields}{
   \if{html}{\out{<div class="r6-fields">}}
   \describe{
-    \item{\code{dag}}{Named list — the DAG specification.}
+    \item{\code{dag}}{Named list - the DAG specification.}
 
     \item{\code{mechanisms}}{Named list of \code{Mechanism} instances, one per node.}
 
@@ -37,7 +37,7 @@ effect$summary()
 
     \item{\code{traces}}{Named list of mechanism fit objects, one per node (after fit).}
 
-    \item{\code{.fitted}}{Logical — whether \verb{$fit()} has been called.}
+    \item{\code{.fitted}}{Logical - whether \verb{$fit()} has been called.}
   }
   \if{html}{\out{</div>}}
 }
@@ -124,20 +124,20 @@ node not specified receives a \code{GPMechanism} by default.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{source}}{Character scalar — the intervention (treatment) node.}
-      \item{\code{target}}{Character scalar — the outcome node.}
+      \item{\code{source}}{Character scalar - the intervention (treatment) node.}
+      \item{\code{target}}{Character scalar - the outcome node.}
       \item{\code{values}}{Optional numeric vector of length 2 \code{c(from, to)} giving
 the explicit intervention contrast.}
-      \item{\code{std_units}}{Logical — if \code{TRUE}, compute the effect of a 1-SD
+      \item{\code{std_units}}{Logical - if \code{TRUE}, compute the effect of a 1-SD
 increase centred at the mean.}
       \item{\code{conditions}}{Optional named list of node values to condition on
 (fixes those nodes at the given values during propagation). Can also be
 a list of such lists to compute and overlay multiple conditions.}
-      \item{\code{sweep}}{Logical — if \code{TRUE}, compute the dose-response curve.}
-      \item{\code{sweep_n}}{Integer — number of points in the sweep grid (default 50).}
+      \item{\code{sweep}}{Logical - if \code{TRUE}, compute the dose-response curve.}
+      \item{\code{sweep_n}}{Integer - number of points in the sweep grid (default 50).}
       \item{\code{sweep_range}}{Numeric vector \code{c(min, max)} for the sweep grid.
 Defaults to the observed range of \code{source}.}
-      \item{\code{hdi}}{Numeric in (0, 1) — HDI probability (default 0.90).}
+      \item{\code{hdi}}{Numeric in (0, 1) - HDI probability (default 0.90).}
     }
     \if{html}{\out{</div>}}
   }
@@ -153,7 +153,7 @@ Defaults to the observed range of \code{source}.}
   Per-node summary table.
 
 For each node, reports the direct local effect of each parent (the
-function's gradient at the parents' means — comparable to a regression
+function's gradient at the parents' means - comparable to a regression
 coefficient) and the residual noise sd, each with posterior mean, sd and
 HDI.
   \subsection{Usage}{
@@ -164,7 +164,7 @@ HDI.
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{hdi_prob}}{Numeric — HDI probability (default 0.90; currently fixed).}
+      \item{\code{hdi_prob}}{Numeric - HDI probability (default 0.90; currently fixed).}
     }
     \if{html}{\out{</div>}}
   }
@@ -239,7 +239,7 @@ means) and residual noise, as posterior means with HDI intervals.
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node to plot.}
+      \item{\code{node}}{Character scalar - the node to plot.}
     }
     \if{html}{\out{</div>}}
   }
@@ -262,7 +262,7 @@ means) and residual noise, as posterior means with HDI intervals.
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{path}}{File path (e.g. \code{"model.rds"}).}
-      \item{\code{include_data}}{Logical — whether to save the training data alongside
+      \item{\code{include_data}}{Logical - whether to save the training data alongside
 the model (default \code{TRUE}, so \verb{$effects()} works immediately on load).}
     }
     \if{html}{\out{</div>}}

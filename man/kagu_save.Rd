@@ -11,7 +11,7 @@ kagu_save(model, path, include_data = TRUE)
 
 \item{path}{File path to write to (e.g. \code{"model.rds"}).}
 
-\item{include_data}{Logical — whether to save the training data alongside
+\item{include_data}{Logical - whether to save the training data alongside
 the model. Defaults to \code{TRUE} so that \verb{$effects()} works immediately
 after loading without needing to reattach the data.}
 }

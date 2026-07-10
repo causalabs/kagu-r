@@ -27,5 +27,6 @@
 #' @importFrom bayestestR hdi
 #' @importFrom tibble as_tibble
 #' @importFrom stats sd
+#' @importFrom rlang .data
 ## usethis namespace: end
 NULL

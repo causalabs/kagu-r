@@ -7,15 +7,15 @@
 A mechanism owns the full lifecycle of a node's conditional model, decoupled
 from any particular inference backend. Subclasses implement:
 \itemize{
-\item \verb{$fit(node, parents, data, ...)} — fit the local model, returning an opaque
+\item \verb{$fit(node, parents, data, ...)} - fit the local model, returning an opaque
 fit object.
-\item \verb{$predict_mean(node, parents, parent_values, fit)} — the conditional mean
+\item \verb{$predict_mean(node, parents, parent_values, fit)} - the conditional mean
 \code{E[node | parents]} for each posterior draw, as a \verb{[n_chains, n_draws]}
 matrix (Gaussian processes use a single chain, so \code{n_chains = 1}).
-\item \verb{$log_marglik(node, parents, data)} — the log marginal likelihood
+\item \verb{$log_marglik(node, parents, data)} - the log marginal likelihood
 \verb{log P(node | parents)}, used by structure discovery.
-\item \verb{$posterior_shape(fit)} — \code{c(n_chains, n_draws)} for the fit.
-\item \verb{$node_terms(node, parents, data, fit)} — summary rows for \code{model$summary()}.
+\item \verb{$posterior_shape(fit)} - \code{c(n_chains, n_draws)} for the fit.
+\item \verb{$node_terms(node, parents, data, fit)} - summary rows for \code{model$summary()}.
 }
 }
 \section{Methods}{
@@ -42,7 +42,7 @@ matrix (Gaussian processes use a single chain, so \code{n_chains = 1}).
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name (response).}
+      \item{\code{node}}{Character scalar - the node name (response).}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{data}}{A \code{data.frame} with columns for the node and its parents.}
       \item{\code{...}}{Backend-specific arguments.}
@@ -67,7 +67,7 @@ matrix (Gaussian processes use a single chain, so \code{n_chains = 1}).
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name.}
+      \item{\code{node}}{Character scalar - the node name.}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{parent_values}}{Named list of \verb{[n_chains, n_draws]} matrices, one per
 parent, giving the parent values for each posterior draw.}
@@ -93,7 +93,7 @@ parent, giving the parent values for each posterior draw.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name.}
+      \item{\code{node}}{Character scalar - the node name.}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{data}}{A \code{data.frame}.}
     }
@@ -139,7 +139,7 @@ parent, giving the parent values for each posterior draw.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{node}}{Character scalar — the node name.}
+      \item{\code{node}}{Character scalar - the node name.}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{data}}{A \code{data.frame}.}
       \item{\code{fit}}{A fit object from \verb{$fit()}.}

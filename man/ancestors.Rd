@@ -9,7 +9,7 @@ ancestors(dag, node)
 \arguments{
 \item{dag}{Named list as described in \code{\link[=validate_dag]{validate_dag()}}.}
 
-\item{node}{Character scalar — the node to query.}
+\item{node}{Character scalar - the node to query.}
 }
 \value{
 Character vector of all nodes with a directed path to \code{node}

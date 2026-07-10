@@ -18,5 +18,5 @@ Validate a DAG specification
 }
 \examples{
 dag <- list(x = c(), y = c("x"), z = c("x", "y"))
-validate_dag(dag)  # silent — DAG is valid
+validate_dag(dag)  # silent - DAG is valid
 }

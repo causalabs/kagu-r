@@ -13,7 +13,7 @@ per-graph log marginal likelihoods and the cache of unique local fits.
   \describe{
     \item{\code{dags}}{List of candidate DAG specifications evaluated.}
 
-    \item{\code{labels}}{Character vector of short ids (one per DAG) — user-supplied
+    \item{\code{labels}}{Character vector of short ids (one per DAG) - user-supplied
 names if the \code{dags} list was named, otherwise spreadsheet-style ids
 (\code{"A"}, \code{"B"}, ..., \code{"AA"}). Used to reference DAGs in summaries and in
 \verb{$get_dag()} / \verb{$plot_dag()}.}
@@ -22,25 +22,25 @@ names if the \code{dags} list was named, otherwise spreadsheet-style ids
 
     \item{\code{data}}{The data used for the search (for refitting via \verb{$as_model()}).}
 
-    \item{\code{log_marglik}}{Numeric vector — log marginal likelihood per DAG.}
+    \item{\code{log_marglik}}{Numeric vector - log marginal likelihood per DAG.}
 
-    \item{\code{log_prior}}{Numeric vector — log prior per DAG.}
+    \item{\code{log_prior}}{Numeric vector - log prior per DAG.}
 
-    \item{\code{log_posterior}}{Numeric vector — normalised log posterior per DAG.}
+    \item{\code{log_posterior}}{Numeric vector - normalised log posterior per DAG.}
 
-    \item{\code{prob}}{Numeric vector — posterior probability per DAG (sums to 1).}
+    \item{\code{prob}}{Numeric vector - posterior probability per DAG (sums to 1).}
 
-    \item{\code{local_logml}}{Named numeric — cached log marginal likelihood of each
+    \item{\code{local_logml}}{Named numeric - cached log marginal likelihood of each
 unique local model, keyed by \code{"node|sorted,parents"}.}
 
-    \item{\code{local_fits}}{Named list — the fitted model for each unique local
+    \item{\code{local_fits}}{Named list - the fitted model for each unique local
 model (reused for effect propagation; same keys as \code{local_logml}).}
 
     \item{\code{mechanisms}}{Named list of \code{Mechanism} instances, one per node.}
 
-    \item{\code{n_models}}{Integer — number of candidate DAGs.}
+    \item{\code{n_models}}{Integer - number of candidate DAGs.}
 
-    \item{\code{n_unique_fits}}{Integer — number of unique local models fitted.}
+    \item{\code{n_unique_fits}}{Integer - number of unique local models fitted.}
   }
   \if{html}{\out{</div>}}
 }
@@ -101,7 +101,7 @@ model (reused for effect propagation; same keys as \code{local_logml}).}
   Ranked summary table of the most probable DAGs.
 
 Each DAG is referenced by its short \code{id} (see \verb{$labels}) rather than by a
-full edge listing — inspect a structure with \verb{$get_dag(id)} or
+full edge listing - inspect a structure with \verb{$get_dag(id)} or
 \verb{$plot_dag(id)}.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
@@ -111,7 +111,7 @@ full edge listing — inspect a structure with \verb{$get_dag(id)} or
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{top_n}}{Integer — number of top DAGs to return (default 10).}
+      \item{\code{top_n}}{Integer - number of top DAGs to return (default 10).}
     }
     \if{html}{\out{</div>}}
   }
@@ -150,7 +150,7 @@ full edge listing — inspect a structure with \verb{$get_dag(id)} or
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{id}}{Character scalar — a DAG id from \verb{$summary()} / \verb{$labels}.}
+      \item{\code{id}}{Character scalar - a DAG id from \verb{$summary()} / \verb{$labels}.}
     }
     \if{html}{\out{</div>}}
   }
@@ -172,7 +172,7 @@ full edge listing — inspect a structure with \verb{$get_dag(id)} or
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{id}}{Character scalar — a DAG id from \verb{$summary()} / \verb{$labels}.}
+      \item{\code{id}}{Character scalar - a DAG id from \verb{$summary()} / \verb{$labels}.}
       \item{\code{node_pos}}{Optional named list of \code{c(row, col)} node positions,
 passed to \code{\link[=kagu_plot_dag]{kagu_plot_dag()}}.}
     }
@@ -238,12 +238,12 @@ path to \code{target} contribute a zero effect, exactly as they should.
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{source, target}}{Character scalars — intervention and outcome nodes.}
+      \item{\code{source, target}}{Character scalars - intervention and outcome nodes.}
       \item{\code{values, std_units, conditions, sweep, sweep_n, sweep_range, hdi}}{Passed to
 \code{KaguModel$effects()} (identical meaning).}
-      \item{\code{prob_threshold}}{Numeric — DAGs with posterior probability below this
+      \item{\code{prob_threshold}}{Numeric - DAGs with posterior probability below this
 are skipped for efficiency (default 1e-3).}
-      \item{\code{n_samples}}{Integer — size of the pooled mixture posterior (default 4000).}
+      \item{\code{n_samples}}{Integer - size of the pooled mixture posterior (default 4000).}
     }
     \if{html}{\out{</div>}}
   }
@@ -320,7 +320,7 @@ specification to fit.}
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{top_n}}{Integer — number of top DAGs to show (default 20).}
+      \item{\code{top_n}}{Integer - number of top DAGs to show (default 20).}
       \item{\code{true_dag}}{Optional DAG specification to highlight (e.g. the known
 data-generating structure).}
     }

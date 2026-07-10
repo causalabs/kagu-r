@@ -7,7 +7,7 @@
 fit_node(node, parents, data, mechanism, ...)
 }
 \arguments{
-\item{node}{Character scalar — name of the node to fit.}
+\item{node}{Character scalar - name of the node to fit.}
 
 \item{parents}{Character vector of parent node names (empty for root nodes).}
 
