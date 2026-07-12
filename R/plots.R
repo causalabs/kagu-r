@@ -3,6 +3,76 @@
 #' @name plots
 NULL
 
+# Draw DAG edges after the panel viewport has been established. Nodes and
+# arrowheads have fixed physical sizes, so trimming in data coordinates cannot
+# keep a stable gap when the output device changes shape or size.
+.dag_edge_grob <- function(coords, start_gap = 4.8, end_gap = 5.8) {
+  grid::gTree(
+    x0 = coords$x,
+    y0 = coords$y,
+    x1 = coords$xend,
+    y1 = coords$yend,
+    start_gap = start_gap,
+    end_gap = end_gap,
+    cl = "kagu_dag_edges"
+  )
+}
+
+#' @importFrom grid makeContent
+#' @exportS3Method grid::makeContent
+makeContent.kagu_dag_edges <- function(x) {
+  x0 <- grid::convertX(grid::unit(x$x0, "native"), "mm", valueOnly = TRUE)
+  y0 <- grid::convertY(grid::unit(x$y0, "native"), "mm", valueOnly = TRUE)
+  x1 <- grid::convertX(grid::unit(x$x1, "native"), "mm", valueOnly = TRUE)
+  y1 <- grid::convertY(grid::unit(x$y1, "native"), "mm", valueOnly = TRUE)
+
+  dx <- x1 - x0
+  dy <- y1 - y0
+  edge_length <- sqrt(dx^2 + dy^2)
+  ux <- ifelse(edge_length > 0, dx / edge_length, 0)
+  uy <- ifelse(edge_length > 0, dy / edge_length, 0)
+
+  # Avoid reversing a segment if a caller makes the panel too small for the
+  # two fixed-size nodes. In normal plots these limits are not reached.
+  usable <- pmax(edge_length - 0.5, 0)
+  start_gap <- pmin(x$start_gap, usable / 2)
+  end_gap <- pmin(x$end_gap, usable - start_gap)
+
+  edge <- grid::segmentsGrob(
+    x0 = grid::unit(x0 + start_gap * ux, "mm"),
+    y0 = grid::unit(y0 + start_gap * uy, "mm"),
+    x1 = grid::unit(x1 - end_gap * ux, "mm"),
+    y1 = grid::unit(y1 - end_gap * uy, "mm"),
+    gp = grid::gpar(col = "black", fill = "black", lwd = 0.5 * 72.27 / 25.4),
+    arrow = grid::arrow(length = grid::unit(6, "pt"), type = "closed")
+  )
+
+  grid::setChildren(x, grid::gList(edge))
+}
+
+.GeomDagEdge <- ggplot2::ggproto(
+  "GeomDagEdge", ggplot2::Geom,
+  required_aes = c("x", "y", "xend", "yend"),
+  default_aes = ggplot2::aes(),
+  draw_key = ggplot2::draw_key_blank,
+  draw_panel = function(data, panel_params, coord) {
+    .dag_edge_grob(coord$transform(data, panel_params))
+  }
+)
+
+.geom_dag_edge <- function(data) {
+  ggplot2::layer(
+    data = data,
+    mapping = ggplot2::aes(
+      x = .data$x, y = .data$y, xend = .data$xend, yend = .data$yend
+    ),
+    stat = "identity",
+    geom = .GeomDagEdge,
+    position = "identity",
+    inherit.aes = FALSE
+  )
+}
+
 #' Plot the DAG structure
 #'
 #' Produces a `ggplot` showing nodes and directed edges. Layout is computed
@@ -62,50 +132,61 @@ kagu_plot_dag <- function(dag, node_pos = NULL) {
     )
   }))
 
-  # Shorten edges so they start/end at the node circle boundary rather than
-  # its centre (leaves a clean gap for the arrowhead, Pearl-diagram style).
+  # Labels normally sit below their nodes. If an arrow approaches from below,
+  # that would hide its head, so move only that label to the less busy side.
+  node_df$label_hjust <- 0.5
+  node_df$label_vjust <- 2.1
   if (!is.null(edges) && nrow(edges) > 0) {
-    SHRINK <- 0.13
-    dx     <- edges$xend - edges$x
-    dy     <- edges$yend - edges$y
-    len    <- sqrt(dx^2 + dy^2)
-    edges$x    <- edges$x    + SHRINK * dx / len
-    edges$y    <- edges$y    + SHRINK * dy / len
-    edges$xend <- edges$xend - SHRINK * dx / len
-    edges$yend <- edges$yend - SHRINK * dy / len
+    for (i in seq_len(nrow(node_df))) {
+      incoming <- edges[edges$to == node_df$name[[i]], , drop = FALSE]
+      approaches_from_below <- incoming$y < node_df$y[[i]]
+      if (any(approaches_from_below)) {
+        incident <- edges[edges$from == node_df$name[[i]] |
+                            edges$to == node_df$name[[i]], , drop = FALSE]
+        other_x <- ifelse(
+          incident$from == node_df$name[[i]], incident$xend, incident$x
+        )
+        prefer_right <- sum(other_x > node_df$x[[i]]) <=
+          sum(other_x < node_df$x[[i]])
+        node_df$label_hjust[[i]] <- if (prefer_right) -0.32 else 1.32
+        node_df$label_vjust[[i]] <- 0.5
+      }
+    }
   }
 
   # --- Plot (black & white, literature / Pearl style) ------------------------
   p <- ggplot2::ggplot(node_df, ggplot2::aes(x = .data$x, y = .data$y))
 
   if (!is.null(edges) && nrow(edges) > 0) {
-    p <- p + ggplot2::geom_segment(
-      data = edges,
-      ggplot2::aes(x = .data$x, y = .data$y,
-                   xend = .data$xend, yend = .data$yend),
-      arrow     = grid::arrow(length = grid::unit(6, "pt"), type = "closed"),
-      colour    = "black",
-      linewidth = 0.5
-    )
+    p <- p + .geom_dag_edge(edges)
   }
 
   p +
     # open node: white fill masks any crossing edge, thick black outline
     ggplot2::geom_point(shape = 21, size = 9, stroke = 1.2,
                         fill = "white", colour = "black") +
-    # variable name set just below the node, on a translucent rounded white
-    # label so it stays legible where an edge passes behind it
-    ggplot2::geom_label(ggplot2::aes(label = .data$name),
-                        nudge_y       = -0.17,
+    # variable name set just below the node, on a rounded white
+    # label so it stays legible where an edge passes behind it. vjust makes the
+    # offset relative to the physical label size rather than the data range.
+    ggplot2::geom_label(ggplot2::aes(
+                          label = .data$name,
+                          hjust = .data$label_hjust,
+                          vjust = .data$label_vjust
+                        ),
                         size          = 3.6,
                         colour        = "black",
-                        fill          = "#FFFFFFB3",
-                        label.size    = 0,
+                        fill          = "white",
+                        linewidth     = 0,
                         label.r       = grid::unit(0.12, "lines"),
                         label.padding = grid::unit(0.12, "lines")) +
     # generous expansion + clip = "off" so nodes/labels are never cut off
-    ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.18)) +
-    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = 0.22)) +
+    ggplot2::scale_x_continuous(expand = ggplot2::expansion(mult = 0.14)) +
+    ggplot2::scale_y_continuous(
+      expand = ggplot2::expansion(mult = c(0.12, 0.18))
+    ) +
+    # Equal coordinates preserve the intended graph geometry. Edge trimming is
+    # resolved later in physical units, after this coordinate system and the
+    # output device have established the panel size.
     ggplot2::coord_equal(clip = "off") +
     ggplot2::theme_void() +
     ggplot2::theme(plot.margin = ggplot2::margin(14, 14, 14, 14))
