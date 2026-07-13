@@ -26,7 +26,7 @@
 #' @importFrom posterior summarise_draws
 #' @importFrom bayestestR hdi
 #' @importFrom tibble as_tibble
-#' @importFrom stats sd
+#' @importFrom stats sd setNames
 #' @importFrom rlang .data
 ## usethis namespace: end
 NULL

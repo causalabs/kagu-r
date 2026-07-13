@@ -175,7 +175,7 @@ EffectResult <- R6::R6Class("EffectResult",
     #' @param ... Ignored.
     print = function(...) {
       kind <- if (self$is_sweep()) "sweep" else "scalar"
-      cat(sprintf("<EffectResult [%s]: %s → %s>\n",
+      cat(sprintf("<EffectResult [%s]: %s \u2192 %s>\n",
                   kind, self$source, self$target))
       print(self$summary())
       invisible(self)

@@ -134,7 +134,7 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
         return(tibble::tibble(from = character(0), to = character(0),
                               prob = numeric(0)))
       }
-      parts <- strsplit(names(acc), "→", fixed = TRUE)
+      parts <- strsplit(names(acc), "\u2192", fixed = TRUE)
       out <- tibble::tibble(
         from = vapply(parts, `[[`, character(1), 1L),
         to   = vapply(parts, `[[`, character(1), 2L),
@@ -366,7 +366,7 @@ kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
 
   # ---- Fit each unique local model once; keep both fit and logML -----------
   cli::cli_alert_info(
-    "Scoring {n_models} DAG{?s} via {n_unique} unique local fit{?s} …"
+    "Scoring {n_models} DAG{?s} via {n_unique} unique local fit{?s} \u2026"
   )
   local_logml <- stats::setNames(numeric(n_unique), keys)
   local_fits  <- stats::setNames(vector("list", n_unique), keys)
@@ -455,7 +455,7 @@ kagu_discover <- function(data, nodes = NULL, dags = NULL, disallowed = NULL,
   e <- character(0)
   for (child in names(dag)) {
     for (parent in dag[[child]]) {
-      e <- c(e, paste0(parent, "→", child))
+      e <- c(e, paste0(parent, "\u2192", child))
     }
   }
   sort(e)

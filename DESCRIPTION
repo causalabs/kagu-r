@@ -1,6 +1,6 @@
 Package: kagu
 Title: Bayesian Graphical Causal Models
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: c(
     person("Jordan", "Hart", role = c("aut", "cre"), email = "jordan@causa.tech"),
     person("Dan", "Franks", role = "aut", email = "dan@causa.tech"),

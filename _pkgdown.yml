@@ -2,6 +2,7 @@ url: https://causalabs.github.io/kagu-r/
 
 template:
   bootstrap: 5
+  math-rendering: mathjax
   bslib:
     primary:         "#26a69a"
     navbar-bg:       "#212529"
@@ -35,6 +36,13 @@ navbar:
 home:
   title: Kagu
   description: Bayesian graphical causal models in R
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with
+  components:
+    developed_by: Developed by Causa Ltd.
 
 reference:
   - title: "Model"

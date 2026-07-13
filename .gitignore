@@ -26,3 +26,6 @@ outputs/
 
 # Claude Code local tooling
 .claude/
+
+# stray default-device plot
+Rplots.pdf
