@@ -52,6 +52,11 @@ html { overflow-x: clip; }
   z-index: 1;
   max-width: 740px;
   margin: 0 auto;
+  /* Bootstrap sets `hyphens: auto` on `.row>main`, which the hero inherits and
+     which hyphenates long words mid-line on narrow screens. Turn it off; long
+     words instead wrap whole (via Bootstrap's overflow-wrap: break-word). */
+  -webkit-hyphens: manual;
+  hyphens: manual;
 }
 
 .kagu-hero__title {
@@ -63,6 +68,7 @@ html { overflow-x: clip; }
   letter-spacing: -0.025em;
   color: #f5f3ee;
   margin: 0 0 1.5rem;
+  text-wrap: balance;
 }
 
 .kagu-hero__tagline {
@@ -71,12 +77,15 @@ html { overflow-x: clip; }
   color: #aebfba;
   max-width: 580px;
   margin: 0 auto 2.75rem;
+  text-wrap: pretty;
 }
 
 .kagu-hero__install {
   display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
+  /* keep the command and the copy button on one row; the command shrinks and
+     scrolls within the pill rather than overflowing / bumping the button down */
+  flex-wrap: nowrap;
   justify-content: center;
   gap: .5rem .8rem;
   max-width: 100%;
@@ -101,6 +110,11 @@ html { overflow-x: clip; }
   color: inherit;
   font-size: inherit;
   white-space: nowrap;
+  /* allow the code to shrink below its intrinsic width and scroll horizontally
+     inside the pill on narrow screens (the copy button stays put) */
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .kagu-hero__copy {
   appearance: none;
