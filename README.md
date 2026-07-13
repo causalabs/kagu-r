@@ -8,7 +8,7 @@ dose-response curves) are answered by propagating interventions through that
 fitted graph, so different questions are queries against the same fitted
 model.
 
-Full documentation: <https://causalabs.github.io/kagu-r/>
+Full documentation: <https://www.kagu-r.org>
 
 ---
 

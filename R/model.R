@@ -76,12 +76,12 @@ KaguModel <- R6::R6Class("KaguModel",
       order     <- topological_sort(self$dag)
       n_nodes   <- length(order)
 
-      cli::cli_alert_info("Fitting {n_nodes} node{?s} in topological order …")
+      cli::cli_alert_info("Fitting {n_nodes} node{?s} in topological order \u2026")
       for (i in seq_along(order)) {
         node <- order[[i]]
         # Persistent per-node line (visible across consoles, RStudio, scripts);
         # printed *before* the fit so the user sees which node is running.
-        cli::cli_alert("[{i}/{n_nodes}] fitting node {.field {node}} …")
+        cli::cli_alert("[{i}/{n_nodes}] fitting node {.field {node}} \u2026")
 
         self$traces[[node]] <- fit_node(
           node      = node,

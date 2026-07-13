@@ -64,7 +64,7 @@ df <- data.frame(age, sex, sociality, food_sharing, condition)
 
 We can visualise the true proposed causal graph:
 
-```{r plot-true-dag, fig.height=3}
+```{r plot-true-dag, fig.width=5, fig.height=4.2}
 dag_true <- list(
   age          = c(),
   sex          = c(),
@@ -93,7 +93,7 @@ Suppose a reviewer suggests two alternative models:
 1. `Alt1`: Sociality has no measured cause - the apparent `age → sociality` link is just noise.
 2. `Alt2`: Body condition causes sociality (healthier individuals have more energy to socialize).
 
-```{r plot-alt-dags, fig.height=3, fig.width=8}
+```{r plot-alt-dags, fig.width=8, fig.height=4}
 dag_alt1 <- list(
   age          = c(),
   sex          = c(),
@@ -132,32 +132,40 @@ Kagu places most of the posterior (~83%) on `dag_true`, but crucially it does **
 
 Two things are worth noting. First, the parents of `condition` are pinned down with near-certainty across every competitive structure - the strong `sex * sociality` interaction gives the GP a non-linear signature that no reversal of those edges can mimic. Second, the posterior-over-DAGs framing carries the residual structural uncertainty forward rather than discarding it, so we can go on to estimate effects while remaining appropriately humble about which structure generated the data.
 
-## The Table II Fallacy
+## The Table II fallacy
 
-Now that we are confident in our DAG, we want to answer our primary research question: **Does sociality improve body condition?**
-
-A classic (but flawed) approach in ecology is to fit a single multiple regression model including all measured variables, and read the coefficients from the resulting table (the so-called "Table II").
-
-```{r table-ii}
-summary(lm(condition ~ sociality + food_sharing + age + sex, data = df))$coefficients
-```
-
-Looking at this table, a researcher would incorrectly conclude:
-1. **Sociality is bad for condition**: its coefficient is negative and statistically significant ($p \approx 0.03$).
-2. The only beneficial pathway is food sharing.
-
-Both conclusions are wrong. This is the **Table II Fallacy**. By including `food_sharing` (a mediator) in the model, the coefficient for `sociality` is stripped of its positive *indirect* effect. What remains is the direct effect - strongly positive for females, strongly negative for males - and, with no `sex * sociality` interaction term in the model, the linear fit collapses those opposing slopes into a single misleading number. Here it lands significantly *negative*, exactly inverting sociality's true (large, positive) effect for half the population.
-
-## Estimating the true effects with Kagu
-
-Let's fit our validated DAG using Kagu.
+Now that we are reasonably confident in the structure, we fit it with Kagu so we can interrogate the graph directly:
 
 ```{r fit}
 mod <- KaguModel$new(dag_true)
 mod$fit(df)
 ```
 
-If we ask Kagu for the total marginal effect of `sociality` on `condition`, it automatically handles the confounding by `age` and *integrates out* the downstream mediator `food_sharing` correctly via Do-calculus.
+Our primary question is the total effect of `sociality` on `condition`. Done carefully with a regression, we adjust for the confounder `age` and, correctly, leave the mediator `food_sharing` out of the model:
+
+```{r table-ii}
+summary(lm(condition ~ sociality + age + sex, data = df))$coefficients
+```
+
+This model is correctly specified for the question it was built to answer. The temptation is then to read *every* row of the table as "the effect of that variable on condition." That is the **Table II fallacy** ([Westreich & Greenland, 2013](https://doi.org/10.1093/aje/kws412)): the coefficients in a single table are not the same kind of quantity.
+
+- **`sociality`** is the estimand the study was designed for -- its population-average total effect on condition -- because we adjusted correctly for it.
+- **`age`** is *not* age's total effect. It is age's effect *holding sociality fixed*: the **direct** effect, which throws away age's influence that runs *through* sociality (older animals are more social, and sociality feeds condition). Age's total effect is larger.
+- **`sex`** modifies the effect of sociality (the `sex * sociality` interaction), so no single "main effect" number for sex can be read as "the effect of sex."
+
+Kagu makes the distinction concrete. Asked for age's *total* effect, it propagates through the whole graph, including the `age → sociality → condition` path:
+
+```{r age-total}
+mod$effects("age", "condition", hdi = 0.95)$summary()
+```
+
+The total effect (mean $\approx 1.0$) is larger than the regression's age coefficient ($\approx 0.6$): the difference is precisely the indirect path through sociality that the coefficient leaves out. Same data, same graph, but a different question and a different answer. With only 50 individuals both estimates are uncertain, yet the *distinction* between them is structural, not statistical.
+
+It can be worse still. An adjustment variable with its own unmeasured confounder gives a coefficient that is not merely the wrong estimand but outright confounded; Westreich & Greenland give the full taxonomy. The remedy is the same in every case: decide which estimand you want for each variable and let the graph deliver it, rather than reading a regression table as a list of interchangeable "effects" -- which is exactly what Kagu does next.
+
+## Estimating the true effects with Kagu
+
+The model is already fitted, so we can query any estimand we like from the same graph. Take the one the regression targeted -- the total effect of `sociality` on `condition` -- where Kagu adjusts for the confounder `age` and *integrates out* the mediator `food_sharing` via the do-operator, carrying the full posterior:
 
 ```{r total-effect}
 # The average total effect of a 1-unit increase in sociality

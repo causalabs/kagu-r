@@ -1,0 +1,20 @@
+citHeader("To cite the kagu package in publications, please use:")
+
+ver <- if (exists("meta") && !is.null(meta$Version)) meta$Version else
+  utils::packageDescription("kagu")$Version
+
+bibentry(
+  bibtype     = "Manual",
+  key         = "kagu",
+  title       = "{kagu}: Bayesian Graphical Causal Models",
+  author      = c(person("Jordan", "Hart"),
+                  person("Dan", "Franks")),
+  year        = "2026",
+  note        = sprintf("R package version %s", ver),
+  url         = "https://causalabs.github.io/kagu-r/",
+  textVersion = sprintf(
+    paste0("Hart J, Franks D (2026). kagu: Bayesian Graphical Causal Models. ",
+           "R package version %s. https://causalabs.github.io/kagu-r/"),
+    ver
+  )
+)

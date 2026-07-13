@@ -6,11 +6,44 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Weekly r-devel run for CRAN early-warning, plus manual trigger.
+  schedule:
+    - cron: '13 4 * * 1'   # Mondays 04:13 UTC
+  workflow_dispatch:
 
 permissions: read-all
 
+# Cancel superseded runs on the same branch/PR instead of letting them pile up.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  R-CMD-check:
+  # Fast Linux check inside a prebuilt r-hub container: R, system dependencies,
+  # TeX, qpdf and checkbashisms are baked in, so there is no `setup-r` step and
+  # no runtime apt install of the CRAN-check toolchain (the old bottleneck).
+  linux:
+    runs-on: ubuntu-latest
+    container: ghcr.io/r-hub/containers/ubuntu-release:latest
+    name: ubuntu-release (container)
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual")'
+
+  # Cross-platform release coverage on native runners (fast already, ~6-7 min).
+  other:
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
@@ -20,8 +53,6 @@ jobs:
         config:
           - {os: macos-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,  r: 'release'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -35,7 +66,6 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
-          http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-r-dependencies@v2
@@ -46,4 +76,37 @@ jobs:
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
-          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+          build_args: 'c("--no-manual")'
+
+  # r-devel on Linux, only weekly / on demand (kept off the per-push hot path).
+  # Uses the proven native r-lib setup rather than a container so the CRAN
+  # early-warning config stays exactly as it was.
+  linux-devel:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    name: ubuntu-latest (devel)
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'devel'
+          http-user-agent: 'release'
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual")'
