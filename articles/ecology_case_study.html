@@ -6,7 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Case study: Sociality and fitness in ecology • kagu</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/IBM_Plex_Sans-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/IBM_Plex_Mono-0.4.10/font.css" rel="stylesheet">
@@ -23,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">kagu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,43 +108,35 @@ ratio; a proxy for fitness).</li>
 species:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Age
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
+<strong>Age <span class="math inline">\(\to\)</span>
 Sociality</strong>: Older individuals have had more time to establish
 social bonds.</li>
 <li>
-<strong>Age
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
+<strong>Age <span class="math inline">\(\to\)</span>
 Condition</strong>: Older individuals are more experienced foragers,
 directly improving their condition independent of sociality. This makes
 <code>age</code> a <strong>confounder</strong> of the
 sociality-condition relationship.</li>
 <li>
-<strong>Sociality
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-Food sharing</strong>: More central individuals share food more
-often.</li>
+<strong>Sociality <span class="math inline">\(\to\)</span> Food
+sharing</strong>: More central individuals share food more often.</li>
 <li>
-<strong>Food sharing
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
+<strong>Food sharing <span class="math inline">\(\to\)</span>
 Condition</strong>: Receiving shared food directly improves caloric
 intake and body condition. This makes <code>food_sharing</code> a
 <strong>mediator</strong> on the path from sociality to condition.</li>
 <li>
-<strong>Sex
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
+<strong>Sex <span class="math inline">\(\to\)</span>
 Condition</strong>: Males and females differ in baseline condition due
 to sexual dimorphism.</li>
 <li>
-<strong>Sociality
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\to</annotation></semantics></math>
-Condition (Direct, interacting with Sex)</strong>: Sociality also
-directly affects condition through stress buffering (e.g., lower
-cortisol). However, this effect is highly
-<strong>sex-dependent</strong>. For females, sociality means
-allomaternal support and reduced stress (positive effect). For males,
-sociality means proximity to competitors and higher agonistic stress
-(negative effect).</li>
+<strong>Sociality <span class="math inline">\(\to\)</span> Condition
+(Direct, interacting with Sex)</strong>: Sociality also directly affects
+condition through stress buffering (e.g., lower cortisol). However, this
+effect is highly <strong>sex-dependent</strong>. For females, sociality
+means allomaternal support and reduced stress (positive effect). For
+males, sociality means proximity to competitors and higher agonistic
+stress (negative effect).</li>
 </ol>
 <p>Let’s simulate 50 individuals from this exact process:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -175,7 +173,7 @@ sociality means proximity to competitors and higher agonistic stress
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/kagu_plot_dag.html">kagu_plot_dag</a></span><span class="op">(</span><span class="va">dag_true</span>, <span class="va">node_pos</span><span class="op">)</span> <span class="op">+</span> <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"True DAG"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="ecology_case_study_files/figure-html/plot-true-dag-1.png" class="r-plt" alt="" width="672"></p>
+<p><img src="ecology_case_study_files/figure-html/plot-true-dag-1.png" class="r-plt" alt="" width="480"></p>
 </div>
 </div>
 <div class="section level2">
@@ -249,50 +247,79 @@ so we can go on to estimate effects while remaining appropriately humble
 about which structure generated the data.</p>
 </div>
 <div class="section level2">
-<h2 id="the-table-ii-fallacy">The Table II Fallacy<a class="anchor" aria-label="anchor" href="#the-table-ii-fallacy"></a>
+<h2 id="the-table-ii-fallacy">The Table II fallacy<a class="anchor" aria-label="anchor" href="#the-table-ii-fallacy"></a>
 </h2>
-<p>Now that we are confident in our DAG, we want to answer our primary
-research question: <strong>Does sociality improve body
-condition?</strong></p>
-<p>A classic (but flawed) approach in ecology is to fit a single
-multiple regression model including all measured variables, and read the
-coefficients from the resulting table (the so-called “Table II”).</p>
+<p>Now that we are reasonably confident in the structure, we fit it with
+Kagu so we can interrogate the graph directly:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/summary.html">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">condition</span> <span class="op">~</span> <span class="va">sociality</span> <span class="op">+</span> <span class="va">food_sharing</span> <span class="op">+</span> <span class="va">age</span> <span class="op">+</span> <span class="va">sex</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
-<span><span class="co">#&gt;                 Estimate Std. Error   t value     Pr(&gt;|t|)</span></span>
-<span><span class="co">#&gt; (Intercept)   0.08223808  0.2111311  0.389512 6.987348e-01</span></span>
-<span><span class="co">#&gt; sociality    -0.39387054  0.1786109 -2.205188 3.259281e-02</span></span>
-<span><span class="co">#&gt; food_sharing  0.82683458  0.1659337  4.982921 9.737184e-06</span></span>
-<span><span class="co">#&gt; age           0.32573026  0.2352380  1.384684 1.729768e-01</span></span>
-<span><span class="co">#&gt; sex           0.35112375  0.2108787  1.665051 1.028510e-01</span></span></code></pre></div>
-<p>Looking at this table, a researcher would incorrectly conclude: 1.
-<strong>Sociality is bad for condition</strong>: its coefficient is
-negative and statistically significant
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>≈</mo><mn>0.03</mn></mrow><annotation encoding="application/x-tex">p \approx 0.03</annotation></semantics></math>).
-2. The only beneficial pathway is food sharing.</p>
-<p>Both conclusions are wrong. This is the <strong>Table II
-Fallacy</strong>. By including <code>food_sharing</code> (a mediator) in
-the model, the coefficient for <code>sociality</code> is stripped of its
-positive <em>indirect</em> effect. What remains is the direct effect -
-strongly positive for females, strongly negative for males - and, with
-no <code>sex * sociality</code> interaction term in the model, the
-linear fit collapses those opposing slopes into a single misleading
-number. Here it lands significantly <em>negative</em>, exactly inverting
-sociality’s true (large, positive) effect for half the population.</p>
+<code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/KaguModel.html">KaguModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">dag_true</span><span class="op">)</span></span>
+<span><span class="va">mod</span><span class="op">$</span><span class="fu">fit</span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
+<p>Our primary question is the total effect of <code>sociality</code> on
+<code>condition</code>. Done carefully with a regression, we adjust for
+the confounder <code>age</code> and, correctly, leave the mediator
+<code>food_sharing</code> out of the model:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/summary.html">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">condition</span> <span class="op">~</span> <span class="va">sociality</span> <span class="op">+</span> <span class="va">age</span> <span class="op">+</span> <span class="va">sex</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
+<span><span class="co">#&gt;                Estimate Std. Error     t value   Pr(&gt;|t|)</span></span>
+<span><span class="co">#&gt; (Intercept) -0.01925162  0.2589181 -0.07435407 0.94105106</span></span>
+<span><span class="co">#&gt; sociality    0.10875672  0.1816107  0.59884544 0.55221379</span></span>
+<span><span class="co">#&gt; age          0.61497785  0.2808704  2.18954307 0.03366777</span></span>
+<span><span class="co">#&gt; sex          0.39141862  0.2596293  1.50760547 0.13849324</span></span></code></pre></div>
+<p>This model is correctly specified for the question it was built to
+answer. The temptation is then to read <em>every</em> row of the table
+as “the effect of that variable on condition.” That is the <strong>Table
+II fallacy</strong> (<a href="https://doi.org/10.1093/aje/kws412" class="external-link">Westreich &amp; Greenland,
+2013</a>): the coefficients in a single table are not the same kind of
+quantity.</p>
+<ul>
+<li>
+<strong><code>sociality</code></strong> is the estimand the study
+was designed for – its population-average total effect on condition –
+because we adjusted correctly for it.</li>
+<li>
+<strong><code>age</code></strong> is <em>not</em> age’s total
+effect. It is age’s effect <em>holding sociality fixed</em>: the
+<strong>direct</strong> effect, which throws away age’s influence that
+runs <em>through</em> sociality (older animals are more social, and
+sociality feeds condition). Age’s total effect is larger.</li>
+<li>
+<strong><code>sex</code></strong> modifies the effect of sociality
+(the <code>sex * sociality</code> interaction), so no single “main
+effect” number for sex can be read as “the effect of sex.”</li>
+</ul>
+<p>Kagu makes the distinction concrete. Asked for age’s <em>total</em>
+effect, it propagates through the whole graph, including the
+<code>age → sociality → condition</code> path:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mod</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"condition"</span>, hdi <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
+<span><span class="co">#&gt;   source target       from    to  mean    sd hdi_lower hdi_upper</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> age    condition -<span style="color: #BB0000;">0.058</span><span style="color: #BB0000; text-decoration: underline;">1</span> 0.942 0.987 0.318     0.435      1.63</span></span></code></pre></div>
+<p>The total effect (mean <span class="math inline">\(\approx
+1.0\)</span>) is larger than the regression’s age coefficient (<span class="math inline">\(\approx 0.6\)</span>): the difference is precisely
+the indirect path through sociality that the coefficient leaves out.
+Same data, same graph, but a different question and a different answer.
+With only 50 individuals both estimates are uncertain, yet the
+<em>distinction</em> between them is structural, not statistical.</p>
+<p>It can be worse still. An adjustment variable with its own unmeasured
+confounder gives a coefficient that is not merely the wrong estimand but
+outright confounded; Westreich &amp; Greenland give the full taxonomy.
+The remedy is the same in every case: decide which estimand you want for
+each variable and let the graph deliver it, rather than reading a
+regression table as a list of interchangeable “effects” – which is
+exactly what Kagu does next.</p>
 </div>
 <div class="section level2">
 <h2 id="estimating-the-true-effects-with-kagu">Estimating the true effects with Kagu<a class="anchor" aria-label="anchor" href="#estimating-the-true-effects-with-kagu"></a>
 </h2>
-<p>Let’s fit our validated DAG using Kagu.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">mod</span> <span class="op">&lt;-</span> <span class="va"><a href="../reference/KaguModel.html">KaguModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">dag_true</span><span class="op">)</span></span>
-<span><span class="va">mod</span><span class="op">$</span><span class="fu">fit</span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span></code></pre></div>
-<p>If we ask Kagu for the total marginal effect of
-<code>sociality</code> on <code>condition</code>, it automatically
-handles the confounding by <code>age</code> and <em>integrates out</em>
-the downstream mediator <code>food_sharing</code> correctly via
-Do-calculus.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>The model is already fitted, so we can query any estimand we like
+from the same graph. Take the one the regression targeted – the total
+effect of <code>sociality</code> on <code>condition</code> – where Kagu
+adjusts for the confounder <code>age</code> and <em>integrates out</em>
+the mediator <code>food_sharing</code> via the do-operator, carrying the
+full posterior:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The average total effect of a 1-unit increase in sociality</span></span>
 <span><span class="va">mod</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"sociality"</span>, <span class="st">"condition"</span>, hdi <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
@@ -316,7 +343,7 @@ conceals.</p>
 <p>We can also easily query multiple different effects from the same
 fitted model. For instance, what is the direct effect of our mediator,
 food sharing?</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"food_sharing"</span>, <span class="st">"condition"</span>, hdi <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
 <span><span class="co">#&gt;   source       target      from    to  mean     sd hdi_lower hdi_upper</span></span>
@@ -325,11 +352,9 @@ food sharing?</p>
 <span><span class="va">mod</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"food_sharing"</span>, <span class="st">"condition"</span>, sweep <span class="op">=</span> <span class="cn">TRUE</span>, hdi <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span><span class="op">$</span><span class="fu">plot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"Direct effect of Food Sharing on Condition"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ecology_case_study_files/figure-html/mediator-effect-1.png" class="r-plt" alt="" width="672"></p>
-<p>The model recovers the direct effect of food sharing
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mn>0.85</mn></mrow><annotation encoding="application/x-tex">\approx 0.85</annotation></semantics></math>
-here - close to the true value of 0.8, correctly identified as the
-strongest single pathway, and the one coefficient the flawed linear
-table got roughly right!).</p>
+<p>The model recovers the direct effect of food sharing (<span class="math inline">\(\approx 0.85\)</span> here - close to the true
+value of 0.8, correctly identified as the strongest single pathway, and
+the one coefficient the flawed linear table got roughly right!).</p>
 </div>
 <div class="section level3">
 <h3 id="unmasking-the-interaction">Unmasking the interaction<a class="anchor" aria-label="anchor" href="#unmasking-the-interaction"></a>
@@ -338,7 +363,7 @@ table got roughly right!).</p>
 learned the <code>sex * sociality</code> interaction automatically. We
 can visualise the true, divergent effects of sociality by using a
 <code>sweep</code> and passing a list of <code>conditions</code>.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">eff_multi</span> <span class="op">&lt;-</span> <span class="va">mod</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span></span>
 <span>  source <span class="op">=</span> <span class="st">"sociality"</span>,</span>
 <span>  target <span class="op">=</span> <span class="st">"condition"</span>,</span>
@@ -374,7 +399,7 @@ males, the costs of agonistic competition overwhelm the food-sharing
 benefits, resulting in a negative slope.</p>
 <p>We can read off the same story quantitatively by querying the
 conditional (per-sex) total effect directly:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mod</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"sociality"</span>, <span class="st">"condition"</span>, conditions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>sex <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span>, hdi <span class="op">=</span> <span class="fl">0.95</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span>  <span class="co"># Females</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 8</span></span></span>
 <span><span class="co">#&gt;   source    target       from    to  mean    sd hdi_lower hdi_upper</span></span>
@@ -385,12 +410,10 @@ conditional (per-sex) total effect directly:</p>
 <span><span class="co">#&gt;   source    target       from    to   mean    sd hdi_lower hdi_upper</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> sociality condition -<span style="color: #BB0000;">0.091</span><span style="color: #BB0000; text-decoration: underline;">0</span> 0.909 -<span style="color: #BB0000;">0.572</span> 0.121    -<span style="color: #BB0000;">0.789</span>    -<span style="color: #BB0000;">0.329</span></span></span></code></pre></div>
-<p>For females the effect is strongly positive
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mn>1.4</mn></mrow><annotation encoding="application/x-tex">\approx 1.4</annotation></semantics></math>),
-for males strongly negative
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mi>−</mi><mn>0.6</mn></mrow><annotation encoding="application/x-tex">\approx -0.6</annotation></semantics></math>)
-- two large, opposing effects that the population-averaged estimate
-above (and the linear regression table) washed out to near zero.</p>
+<p>For females the effect is strongly positive (<span class="math inline">\(\approx 1.4\)</span>), for males strongly negative
+(<span class="math inline">\(\approx -0.6\)</span>) - two large,
+opposing effects that the population-averaged estimate above (and the
+linear regression table) washed out to near zero.</p>
 </div>
 </div>
 <div class="section level2">
@@ -400,7 +423,7 @@ above (and the linear regression table) washed out to near zero.</p>
 realizes their basic linear model was inadequate and attempts to rely
 purely on data-driven model selection (like step-wise AIC) to find the
 “best” model for <code>condition</code>.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Try all possible main effects and 2-way interactions</span></span>
 <span><span class="va">full_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">condition</span> <span class="op">~</span> <span class="op">(</span><span class="va">age</span> <span class="op">+</span> <span class="va">sex</span> <span class="op">+</span> <span class="va">sociality</span> <span class="op">+</span> <span class="va">food_sharing</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span>, data <span class="op">=</span> <span class="va">df</span><span class="op">)</span></span>
 <span></span>
@@ -423,16 +446,14 @@ deeply misleading for causal inference:</p>
 <ol style="list-style-type: decimal">
 <li>Because <code>food_sharing</code> (the mediator) was retained as a
 predictor by the AIC algorithm, the base <code>sociality</code>
-coefficient
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mi>−</mi><mn>0.06</mn></mrow><annotation encoding="application/x-tex">\approx -0.06</annotation></semantics></math>)
-is entirely stripped of its indirect pathway.</li>
+coefficient (<span class="math inline">\(\approx -0.06\)</span>) is
+entirely stripped of its indirect pathway.</li>
 <li>If the researcher takes the <code>food_sharing</code> coefficient
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mn>0.82</mn></mrow><annotation encoding="application/x-tex">\approx 0.82</annotation></semantics></math>)
-and treats it as the causal effect of food sharing, they are committing
-the <strong>Table II Fallacy</strong>. The variables chosen by AIC to
-optimally predict <code>condition</code> are fundamentally not the
-correct adjustment set for estimating the causal effect of
-<code>food_sharing</code>.</li>
+(<span class="math inline">\(\approx 0.82\)</span>) and treats it as the
+causal effect of food sharing, they are committing the <strong>Table II
+Fallacy</strong>. The variables chosen by AIC to optimally predict
+<code>condition</code> are fundamentally not the correct adjustment set
+for estimating the causal effect of <code>food_sharing</code>.</li>
 </ol>
 <p>Kagu avoids all of this by explicitly separating the <em>causal
 structure</em> (the DAG) from the <em>functional form</em> (the GPs). It
@@ -447,7 +468,7 @@ conditional effects without falling into the Table II trap!</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Jordan Hart, Dan Franks.</p>
+  <p>Developed by Causa Ltd.</p>
 </div>
 
 <div class="pkgdown-footer-right">

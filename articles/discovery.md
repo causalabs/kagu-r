@@ -6,13 +6,11 @@ want to learn. Kagu can treat structure discovery as Bayesian inference
 over graphs: fit a GCM to every candidate DAG, and turn the marginal
 likelihoods into a posterior distribution over structures,
 
-``` math
-P(G \mid X) \;\propto\; P(X \mid G)\, P(G).
-```
+\\ P(G \mid X) \\\propto\\ P(X \mid G)\\ P(G). \\
 
-Here $`P(X \mid G)`$ is the marginal likelihood of the data under graph
-$`G`$ (computed in closed form from the per-node Gaussian-process fits)
-and $`P(G)`$ is a prior over structures (currently uniform). Rather than
+Here \\P(X \mid G)\\ is the marginal likelihood of the data under graph
+\\G\\ (computed in closed form from the per-node Gaussian-process fits)
+and \\P(G)\\ is a prior over structures (currently uniform). Rather than
 returning a single “best” graph, this returns a full probability
 distribution - an honest representation of what the data can and cannot
 tell us about causal structure.
@@ -96,7 +94,7 @@ thanks to the Markov factorisation - only had to fit each unique
 ### Tighter constraints: `required` edges
 
 For larger systems, the number of candidate DAGs can easily exceed
-Kagu’s safety limits (capped at $`2^{24}`$ subsets, roughly 5
+Kagu’s safety limits (capped at \\2^{24}\\ subsets, roughly 5
 unconstrained nodes). If you have stronger structural beliefs-such as an
 edge that absolutely *must* exist-you can pass `required`. This shrinks
 the search space dramatically by removing those edges from the
@@ -132,7 +130,7 @@ result_explicit <- KaguModel$discover(df, dags = list(dag_mediation, dag_direct)
 `$summary()` ranks the structures by posterior probability. Each row is
 a whole DAG, referenced by a short `id` (here the enumerated graphs get
 ids `"A"`, `"B"`, `"C"`, …; had we passed a *named* list of DAGs, those
-names would be used instead). `posterior_prob` is $`P(G \mid X)`$.
+names would be used instead). `posterior_prob` is \\P(G \mid X)\\.
 
 ``` r
 
@@ -187,8 +185,8 @@ result$plot(true_dag = true_dag)
 Often we care less about the single best graph than about *specific*
 causal questions - does this edge exist, and in which direction?
 `$edge_probabilities()` marginalises over the whole posterior to give
-the probability of each directed edge,
-$`P(\text{from} \to \text{to} \mid X) = \sum_{G \ni \text{edge}} P(G \mid X)`$.
+the probability of each directed edge, \\P(\text{from} \to \text{to}
+\mid X) = \sum\_{G \ni \text{edge}} P(G \mid X)\\.
 
 ``` r
 
@@ -224,13 +222,10 @@ is ruled out.
 When the structure is uncertain, committing to a single DAG - even the
 most probable one - throws away that uncertainty. Instead, query the
 effect directly on the `DiscoveryResult`: it averages over the *entire*
-posterior of DAGs, weighting each by $`P(G \mid X)`$,
-``` math
-P(Q \mid X) = \sum_G P(Q \mid X, G)\, P(G \mid X).
-```
-The call signature and the returned object are exactly those of the
-single-DAG `model$effects()`, so everything downstream - summaries,
-plots - works the same.
+posterior of DAGs, weighting each by \\P(G \mid X)\\, \\ P(Q \mid X) =
+\sum_G P(Q \mid X, G)\\ P(G \mid X). \\ The call signature and the
+returned object are exactly those of the single-DAG `model$effects()`,
+so everything downstream - summaries, plots - works the same.
 
 ``` r
 

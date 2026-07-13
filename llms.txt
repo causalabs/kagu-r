@@ -22,23 +22,58 @@ graph, so different questions are queries against the same fitted model.
 
 ## How it works
 
-The system is represented as structural equations
-`X_i = f_i(Pa(X_i), ε_i)`. Each `f_i` is a *mechanism* fitted as an
-independent Bayesian model, so the joint distribution factorises over
-nodes: `P(X_1, …, X_n) = ∏ P(X_i | Pa(X_i))`.
+The system is represented as structural equations \\X_i =
+f_i\bigl(\mathrm{Pa}(X_i),\\ \varepsilon_i\bigr)\\, where
+\\\mathrm{Pa}(X_i)\\ are the parents of node \\i\\. Each \\f_i\\ is a
+*mechanism* fitted as an independent Bayesian model, so the joint
+distribution factorises over nodes:
+
+\\P(X_1, \ldots, X_n) = \prod\_{i=1}^{n} P\bigl(X_i \mid
+\mathrm{Pa}(X_i)\bigr).\\
 
 Effects are computed via the *do-operator*: fix the treatment node at
-`x` (severing its incoming edges), propagate forward through the DAG in
-topological order, and compare `E[Y | do(X = x)]` against
-`E[Y | do(X = x')]`. Because each node’s mechanism is a Gaussian
-process, non-linearities and interactions between parents are picked up
-automatically, without being specified in the model formula.
+\\x\\ (severing its incoming edges), propagate forward through the DAG
+in topological order, and compare \\\mathbb{E}\\\left\[Y \mid
+\mathrm{do}(X = x)\right\]\\ against \\\mathbb{E}\\\left\[Y \mid
+\mathrm{do}(X = x')\right\]\\. Because each node’s mechanism is a
+Gaussian process, non-linearities and interactions between parents are
+picked up automatically, without being specified in the model formula.
 
 ## A worked example
+
+Say we study 50 animals and want to know whether being more **social**
+improves body **condition**. The causal story has three wrinkles that
+trip up a naive regression:
+
+- **age** is a common cause of both sociality and condition (a
+  *confounder*),
+- sociality drives **food sharing**, which itself improves condition (a
+  *mediator*),
+- and **sex** changes how sociality pays off (an *effect modifier*).
+
+We simulate data with exactly that structure, so we know the ground
+truth: here, sociality *helps females and harms males*.
 
 ``` r
 
 library(kagu)
+
+set.seed(42)
+n   <- 50
+age <- rnorm(n)
+sex <- sample(c(-1, 1), n, replace = TRUE)          # -1 = female, 1 = male
+sociality    <- 0.6 * age + rnorm(n)
+food_sharing <- 0.8 * sociality + rnorm(n)
+condition    <- 0.5 * age + 0.4 * food_sharing -
+                sex * sociality +                    # the sex * sociality interaction
+                rnorm(n)
+data <- data.frame(age, sex, sociality, food_sharing, condition)
+```
+
+We hand Kagu the DAG and fit every node as a Gaussian process of its
+parents:
+
+``` r
 
 model <- KaguModel$new(
   dag = list(
@@ -49,10 +84,42 @@ model <- KaguModel$new(
   )
 )
 model$fit(data)
-
-# Extract causal effect distributions
-model$effects("sociality", "condition")$summary()
 ```
+
+Now ask the causal question. The **total effect** of sociality on
+condition is a do-calculus query: Kagu adjusts for the confounder `age`
+and propagates through the mediator `food_sharing` automatically,
+returning a full posterior rather than a point estimate.
+
+``` r
+
+model$effects("sociality", "condition")$summary()
+#> # A tibble: 1 x 8
+#>   source    target       from    to  mean    sd hdi_lower hdi_upper
+#>   <chr>     <chr>       <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
+#> 1 sociality condition -0.0627 0.937 0.220 0.465    -0.460      1.05
+```
+
+On average the effect looks small and its interval brushes zero, but
+that is *not* “no effect”: the positive effect in females and the
+negative effect in males cancel out. The **same fitted model** answers
+the follow-up without refitting, just by conditioning on `sex`:
+
+``` r
+
+model$effects("sociality", "condition", conditions = list(sex = -1))$summary()$mean  # females
+#> [1] 1.32
+model$effects("sociality", "condition", conditions = list(sex =  1))$summary()$mean  # males
+#> [1] -0.95
+```
+
+Strongly positive for females (\\\approx 1.3\\), negative for males
+(\\\approx -1.0\\). That interaction was never written into a formula —
+each node is a Gaussian process, so it is learned during fitting and
+recovered on query. The [ecology case
+study](https://causalabs.github.io/kagu-r/articles/ecology_case_study.md)
+works through this same example end to end, including causal discovery
+and the Table II fallacy.
 
 ## Learn more
 

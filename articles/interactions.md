@@ -17,16 +17,13 @@ continuous-continuous interaction using Kagu’s effect estimation.
 
 ## A system with a strong interaction
 
-Let’s simulate a system where $`A`$ and $`B`$ are independent causes of
-$`Y`$, but they interact multiplicatively. The true data-generating
-process is:
-``` math
- Y = 1.5 A - 1.0 B + 2.0 (A \times B) + \epsilon 
-```
+Let’s simulate a system where \\A\\ and \\B\\ are independent causes of
+\\Y\\, but they interact multiplicatively. The true data-generating
+process is: \\ Y = 1.5 A - 1.0 B + 2.0 (A \times B) + \epsilon \\
 
-Because of the positive $`2.0`$ interaction term, the effect of $`A`$ on
-$`Y`$ heavily depends on the value of $`B`$. If $`B`$ is positive, $`A`$
-has a strong positive effect. If $`B`$ is negative, $`A`$’s effect might
+Because of the positive \\2.0\\ interaction term, the effect of \\A\\ on
+\\Y\\ heavily depends on the value of \\B\\. If \\B\\ is positive, \\A\\
+has a strong positive effect. If \\B\\ is negative, \\A\\’s effect might
 even become negative!
 
 ``` r
@@ -80,8 +77,8 @@ number-it’s highly variable depending on `b`.
 To probe the interaction, we can estimate the effect of `a` on `y` while
 **conditioning** `b` at specific values using the `conditions` argument.
 
-Let’s look at the gradient (the local slope) of `a -> y` when
-$`B = -1`$, $`B = 0`$, and $`B = 1`$:
+Let’s look at the gradient (the local slope) of `a -> y` when \\B =
+-1\\, \\B = 0\\, and \\B = 1\\:
 
 ``` r
 
@@ -107,12 +104,11 @@ mod$effects("a", "y", conditions = list(b = 1))$summary()
 #> 1 a      y      -0.0300 0.970  3.59 0.0466      3.52      3.68
 ```
 
-The model successfully recovered the interaction! \* At $`B = -1`$, the
-expected slope is $`1.5 + 2.0(-1) = -0.5`$. Kagu estimates
-$`\approx -0.5`$. \* At $`B = 0`$, the expected slope is
-$`1.5 + 2.0(0) = 1.5`$. Kagu estimates $`\approx 1.5`$. \* At $`B = 1`$,
-the expected slope is $`1.5 + 2.0(1) = 3.5`$. Kagu estimates
-$`\approx 3.5`$.
+The model successfully recovered the interaction! \* At \\B = -1\\, the
+expected slope is \\1.5 + 2.0(-1) = -0.5\\. Kagu estimates \\\approx
+-0.5\\. \* At \\B = 0\\, the expected slope is \\1.5 + 2.0(0) = 1.5\\.
+Kagu estimates \\\approx 1.5\\. \* At \\B = 1\\, the expected slope is
+\\1.5 + 2.0(1) = 3.5\\. Kagu estimates \\\approx 3.5\\.
 
 ## Visualising the interaction with sweeps
 

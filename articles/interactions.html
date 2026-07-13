@@ -6,7 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Modelling interactions • kagu</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/IBM_Plex_Sans-0.4.10/font.css" rel="stylesheet">
 <link href="../deps/IBM_Plex_Mono-0.4.10/font.css" rel="stylesheet">
@@ -23,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">kagu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,31 +91,16 @@ continuous-continuous interaction using Kagu’s effect estimation.</p>
 <div class="section level2">
 <h2 id="a-system-with-a-strong-interaction">A system with a strong interaction<a class="anchor" aria-label="anchor" href="#a-system-with-a-strong-interaction"></a>
 </h2>
-<p>Let’s simulate a system where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
-are independent causes of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>,
-but they interact multiplicatively. The true data-generating process is:
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><mn>1.5</mn><mi>A</mi><mo>−</mo><mn>1.0</mn><mi>B</mi><mo>+</mo><mn>2.0</mn><mo stretchy="false" form="prefix">(</mo><mi>A</mi><mo>×</mo><mi>B</mi><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mi>ϵ</mi></mrow><annotation encoding="application/x-tex"> Y = 1.5 A - 1.0 B + 2.0 (A \times B) + \epsilon </annotation></semantics></math></p>
-<p>Because of the positive
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>2.0</mn><annotation encoding="application/x-tex">2.0</annotation></semantics></math>
-interaction term, the effect of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
-on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
-heavily depends on the value of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>.
-If
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
-is positive,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
-has a strong positive effect. If
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>B</mi><annotation encoding="application/x-tex">B</annotation></semantics></math>
-is negative,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>’s
-effect might even become negative!</p>
+<p>Let’s simulate a system where <span class="math inline">\(A\)</span>
+and <span class="math inline">\(B\)</span> are independent causes of
+<span class="math inline">\(Y\)</span>, but they interact
+multiplicatively. The true data-generating process is: <span class="math display">\[ Y = 1.5 A - 1.0 B + 2.0 (A \times B) + \epsilon
+\]</span></p>
+<p>Because of the positive <span class="math inline">\(2.0\)</span>
+interaction term, the effect of <span class="math inline">\(A\)</span>
+on <span class="math inline">\(Y\)</span> heavily depends on the value
+of <span class="math inline">\(B\)</span>. If <span class="math inline">\(B\)</span> is positive, <span class="math inline">\(A\)</span> has a strong positive effect. If <span class="math inline">\(B\)</span> is negative, <span class="math inline">\(A\)</span>’s effect might even become
+negative!</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">500</span></span>
 <span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
@@ -156,11 +147,8 @@ deviation/HDI is quite wide. That’s because the “true” effect of
 <code>b</code> at specific values using the <code>conditions</code>
 argument.</p>
 <p>Let’s look at the gradient (the local slope) of
-<code>a -&gt; y</code> when
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mo>=</mo><mi>−</mi><mn>1</mn></mrow><annotation encoding="application/x-tex">B = -1</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">B = 0</annotation></semantics></math>,
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">B = 1</annotation></semantics></math>:</p>
+<code>a -&gt; y</code> when <span class="math inline">\(B = -1\)</span>,
+<span class="math inline">\(B = 0\)</span>, and <span class="math inline">\(B = 1\)</span>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Slope when b = -1</span></span>
 <span><span class="va">mod</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"y"</span>, conditions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>b <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span></span>
@@ -182,24 +170,8 @@ and
 <span><span class="co">#&gt;   source target    from    to  mean     sd hdi_lower hdi_upper</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> a      y      -<span style="color: #BB0000;">0.030</span><span style="color: #BB0000; text-decoration: underline;">0</span> 0.970  3.59 0.046<span style="text-decoration: underline;">6</span>      3.52      3.68</span></span></code></pre></div>
-<p>The model successfully recovered the interaction! * At
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mo>=</mo><mi>−</mi><mn>1</mn></mrow><annotation encoding="application/x-tex">B = -1</annotation></semantics></math>,
-the expected slope is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.5</mn><mo>+</mo><mn>2.0</mn><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>−</mi><mn>0.5</mn></mrow><annotation encoding="application/x-tex">1.5 + 2.0(-1) = -0.5</annotation></semantics></math>.
-Kagu estimates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mi>−</mi><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\approx -0.5</annotation></semantics></math>.
-* At
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">B = 0</annotation></semantics></math>,
-the expected slope is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.5</mn><mo>+</mo><mn>2.0</mn><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1.5</mn></mrow><annotation encoding="application/x-tex">1.5 + 2.0(0) = 1.5</annotation></semantics></math>.
-Kagu estimates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mn>1.5</mn></mrow><annotation encoding="application/x-tex">\approx 1.5</annotation></semantics></math>.
-* At
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">B = 1</annotation></semantics></math>,
-the expected slope is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.5</mn><mo>+</mo><mn>2.0</mn><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>3.5</mn></mrow><annotation encoding="application/x-tex">1.5 + 2.0(1) = 3.5</annotation></semantics></math>.
-Kagu estimates
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>≈</mo><mn>3.5</mn></mrow><annotation encoding="application/x-tex">\approx 3.5</annotation></semantics></math>.</p>
+<p>The model successfully recovered the interaction! * At <span class="math inline">\(B = -1\)</span>, the expected slope is <span class="math inline">\(1.5 + 2.0(-1) = -0.5\)</span>. Kagu estimates
+<span class="math inline">\(\approx -0.5\)</span>. * At <span class="math inline">\(B = 0\)</span>, the expected slope is <span class="math inline">\(1.5 + 2.0(0) = 1.5\)</span>. Kagu estimates <span class="math inline">\(\approx 1.5\)</span>. * At <span class="math inline">\(B = 1\)</span>, the expected slope is <span class="math inline">\(1.5 + 2.0(1) = 3.5\)</span>. Kagu estimates <span class="math inline">\(\approx 3.5\)</span>.</p>
 </div>
 <div class="section level2">
 <h2 id="visualising-the-interaction-with-sweeps">Visualising the interaction with sweeps<a class="anchor" aria-label="anchor" href="#visualising-the-interaction-with-sweeps"></a>
@@ -239,7 +211,7 @@ naturally accommodated, and easily visualised using the
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Jordan Hart, Dan Franks.</p>
+  <p>Developed by Causa Ltd.</p>
 </div>
 
 <div class="pkgdown-footer-right">

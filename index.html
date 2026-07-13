@@ -6,7 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Kagu • kagu</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/IBM_Plex_Sans-0.4.10/font.css" rel="stylesheet">
 <link href="deps/IBM_Plex_Mono-0.4.10/font.css" rel="stylesheet">
@@ -25,7 +31,7 @@
 
     <a class="navbar-brand me-2" href="index.html">kagu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,16 +85,37 @@ Bayesian graphical causal models in R. Specify a causal DAG, fit each node with 
 <div class="section level2">
 <h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
-<p>The system is represented as structural equations <code>X_i = f_i(Pa(X_i), ε_i)</code>. Each <code>f_i</code> is a <em>mechanism</em> fitted as an independent Bayesian model, so the joint distribution factorises over nodes: <code>P(X_1, …, X_n) = ∏ P(X_i | Pa(X_i))</code>.</p>
-<p>Effects are computed via the <em>do-operator</em>: fix the treatment node at <code>x</code> (severing its incoming edges), propagate forward through the DAG in topological order, and compare <code>E[Y | do(X = x)]</code> against <code>E[Y | do(X = x')]</code>. Because each node’s mechanism is a Gaussian process, non-linearities and interactions between parents are picked up automatically, without being specified in the model formula.</p>
+<p>The system is represented as structural equations <span class="math inline">\(X_i = f_i\bigl(\mathrm{Pa}(X_i),\, \varepsilon_i\bigr)\)</span>, where <span class="math inline">\(\mathrm{Pa}(X_i)\)</span> are the parents of node <span class="math inline">\(i\)</span>. Each <span class="math inline">\(f_i\)</span> is a <em>mechanism</em> fitted as an independent Bayesian model, so the joint distribution factorises over nodes:</p>
+<p><span class="math display">\[P(X_1, \ldots, X_n) = \prod_{i=1}^{n} P\bigl(X_i \mid \mathrm{Pa}(X_i)\bigr).\]</span></p>
+<p>Effects are computed via the <em>do-operator</em>: fix the treatment node at <span class="math inline">\(x\)</span> (severing its incoming edges), propagate forward through the DAG in topological order, and compare <span class="math inline">\(\mathbb{E}\!\left[Y \mid \mathrm{do}(X = x)\right]\)</span> against <span class="math inline">\(\mathbb{E}\!\left[Y \mid \mathrm{do}(X = x')\right]\)</span>. Because each node’s mechanism is a Gaussian process, non-linearities and interactions between parents are picked up automatically, without being specified in the model formula.</p>
 </div>
 <div class="section level2">
 <h2 id="a-worked-example">A worked example<a class="anchor" aria-label="anchor" href="#a-worked-example"></a>
 </h2>
+<p>Say we study 50 animals and want to know whether being more <strong>social</strong> improves body <strong>condition</strong>. The causal story has three wrinkles that trip up a naive regression:</p>
+<ul>
+<li>
+<strong>age</strong> is a common cause of both sociality and condition (a <em>confounder</em>),</li>
+<li>sociality drives <strong>food sharing</strong>, which itself improves condition (a <em>mediator</em>),</li>
+<li>and <strong>sex</strong> changes how sociality pays off (an <em>effect modifier</em>).</li>
+</ul>
+<p>We simulate data with exactly that structure, so we know the ground truth: here, sociality <em>helps females and harms males</em>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/causalabs/kagu-r" class="external-link">kagu</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">model</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/KaguModel.html">KaguModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
+<span><span class="va">n</span>   <span class="op">&lt;-</span> <span class="fl">50</span></span>
+<span><span class="va">age</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span><span class="va">sex</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, <span class="va">n</span>, replace <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>          <span class="co"># -1 = female, 1 = male</span></span>
+<span><span class="va">sociality</span>    <span class="op">&lt;-</span> <span class="fl">0.6</span> <span class="op">*</span> <span class="va">age</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span><span class="va">food_sharing</span> <span class="op">&lt;-</span> <span class="fl">0.8</span> <span class="op">*</span> <span class="va">sociality</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span><span class="va">condition</span>    <span class="op">&lt;-</span> <span class="fl">0.5</span> <span class="op">*</span> <span class="va">age</span> <span class="op">+</span> <span class="fl">0.4</span> <span class="op">*</span> <span class="va">food_sharing</span> <span class="op">-</span></span>
+<span>                <span class="va">sex</span> <span class="op">*</span> <span class="va">sociality</span> <span class="op">+</span>                    <span class="co"># the sex * sociality interaction</span></span>
+<span>                <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span><span class="va">data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">age</span>, <span class="va">sex</span>, <span class="va">sociality</span>, <span class="va">food_sharing</span>, <span class="va">condition</span><span class="op">)</span></span></code></pre></div>
+<p>We hand Kagu the DAG and fit every node as a Gaussian process of its parents:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">model</span> <span class="op">&lt;-</span> <span class="va"><a href="reference/KaguModel.html">KaguModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
 <span>  dag <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">)</span>, sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>    sociality    <span class="op">=</span> <span class="st">"age"</span>,</span>
@@ -96,10 +123,21 @@ Bayesian graphical causal models in R. Specify a causal DAG, fit each node with 
 <span>    condition    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="st">"sex"</span>, <span class="st">"sociality"</span>, <span class="st">"food_sharing"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">model</span><span class="op">$</span><span class="fu">fit</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Extract causal effect distributions</span></span>
-<span><span class="va">model</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"sociality"</span>, <span class="st">"condition"</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">model</span><span class="op">$</span><span class="fu">fit</span><span class="op">(</span><span class="va">data</span><span class="op">)</span></span></code></pre></div>
+<p>Now ask the causal question. The <strong>total effect</strong> of sociality on condition is a do-calculus query: Kagu adjusts for the confounder <code>age</code> and propagates through the mediator <code>food_sharing</code> automatically, returning a full posterior rather than a point estimate.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"sociality"</span>, <span class="st">"condition"</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 1 x 8</span></span>
+<span><span class="co">#&gt;   source    target       from    to  mean    sd hdi_lower hdi_upper</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 sociality condition -0.0627 0.937 0.220 0.465    -0.460      1.05</span></span></code></pre></div>
+<p>On average the effect looks small and its interval brushes zero, but that is <em>not</em> “no effect”: the positive effect in females and the negative effect in males cancel out. The <strong>same fitted model</strong> answers the follow-up without refitting, just by conditioning on <code>sex</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">model</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"sociality"</span>, <span class="st">"condition"</span>, conditions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>sex <span class="op">=</span> <span class="op">-</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">mean</span>  <span class="co"># females</span></span>
+<span><span class="co">#&gt; [1] 1.32</span></span>
+<span><span class="va">model</span><span class="op">$</span><span class="fu">effects</span><span class="op">(</span><span class="st">"sociality"</span>, <span class="st">"condition"</span>, conditions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>sex <span class="op">=</span>  <span class="fl">1</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="fu">summary</span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">mean</span>  <span class="co"># males</span></span>
+<span><span class="co">#&gt; [1] -0.95</span></span></code></pre></div>
+<p>Strongly positive for females (<span class="math inline">\(\approx 1.3\)</span>), negative for males (<span class="math inline">\(\approx -1.0\)</span>). That interaction was never written into a formula — each node is a Gaussian process, so it is learned during fitting and recovered on query. The <a href="articles/ecology_case_study.html">ecology case study</a> works through this same example end to end, including causal discovery and the Table II fallacy.</p>
 </div>
 <div class="section level2">
 <h2 id="learn-more">Learn more<a class="anchor" aria-label="anchor" href="#learn-more"></a>
@@ -164,7 +202,7 @@ Bayesian graphical causal models in R. Specify a causal DAG, fit each node with 
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Jordan Hart, Dan Franks.</p>
+  <p>Developed by Causa Ltd.</p>
 </div>
 
 <div class="pkgdown-footer-right">
