@@ -33,7 +33,8 @@ Suggests:
     rmarkdown,
     withr,
     patchwork,
-    bayesplot
+    bayesplot,
+    gridExtra
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://github.com/causalabs/kagu-r, https://causalabs.github.io/kagu-r/
