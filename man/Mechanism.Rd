@@ -16,6 +16,12 @@ matrix (Gaussian processes use a single chain, so \code{n_chains = 1}).
 \verb{log P(node | parents)}, used by structure discovery.
 \item \verb{$posterior_shape(fit)} - \code{c(n_chains, n_draws)} for the fit.
 \item \verb{$node_terms(node, parents, data, fit)} - summary rows for \code{model$summary()}.
+\item \verb{$simulate_prior(node, parents, parent_values, data, ndraws)} - replicated
+node values drawn from the prior predictive distribution.
+\item \verb{$simulate_posterior(node, parents, parent_values, fit, draws, n)} -
+replicated node values drawn from the posterior predictive distribution.
+\item \verb{$function_draws(node, parents, grid, data, fit, ndraws)} - prior or
+posterior draws of the node's conditional-mean function on a grid.
 }
 }
 \section{Methods}{
@@ -26,6 +32,9 @@ matrix (Gaussian processes use a single chain, so \code{n_chains = 1}).
     \item \href{#method-Mechanism-log_marglik}{\code{Mechanism$log_marglik()}}
     \item \href{#method-Mechanism-posterior_shape}{\code{Mechanism$posterior_shape()}}
     \item \href{#method-Mechanism-node_terms}{\code{Mechanism$node_terms()}}
+    \item \href{#method-Mechanism-simulate_prior}{\code{Mechanism$simulate_prior()}}
+    \item \href{#method-Mechanism-simulate_posterior}{\code{Mechanism$simulate_posterior()}}
+    \item \href{#method-Mechanism-function_draws}{\code{Mechanism$function_draws()}}
     \item \href{#method-Mechanism-clone}{\code{Mechanism$clone()}}
   }
 }
@@ -149,6 +158,91 @@ parent, giving the parent values for each posterior draw.}
   \subsection{Returns}{
     A \code{tibble} with columns \code{node}, \code{term}, \code{mean}, \code{sd},
 \code{hdi_lower}, \code{hdi_upper}.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Mechanism-simulate_prior"></a>}}
+\if{latex}{\out{\hypertarget{method-Mechanism-simulate_prior}{}}}
+\subsection{\code{Mechanism$simulate_prior()}}{
+  Simulate node values from the prior predictive distribution.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Mechanism$simulate_prior(node, parents, parent_values, data, ndraws)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar - the node name.}
+      \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{parent_values}}{Named list of \verb{[ndraws, n]} matrices of simulated
+parent values, one per parent (empty for a root node).}
+      \item{\code{data}}{A \code{data.frame} - sets the node's location/scale and \code{n}.}
+      \item{\code{ndraws}}{Integer - number of prior predictive draws.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \verb{[ndraws, n]} numeric matrix.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Mechanism-simulate_posterior"></a>}}
+\if{latex}{\out{\hypertarget{method-Mechanism-simulate_posterior}{}}}
+\subsection{\code{Mechanism$simulate_posterior()}}{
+  Simulate node values from the posterior predictive
+distribution (conditional mean plus observation noise).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Mechanism$simulate_posterior(node, parents, parent_values, fit, draws, n)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar - the node name.}
+      \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{parent_values}}{Named list, one entry per parent: either a length-\code{n}
+vector shared by every draw (e.g. the observed parents) or a
+\verb{[length(draws), n]} matrix with one row per draw.}
+      \item{\code{fit}}{A fit object from \verb{$fit()}.}
+      \item{\code{draws}}{Integer vector - which posterior draws to use.}
+      \item{\code{n}}{Integer - number of observations to simulate per draw.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \verb{[length(draws), n]} numeric matrix.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Mechanism-function_draws"></a>}}
+\if{latex}{\out{\hypertarget{method-Mechanism-function_draws}{}}}
+\subsection{\code{Mechanism$function_draws()}}{
+  Prior (\code{fit = NULL}) or posterior draws of the node's
+conditional-mean function, evaluated on a grid of parent values.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Mechanism$function_draws(node, parents, grid, data, fit = NULL, ndraws = 50L)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar - the node name.}
+      \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{grid}}{A \code{data.frame} with one column per parent.}
+      \item{\code{data}}{A \code{data.frame} - sets the node's location/scale.}
+      \item{\code{fit}}{A fit object from \verb{$fit()}, or \code{NULL} for prior draws.}
+      \item{\code{ndraws}}{Integer - number of function draws.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \verb{[ndraws, nrow(grid)]} numeric matrix.
   }
 }
 

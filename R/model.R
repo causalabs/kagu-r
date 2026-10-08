@@ -43,17 +43,26 @@ KaguModel <- R6::R6Class("KaguModel",
     #' @param dag Named list mapping each node to a character vector of its
     #'   parent node names. Root nodes map to `c()`.
     #' @param mechanisms Optional named list of `Mechanism` instances. Any
-    #'   node not specified receives a `GPMechanism` by default.
-    initialize = function(dag, mechanisms = NULL) {
+    #'   node not specified receives a copy of `default_mechanism`.
+    #' @param default_mechanism Optional `Mechanism` used for every node not
+    #'   listed in `mechanisms` (each node gets its own copy). Defaults to
+    #'   `GPMechanism$new()`; pass e.g.
+    #'   `GPMechanism$new(prior = gp_prior(...))` to set one prior for the model.
+    initialize = function(dag, mechanisms = NULL, default_mechanism = NULL) {
       validate_dag(dag)
       self$dag <- dag
 
       nodes <- names(dag)
       if (is.null(mechanisms)) mechanisms <- list()
+      if (is.null(default_mechanism)) default_mechanism <- GPMechanism$new()
+      if (!inherits(default_mechanism, "Mechanism")) {
+        stop("`default_mechanism` must be a Mechanism, e.g. GPMechanism$new().")
+      }
 
       self$mechanisms <- setNames(
         lapply(nodes, function(n) {
-          if (!is.null(mechanisms[[n]])) mechanisms[[n]] else GPMechanism$new()
+          if (!is.null(mechanisms[[n]])) mechanisms[[n]]
+          else default_mechanism$clone(deep = TRUE)
         }),
         nodes
       )
@@ -201,6 +210,130 @@ KaguModel <- R6::R6Class("KaguModel",
         )
       })
       do.call(rbind, results)
+    },
+
+    # -------------------------------------------------------------------------
+    # Predictive checks
+
+    #' @description Simulate replicated datasets from the **prior** predictive
+    #'   distribution, by ancestral sampling through the DAG: each draw samples
+    #'   every node's hyperparameters, function and noise from its mechanism's
+    #'   prior, feeding simulated parents into their children. Needs no fit.
+    #' @param data A `data.frame`, used only for each variable's location and
+    #'   scale (priors are on the standardised scale) and the number of rows.
+    #'   Defaults to the fitted data.
+    #' @param ndraws Integer - number of replicated datasets.
+    #' @return A [PredictiveResult] with `type = "prior"`.
+    prior_predictive = function(data = NULL, ndraws = 100L) {
+      if (is.null(data)) data <- self$data
+      if (is.null(data)) {
+        stop("Supply `data` (it sets each variable's scale), or call $fit() first.")
+      }
+      .check_data_nodes(self$dag, data)
+      ndraws <- .check_ndraws(ndraws)
+
+      sims <- list()
+      for (node in topological_sort(self$dag)) {
+        parents <- self$dag[[node]]
+        sims[[node]] <- self$mechanisms[[node]]$simulate_prior(
+          node, parents, sims[parents], data, ndraws
+        )
+      }
+      PredictiveResult$new("prior", data, sims[names(self$dag)], self$dag)
+    },
+
+    #' @description Simulate replicated datasets from the **posterior**
+    #'   predictive distribution.
+    #'
+    #' - `type = "conditional"`: every node is simulated given its *observed*
+    #'   parents. This checks each mechanism (local fit) in isolation.
+    #' - `type = "joint"`: the whole graph is simulated ancestrally from the
+    #'   fitted model, with each node's posterior draw fed its simulated parents.
+    #'   This checks what the DAG implies globally - e.g. a missing edge shows up
+    #'   as a dependence the replicated data cannot reproduce.
+    #'
+    #' Hyperparameters are point estimates, so the replicates do not carry
+    #' hyperparameter uncertainty and can be slightly too narrow.
+    #' @param ndraws Integer - number of replicated datasets (at most the number
+    #'   of stored posterior draws).
+    #' @param type `"conditional"` or `"joint"`.
+    #' @return A [PredictiveResult].
+    posterior_predictive = function(ndraws = 100L, type = c("conditional", "joint")) {
+      if (!self$.fitted) stop("Call $fit() before $posterior_predictive().")
+      type   <- match.arg(type)
+      ndraws <- .check_ndraws(ndraws)
+      data   <- self$data
+      n      <- nrow(data)
+
+      n_avail <- min(vapply(names(self$dag), function(nd) {
+        self$mechanisms[[nd]]$posterior_shape(self$traces[[nd]])[["n_draws"]]
+      }, numeric(1)))
+      if (ndraws > n_avail) {
+        stop(sprintf("`ndraws` (%d) exceeds the %d stored posterior draws.",
+                     ndraws, n_avail))
+      }
+      draws <- sort(sample.int(n_avail, ndraws))
+
+      sims <- list()
+      for (node in topological_sort(self$dag)) {
+        parents <- self$dag[[node]]
+        parent_values <- if (type == "conditional") {
+          lapply(setNames(parents, parents), function(q) data[[q]])
+        } else {
+          sims[parents]
+        }
+        sims[[node]] <- self$mechanisms[[node]]$simulate_posterior(
+          node, parents, parent_values, self$traces[[node]], draws, n
+        )
+      }
+      PredictiveResult$new(type, data, sims[names(self$dag)], self$dag)
+    },
+
+    #' @description Prior or posterior draws of a node's conditional-mean
+    #'   function against one parent, with the other parents held fixed - for
+    #'   plotting what functions the prior allows or the posterior has learned.
+    #' @param node Character scalar - the node whose function to draw.
+    #' @param parent Character scalar - the parent to vary (default: the first).
+    #' @param ndraws Integer - number of function draws.
+    #' @param n_grid Integer - number of grid points across the parent's range.
+    #' @param prior Logical - draw from the prior (`TRUE`) or posterior.
+    #' @param at Optional named list of values for the other parents (default:
+    #'   their means).
+    #' @param data Optional `data.frame` (defaults to the fitted data).
+    #' @return A `tibble` with columns `draw`, `parent_value`, `value`.
+    function_draws = function(node, parent = NULL, ndraws = 50L, n_grid = 100L,
+                              prior = FALSE, at = NULL, data = NULL) {
+      parents <- self$dag[[node]]
+      if (length(parents) == 0L) {
+        stop(sprintf("Node '%s' has no parents, so it has no function to draw.", node))
+      }
+      if (is.null(parent)) parent <- parents[[1]]
+      if (!parent %in% parents) {
+        stop(sprintf("'%s' is not a parent of '%s'.", parent, node))
+      }
+      if (is.null(data)) data <- self$data
+      if (is.null(data)) stop("Supply `data`, or call $fit() first.")
+      if (!prior && !self$.fitted) {
+        stop("Call $fit() before drawing posterior functions (or use prior = TRUE).")
+      }
+
+      grid <- as.data.frame(lapply(setNames(parents, parents), function(q) {
+        if (q == parent) {
+          seq(min(data[[q]]), max(data[[q]]), length.out = n_grid)
+        } else {
+          rep(if (!is.null(at[[q]])) at[[q]] else mean(data[[q]]), n_grid)
+        }
+      }))
+      draws <- self$mechanisms[[node]]$function_draws(
+        node, parents, grid, data,
+        fit = if (prior) NULL else self$traces[[node]],
+        ndraws = .check_ndraws(ndraws)
+      )
+      tibble::tibble(
+        draw         = rep(seq_len(nrow(draws)), times = n_grid),
+        parent_value = rep(grid[[parent]], each = nrow(draws)),
+        value        = as.vector(draws)
+      )
     },
 
     # -------------------------------------------------------------------------

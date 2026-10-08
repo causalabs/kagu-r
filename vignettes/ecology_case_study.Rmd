@@ -23,6 +23,12 @@ set.seed(42)
 
 In this vignette, we explore a classic observational study in behavioural ecology. We'll use Kagu to perform causal discovery, estimate effects, unmask hidden interactions, and avoid the notorious "Table II fallacy" common in traditional regression.
 
+> **Note:** To keep the focus on the demonstration, this vignette skips the
+> full Bayesian workflow of checking priors before fitting and model fit
+> afterwards. With real data you should do both: see
+> `vignette("predictive_checks")` for how to run prior and posterior
+> predictive checks.
+
 ## The study system
 
 Imagine a long-term field study of a social mammal population (e.g., macaques, dolphins, or elephants). We have collected observational data on 50 individuals - a small, noisy field dataset typical of hard-to-observe wild populations - measuring five variables:

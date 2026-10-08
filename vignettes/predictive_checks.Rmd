@@ -1,0 +1,378 @@
+---
+title: "Prior and posterior predictive checks"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Prior and posterior predictive checks}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 7, fig.height = 4,
+  message   = FALSE,
+  warning   = FALSE,
+  # bayesplot is a suggested package: only run the code if it is installed
+  eval      = requireNamespace("bayesplot", quietly = TRUE)
+)
+```
+
+A fitted model is only as trustworthy as its assumptions. The Bayesian workflow
+of Gelman et al. (2020) and Gabry et al. (2019) checks those assumptions by
+**simulating data from the model and comparing it with the data you have**:
+
+- A **prior predictive check** simulates data from the priors alone, before
+  seeing the outcome. Does the model think plausible data looks plausible, or
+  does it expect values that are absurd?
+- A **posterior predictive check** simulates *replicated* data `yrep` from the
+  fitted model. If the model captures the process that generated `y`, then `y`
+  should look like a typical draw of `yrep`. Systematic differences point to
+  what the model is missing.
+
+A graphical causal model adds a twist to the usual workflow: you can check it at two levels. Each
+**mechanism** (a node given its parents) can fit well or badly, and the
+**graph** as a whole makes claims - every missing edge implies a conditional independence -
+that the data may contradict. Kagu supports both, and returns replicates in the
+format the [bayesplot](https://mc-stan.org/bayesplot/) package expects, so you
+can use its full set of `ppc_*()` plots.
+
+```{r libraries}
+library(kagu)
+library(ggplot2)
+library(bayesplot)
+color_scheme_set("teal")
+```
+
+## An example system
+
+We use a small, arbitrary system with four variables. `x` and `w` are root
+causes; `z` depends non-linearly on `x`; and `y` depends on `z` and `w`,
+including an interaction between them.
+
+```{r simulate}
+set.seed(2024)
+n <- 150
+x <- rnorm(n)
+w <- rnorm(n)
+z <- sin(2 * x) + 0.5 * x + rnorm(n, sd = 0.3)
+y <- 0.8 * z + 0.6 * w + 0.5 * z * w + rnorm(n, sd = 0.4)
+d <- data.frame(x, w, z, y)
+
+dag <- list(x = c(), w = c(), z = "x", y = c("z", "w"))
+```
+
+```{r plot-dag, fig.width = 4, fig.height = 3.2}
+node_pos <- list(x = c(1, 1), z = c(1, 2), w = c(2, 1), y = c(2, 2))
+kagu_plot_dag(dag, node_pos)
+```
+
+## Prior predictive checks
+
+Each Kagu node is a Gaussian process whose behaviour is controlled by three
+hyperparameters, all on the **standardised** scale (each variable centred and
+scaled to unit sd before fitting):
+
+- a **lengthscale** per parent - how far the parent must move before the
+  function changes (small = wiggly);
+- a **signal sd** - how much the function varies;
+- a **noise sd** - how much the node scatters around the function.
+
+Kagu fits these by optimisation, but optimisation implies a prior: by default
+the search is confined to a wide box, which is the same as a log-uniform prior
+over that box. `gp_prior()` makes it explicit:
+
+```{r default-prior}
+gp_prior()
+```
+
+### What does the default prior believe?
+
+Priors on hyperparameters are hard to judge directly. It is much easier to
+look at what they imply for the *data*. First, draw functions for `z` against
+`x` from the prior, and overlay the observed data:
+
+```{r prior-functions-default}
+prior_model <- KaguModel$new(dag)
+
+plot_functions <- function(draws, title) {
+  ggplot(draws, aes(parent_value, value, group = draw)) +
+    geom_line(colour = "#26a69a", alpha = 0.35) +
+    geom_point(data = d, aes(x, z), inherit.aes = FALSE, size = 0.7) +
+    labs(x = "x", y = "z", title = title) +
+    theme_minimal()
+}
+
+plot_functions(
+  prior_model$function_draws("z", "x", ndraws = 40, prior = TRUE, data = d),
+  "Prior function draws: default prior"
+)
+```
+
+The default prior is happy with functions that swing many times the range of
+the data, and with ones that oscillate over a tiny fraction of `x`. Next,
+simulate whole datasets from the prior, ancestrally through the graph, and
+compare them with the observed `y`:
+
+```{r prior-predictive-default}
+pr_default <- prior_model$prior_predictive(d, ndraws = 100)
+
+bayesplot_grid(
+  ppc_dens_overlay(pr_default$y("y"), pr_default$yrep("y")[1:50, ]),
+  ppc_stat(pr_default$y("y"), pr_default$yrep("y"), stat = "sd"),
+  grid_args = list(ncol = 2)
+)
+```
+
+```{r prior-default-numbers, include = FALSE}
+sd_def <- apply(pr_default$yrep("y"), 1, sd)
+```
+
+The prior predictive spread of `y` ranges over more than an order of magnitude
+(sd from `r round(min(sd_def), 2)` to `r round(max(sd_def), 1)`, against an
+observed `r round(sd(d$y), 2)`). This prior is not "uninformative" - it
+actively favours data far more extreme than anything we would expect.
+
+Note that the priors live on the standardised scale, so each variable's
+location and scale are anchored to the observed data (as in rstanarm's
+autoscaling). The prior predictive check is therefore about shape, spread and
+smoothness, not about where the data are centred.
+
+### A weakly informative prior
+
+On the standardised scale, sensible defaults are easy to reason about:
+
+- `lengthscale = prior_lognormal(0, 0.5)` - functions change over roughly
+  0.4 to 2.7 sd of a parent: smooth, but able to bend;
+- `signal_sd = prior_halfnormal(1)` - the function varies on the scale of the
+  data, not ten times it;
+- `noise_sd = prior_halfnormal(0.5)` - the noise is at most around the scale of
+  the data.
+
+```{r prior-functions-wi}
+wi_prior <- gp_prior(
+  lengthscale = prior_lognormal(0, 0.5),
+  signal_sd   = prior_halfnormal(1),
+  noise_sd    = prior_halfnormal(0.5)
+)
+wi_mechanism <- GPMechanism$new(prior = wi_prior)
+wi_mechanism$hyper   # a non-default prior is fitted by MAP, so it is actually used
+
+wi_model <- KaguModel$new(dag, default_mechanism = wi_mechanism)
+
+plot_functions(
+  wi_model$function_draws("z", "x", ndraws = 40, prior = TRUE, data = d),
+  "Prior function draws: weakly informative prior"
+)
+```
+
+```{r prior-predictive-wi}
+pr_wi <- wi_model$prior_predictive(d, ndraws = 100)
+
+bayesplot_grid(
+  ppc_dens_overlay(pr_wi$y("y"), pr_wi$yrep("y")[1:50, ]),
+  ppc_stat(pr_wi$y("y"), pr_wi$yrep("y"), stat = "sd"),
+  grid_args = list(ncol = 2)
+)
+```
+
+The prior predictive datasets now sit on the same scale as the data, while
+still allowing a wide range of shapes. The observed data look like one
+plausible draw.
+
+### Does the choice matter?
+
+With 150 observations the data dominate either prior. Fitting both models and
+comparing a causal effect is a quick sensitivity check:
+
+```{r sensitivity}
+default_model <- KaguModel$new(dag)
+default_model$fit(d)
+wi_model$fit(d)
+
+rbind(
+  cbind(prior = "default (ML)", default_model$effects("x", "y", hdi = 0.95)$summary()),
+  cbind(prior = "weakly informative (MAP)", wi_model$effects("x", "y", hdi = 0.95)$summary())
+)[, c("prior", "mean", "hdi_lower", "hdi_upper")]
+```
+
+The estimates barely move, so the conclusions are not an artefact of the
+prior. With less data, or more parents per node, the weakly informative prior
+matters more: it keeps the fit from chasing noise. We use `wi_model` from here
+on.
+
+## Posterior predictive checks
+
+### Checking each mechanism
+
+`type = "conditional"` (the default) simulates every node given its *observed*
+parents, so it checks each mechanism on its own:
+
+```{r ppc-conditional}
+pc <- wi_model$posterior_predictive(ndraws = 100)
+pc
+
+bayesplot_grid(
+  ppc_dens_overlay(pc$y("z"), pc$yrep("z")[1:50, ]) + ggtitle("z | x"),
+  ppc_dens_overlay(pc$y("y"), pc$yrep("y")[1:50, ]) + ggtitle("y | z, w"),
+  grid_args = list(ncol = 2)
+)
+```
+
+The replicated densities (light) surround the observed one (dark). Summary
+statistics give the same check numerically: `p_value` is the share of
+replicated datasets whose statistic is at least the observed one, so values
+near 0 or 1 signal a mismatch.
+
+```{r ppc-stats}
+pc$summary(stats = c("mean", "sd", "min", "max"), nodes = c("z", "y"))
+```
+
+These posterior predictive p-values are not classical p-values: they are not
+uniform even when the model is right (they cluster around 0.5), so treat them
+as a descriptive flag rather than a test.
+
+### Checks that target the structure
+
+A density overlay is a blunt instrument. Gabry et al. (2019) recommend choosing
+checks that probe what the model could plausibly get wrong, and in a causal
+graph the parents of each node tell you where to look. Here, `y` should move
+with `w`. Plotting the observed `y` against `w`, with the replicated
+intervals, checks exactly that:
+
+```{r ppc-intervals-good}
+ppc_intervals(pc$y("y"), pc$yrep("y"), x = d$w) +
+  labs(x = "w", y = "y", title = "y against w: observed (dark) vs replicated intervals")
+```
+
+Equivalently, split the data by `w` and compare the mean of `y` within each
+group:
+
+```{r ppc-grouped-good}
+w_group <- cut(d$w, quantile(d$w, 0:3 / 3), include.lowest = TRUE,
+               labels = c("low w", "mid w", "high w"))
+
+ppc_stat_grouped(pc$y("y"), pc$yrep("y"), group = w_group, stat = "mean")
+```
+
+### Checking the graph as a whole
+
+`type = "joint"` instead simulates the whole graph from the fitted model: root
+nodes from their marginals, every other node from its mechanism given its
+*simulated* parents. Each replicated dataset then carries every dependence the
+DAG implies, so we can compare the correlation of every pair of variables with
+what the model reproduces:
+
+```{r ppc-joint-good, fig.height = 3.6}
+pj <- wi_model$posterior_predictive(ndraws = 100, type = "joint")
+pj$plot_cor(prob = 0.95)
+```
+
+```{r joint-good-numbers, include = FALSE}
+cc_good <- pj$cor_check(prob = 0.95)
+flagged <- with(cc_good[cc_good$outside, ], paste(var1, var2, sep = "-"))
+joint_verdict <- if (length(flagged) == 0) {
+  "Every pair lies within its replicated range."
+} else {
+  paste0(
+    "Every pair except ", paste(flagged, collapse = ", "),
+    " lies within its replicated range, and ",
+    if (length(flagged) == 1) "that one sits" else "those sit",
+    " only just outside. With ", nrow(cc_good), " pairs and 95% intervals,",
+    " an occasional near-miss is expected by chance: what matters is a pair",
+    " that is far outside, as in the next section."
+  )
+}
+```
+
+`r joint_verdict`
+
+## Catching a misspecified model
+
+Now suppose we had drawn the graph without the `w -> y` edge:
+
+```{r fit-bad}
+dag_bad <- list(x = c(), w = c(), z = "x", y = "z")
+
+bad_model <- KaguModel$new(dag_bad, default_mechanism = GPMechanism$new(prior = wi_prior))
+bad_model$fit(d)
+pc_bad <- bad_model$posterior_predictive(ndraws = 100)
+```
+
+The standard marginal checks of `y` look fine. The missing influence of `w` is
+simply absorbed into a larger noise term, so the overall distribution is still
+reproduced:
+
+```{r ppc-bad-marginal}
+ppc_dens_overlay(pc_bad$y("y"), pc_bad$yrep("y")[1:50, ])
+pc_bad$summary(nodes = "y")
+```
+
+A model can pass every one of these checks and still be wrong. The structural
+checks, however, fail clearly. The replicated `y` no longer changes with `w`,
+while the observed `y` does:
+
+```{r ppc-bad-targeted}
+ppc_intervals(pc_bad$y("y"), pc_bad$yrep("y"), x = d$w) +
+  labs(x = "w", y = "y", title = "Misspecified model: y against w")
+
+ppc_stat_grouped(pc_bad$y("y"), pc_bad$yrep("y"), group = w_group, stat = "mean")
+```
+
+The graph-level check finds the same problem without our having to guess where
+to look. The DAG claims `w` and `y` are independent, the replicated data obey
+that claim, and the observed data do not:
+
+```{r ppc-bad-joint, fig.height = 3.6}
+pj_bad <- bad_model$posterior_predictive(ndraws = 100, type = "joint")
+pj_bad$plot_cor(prob = 0.95)
+```
+
+```{r bad-numbers, include = FALSE}
+cc_bad <- pj_bad$cor_check(prob = 0.95)
+wy <- cc_bad[cc_bad$var1 == "w" & cc_bad$var2 == "y", ]
+```
+
+The observed correlation between `w` and `y` is `r round(wy$observed, 2)`,
+against a replicated 95% range of `r round(wy$rep_lower, 2)` to
+`r round(wy$rep_upper, 2)`. Every missing edge in a DAG is a testable claim of
+(conditional) independence, and joint replicates are a direct way to test
+those claims.
+
+## Checking versus discovery
+
+Kagu's structure discovery (`vignette("discovery")`) also judges graphs, but
+it answers a *relative* question: which of the candidate DAGs is best
+supported? Predictive checks answer an *absolute* one: is this model adequate?
+The two are complementary. Discovery can confidently prefer the best of a set
+of candidates that are all wrong, and only a check against the data will
+reveal it.
+
+## Summary
+
+1. **Before fitting**, check the prior: `$function_draws(prior = TRUE)` and
+   `$prior_predictive()`. Replace the vague default with a weakly informative
+   `gp_prior()` if it implies implausible data.
+2. **After fitting**, check each mechanism with
+   `$posterior_predictive(type = "conditional")`. Go beyond density overlays:
+   plot each node against its parents, and use statistics that target what
+   could be wrong.
+3. **Check the graph** with `$posterior_predictive(type = "joint")` and
+   `$plot_cor()`, which tests the independences the DAG implies.
+
+Two caveats apply. Kagu's hyperparameters are point estimates, so the
+replicates do not include hyperparameter uncertainty and can be slightly too
+narrow. And posterior predictive checks use the data twice (once to fit, once
+to check), which makes them conservative: they are good at revealing gross
+misfit, less so at subtle problems.
+
+## References
+
+- Gabry, J., Simpson, D., Vehtari, A., Betancourt, M. & Gelman, A. (2019).
+  Visualization in Bayesian workflow. *Journal of the Royal Statistical
+  Society: Series A*, 182(2), 389-402. <https://doi.org/10.1111/rssa.12378>
+- Gelman, A., Meng, X.-L. & Stern, H. (1996). Posterior predictive assessment
+  of model fitness via realized discrepancies. *Statistica Sinica*, 6, 733-807.
+- Gelman, A., Vehtari, A., Simpson, D., et al. (2020). Bayesian workflow.
+  <https://arxiv.org/abs/2011.01808>

@@ -49,6 +49,9 @@ effect$summary()
     \item \href{#method-KaguModel-effects}{\code{KaguModel$effects()}}
     \item \href{#method-KaguModel-summary}{\code{KaguModel$summary()}}
     \item \href{#method-KaguModel-diagnostics}{\code{KaguModel$diagnostics()}}
+    \item \href{#method-KaguModel-prior_predictive}{\code{KaguModel$prior_predictive()}}
+    \item \href{#method-KaguModel-posterior_predictive}{\code{KaguModel$posterior_predictive()}}
+    \item \href{#method-KaguModel-function_draws}{\code{KaguModel$function_draws()}}
     \item \href{#method-KaguModel-plot_dag}{\code{KaguModel$plot_dag()}}
     \item \href{#method-KaguModel-plot_posterior}{\code{KaguModel$plot_posterior()}}
     \item \href{#method-KaguModel-save}{\code{KaguModel$save()}}
@@ -63,7 +66,7 @@ effect$summary()
   Create a new KaguModel.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{KaguModel$new(dag, mechanisms = NULL)}
+    \preformatted{KaguModel$new(dag, mechanisms = NULL, default_mechanism = NULL)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -72,7 +75,11 @@ effect$summary()
       \item{\code{dag}}{Named list mapping each node to a character vector of its
 parent node names. Root nodes map to \code{c()}.}
       \item{\code{mechanisms}}{Optional named list of \code{Mechanism} instances. Any
-node not specified receives a \code{GPMechanism} by default.}
+node not specified receives a copy of \code{default_mechanism}.}
+      \item{\code{default_mechanism}}{Optional \code{Mechanism} used for every node not
+listed in \code{mechanisms} (each node gets its own copy). Defaults to
+\code{GPMechanism$new()}; pass e.g.
+\code{GPMechanism$new(prior = gp_prior(...))} to set one prior for the model.}
     }
     \if{html}{\out{</div>}}
   }
@@ -197,6 +204,109 @@ per node.
   }
   \subsection{Returns}{
     A \code{tibble} with \code{node}, \code{n_chains}, \code{n_draws}, \code{sigma}, \code{sigma_sd}.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-KaguModel-prior_predictive"></a>}}
+\if{latex}{\out{\hypertarget{method-KaguModel-prior_predictive}{}}}
+\subsection{\code{KaguModel$prior_predictive()}}{
+  Simulate replicated datasets from the \strong{prior} predictive
+distribution, by ancestral sampling through the DAG: each draw samples
+every node's hyperparameters, function and noise from its mechanism's
+prior, feeding simulated parents into their children. Needs no fit.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{KaguModel$prior_predictive(data = NULL, ndraws = 100L)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{A \code{data.frame}, used only for each variable's location and
+scale (priors are on the standardised scale) and the number of rows.
+Defaults to the fitted data.}
+      \item{\code{ndraws}}{Integer - number of replicated datasets.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \link{PredictiveResult} with \code{type = "prior"}.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-KaguModel-posterior_predictive"></a>}}
+\if{latex}{\out{\hypertarget{method-KaguModel-posterior_predictive}{}}}
+\subsection{\code{KaguModel$posterior_predictive()}}{
+  Simulate replicated datasets from the \strong{posterior}
+predictive distribution.
+\itemize{
+\item \code{type = "conditional"}: every node is simulated given its \emph{observed}
+parents. This checks each mechanism (local fit) in isolation.
+\item \code{type = "joint"}: the whole graph is simulated ancestrally from the
+fitted model, with each node's posterior draw fed its simulated parents.
+This checks what the DAG implies globally - e.g. a missing edge shows up
+as a dependence the replicated data cannot reproduce.
+}
+
+Hyperparameters are point estimates, so the replicates do not carry
+hyperparameter uncertainty and can be slightly too narrow.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{KaguModel$posterior_predictive(ndraws = 100L, type = c("conditional", "joint"))}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{ndraws}}{Integer - number of replicated datasets (at most the number
+of stored posterior draws).}
+      \item{\code{type}}{\code{"conditional"} or \code{"joint"}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \link{PredictiveResult}.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-KaguModel-function_draws"></a>}}
+\if{latex}{\out{\hypertarget{method-KaguModel-function_draws}{}}}
+\subsection{\code{KaguModel$function_draws()}}{
+  Prior or posterior draws of a node's conditional-mean
+function against one parent, with the other parents held fixed - for
+plotting what functions the prior allows or the posterior has learned.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{KaguModel$function_draws(
+  node,
+  parent = NULL,
+  ndraws = 50L,
+  n_grid = 100L,
+  prior = FALSE,
+  at = NULL,
+  data = NULL
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar - the node whose function to draw.}
+      \item{\code{parent}}{Character scalar - the parent to vary (default: the first).}
+      \item{\code{ndraws}}{Integer - number of function draws.}
+      \item{\code{n_grid}}{Integer - number of grid points across the parent's range.}
+      \item{\code{prior}}{Logical - draw from the prior (\code{TRUE}) or posterior.}
+      \item{\code{at}}{Optional named list of values for the other parents (default:
+their means).}
+      \item{\code{data}}{Optional \code{data.frame} (defaults to the fitted data).}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A \code{tibble} with columns \code{draw}, \code{parent_value}, \code{value}.
   }
 }
 
