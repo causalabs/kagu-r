@@ -14,12 +14,12 @@ Source:
 [`inst/CITATION`](https://github.com/causalabs/kagu-r/blob/main/inst/CITATION)
 
 Hart J, Franks D (2026). kagu: Bayesian Graphical Causal Models. R
-package version 1.0.1. https://causalabs.github.io/kagu-r/
+package version 1.1.0. https://causalabs.github.io/kagu-r/
 
     @Manual{kagu,
       title = {{kagu}: Bayesian Graphical Causal Models},
       author = {Jordan Hart and Dan Franks},
       year = {2026},
-      note = {R package version 1.0.1},
+      note = {R package version 1.1.0},
       url = {https://causalabs.github.io/kagu-r/},
     }

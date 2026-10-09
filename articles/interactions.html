@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">kagu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,7 @@
     <li><a class="dropdown-item" href="../articles/interactions.html">Modelling interactions</a></li>
     <li><a class="dropdown-item" href="../articles/comparison.html">Comparison vs OLS</a></li>
     <li><a class="dropdown-item" href="../articles/ecology_case_study.html">Ecology case study</a></li>
+    <li><a class="dropdown-item" href="../articles/predictive_checks.html">Predictive checks</a></li>
   </ul>
 </li>
       </ul>
@@ -88,6 +89,13 @@ non-linearities and interactions without any explicit formula from the
 user.</p>
 <p>In this vignette, we’ll look at how to recover and visualise a
 continuous-continuous interaction using Kagu’s effect estimation.</p>
+<blockquote>
+<p><strong>Note:</strong> To keep the focus on the demonstration, this
+vignette skips the full Bayesian workflow of checking priors before
+fitting and model fit afterwards. With real data you should do both: see
+<code><a href="../articles/predictive_checks.html">vignette("predictive_checks")</a></code> for how to run prior and
+posterior predictive checks.</p>
+</blockquote>
 <div class="section level2">
 <h2 id="a-system-with-a-strong-interaction">A system with a strong interaction<a class="anchor" aria-label="anchor" href="#a-system-with-a-strong-interaction"></a>
 </h2>

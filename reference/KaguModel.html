@@ -15,7 +15,7 @@ to nodes, fit to data, and extract causal effects."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">kagu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -31,6 +31,7 @@ to nodes, fit to data, and extract causal effects."></head><body>
     <li><a class="dropdown-item" href="../articles/interactions.html">Modelling interactions</a></li>
     <li><a class="dropdown-item" href="../articles/comparison.html">Comparison vs OLS</a></li>
     <li><a class="dropdown-item" href="../articles/ecology_case_study.html">Ecology case study</a></li>
+    <li><a class="dropdown-item" href="../articles/predictive_checks.html">Predictive checks</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/causalabs/kagu-r/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
@@ -86,6 +87,9 @@ to nodes, fit to data, and extract causal effects.</p>
 <li><p><a href="#method-KaguModel-effects"><code>KaguModel$effects()</code></a></p></li>
 <li><p><a href="#method-KaguModel-summary"><code>KaguModel$summary()</code></a></p></li>
 <li><p><a href="#method-KaguModel-diagnostics"><code>KaguModel$diagnostics()</code></a></p></li>
+<li><p><a href="#method-KaguModel-prior_predictive"><code>KaguModel$prior_predictive()</code></a></p></li>
+<li><p><a href="#method-KaguModel-posterior_predictive"><code>KaguModel$posterior_predictive()</code></a></p></li>
+<li><p><a href="#method-KaguModel-function_draws"><code>KaguModel$function_draws()</code></a></p></li>
 <li><p><a href="#method-KaguModel-plot_dag"><code>KaguModel$plot_dag()</code></a></p></li>
 <li><p><a href="#method-KaguModel-plot_posterior"><code>KaguModel$plot_posterior()</code></a></p></li>
 <li><p><a href="#method-KaguModel-save"><code>KaguModel$save()</code></a></p></li>
@@ -95,7 +99,7 @@ to nodes, fit to data, and extract causal effects.</p>
 <h3 id="kagumodel-new-"><code>KaguModel$new()</code><a class="anchor" aria-label="anchor" href="#kagumodel-new-"></a></h3>
 <p>Create a new KaguModel.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/KaguModel.html">KaguModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">dag</span>, mechanisms <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/KaguModel.html">KaguModel</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="va">dag</span>, mechanisms <span class="op">=</span> <span class="cn">NULL</span>, default_mechanism <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>dag</code></dt>
@@ -104,7 +108,13 @@ parent node names. Root nodes map to <code><a href="https://rdrr.io/r/base/c.htm
 
       <dt><code>mechanisms</code></dt>
 <dd><p>Optional named list of <code>Mechanism</code> instances. Any
-node not specified receives a <code>GPMechanism</code> by default.</p></dd>
+node not specified receives a copy of <code>default_mechanism</code>.</p></dd>
+
+      <dt><code>default_mechanism</code></dt>
+<dd><p>Optional <code>Mechanism</code> used for every node not
+listed in <code>mechanisms</code> (each node gets its own copy). Defaults to
+<code>GPMechanism$new()</code>; pass e.g.
+<code>GPMechanism$new(prior = gp_prior(...))</code> to set one prior for the model.</p></dd>
 
 
 </dl><p></p></div>
@@ -238,13 +248,119 @@ per node.</p><div class="section">
 
 </div>
 
+<p></p><hr><a id="method-KaguModel-prior_predictive"></a><div class="section">
+<h3 id="kagumodel-prior-predictive-"><code>KaguModel$prior_predictive()</code><a class="anchor" aria-label="anchor" href="#kagumodel-prior-predictive-"></a></h3>
+<p>Simulate replicated datasets from the <strong>prior</strong> predictive
+distribution, by ancestral sampling through the DAG: each draw samples
+every node's hyperparameters, function and noise from its mechanism's
+prior, feeding simulated parents into their children. Needs no fit.</p><div class="section">
+<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">KaguModel</span><span class="op">$</span><span class="fu">prior_predictive</span><span class="op">(</span>data <span class="op">=</span> <span class="cn">NULL</span>, ndraws <span class="op">=</span> <span class="fl">100L</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div><p></p><div class="section">
+<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>data</code></dt>
+<dd><p>A <code>data.frame</code>, used only for each variable's location and
+scale (priors are on the standardised scale) and the number of rows.
+Defaults to the fitted data.</p></dd>
+
+      <dt><code>ndraws</code></dt>
+<dd><p>Integer - number of replicated datasets.</p></dd>
+
+
+</dl><p></p></div>
+</div><p></p><div class="section">
+<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<p>A <a href="PredictiveResult.html">PredictiveResult</a> with <code>type = "prior"</code>.</p>
+</div>
+
+</div>
+
+<p></p><hr><a id="method-KaguModel-posterior_predictive"></a><div class="section">
+<h3 id="kagumodel-posterior-predictive-"><code>KaguModel$posterior_predictive()</code><a class="anchor" aria-label="anchor" href="#kagumodel-posterior-predictive-"></a></h3>
+<p>Simulate replicated datasets from the <strong>posterior</strong>
+predictive distribution.</p><ul><li><p><code>type = "conditional"</code>: every node is simulated given its <em>observed</em>
+parents. This checks each mechanism (local fit) in isolation.</p></li>
+<li><p><code>type = "joint"</code>: the whole graph is simulated ancestrally from the
+fitted model, with each node's posterior draw fed its simulated parents.
+This checks what the DAG implies globally - e.g. a missing edge shows up
+as a dependence the replicated data cannot reproduce.</p></li>
+</ul><p>Hyperparameters are point estimates, so the replicates do not carry
+hyperparameter uncertainty and can be slightly too narrow.</p><div class="section">
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">KaguModel</span><span class="op">$</span><span class="fu">posterior_predictive</span><span class="op">(</span>ndraws <span class="op">=</span> <span class="fl">100L</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"conditional"</span>, <span class="st">"joint"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div><p></p><div class="section">
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>ndraws</code></dt>
+<dd><p>Integer - number of replicated datasets (at most the number
+of stored posterior draws).</p></dd>
+
+      <dt><code>type</code></dt>
+<dd><p><code>"conditional"</code> or <code>"joint"</code>.</p></dd>
+
+
+</dl><p></p></div>
+</div><p></p><div class="section">
+<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
+<p>A <a href="PredictiveResult.html">PredictiveResult</a>.</p>
+</div>
+
+</div>
+
+<p></p><hr><a id="method-KaguModel-function_draws"></a><div class="section">
+<h3 id="kagumodel-function-draws-"><code>KaguModel$function_draws()</code><a class="anchor" aria-label="anchor" href="#kagumodel-function-draws-"></a></h3>
+<p>Prior or posterior draws of a node's conditional-mean
+function against one parent, with the other parents held fixed - for
+plotting what functions the prior allows or the posterior has learned.</p><div class="section">
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">KaguModel</span><span class="op">$</span><span class="fu">function_draws</span><span class="op">(</span></span>
+<span>  <span class="va">node</span>,</span>
+<span>  parent <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ndraws <span class="op">=</span> <span class="fl">50L</span>,</span>
+<span>  n_grid <span class="op">=</span> <span class="fl">100L</span>,</span>
+<span>  prior <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  at <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  data <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div><p></p><div class="section">
+<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>node</code></dt>
+<dd><p>Character scalar - the node whose function to draw.</p></dd>
+
+      <dt><code>parent</code></dt>
+<dd><p>Character scalar - the parent to vary (default: the first).</p></dd>
+
+      <dt><code>ndraws</code></dt>
+<dd><p>Integer - number of function draws.</p></dd>
+
+      <dt><code>n_grid</code></dt>
+<dd><p>Integer - number of grid points across the parent's range.</p></dd>
+
+      <dt><code>prior</code></dt>
+<dd><p>Logical - draw from the prior (<code>TRUE</code>) or posterior.</p></dd>
+
+      <dt><code>at</code></dt>
+<dd><p>Optional named list of values for the other parents (default:
+their means).</p></dd>
+
+      <dt><code>data</code></dt>
+<dd><p>Optional <code>data.frame</code> (defaults to the fitted data).</p></dd>
+
+
+</dl><p></p></div>
+</div><p></p><div class="section">
+<h4 id="returns-6">Returns<a class="anchor" aria-label="anchor" href="#returns-6"></a></h4>
+<p>A <code>tibble</code> with columns <code>draw</code>, <code>parent_value</code>, <code>value</code>.</p>
+</div>
+
+</div>
+
 <p></p><hr><a id="method-KaguModel-plot_dag"></a><div class="section">
 <h3 id="kagumodel-plot-dag-"><code>KaguModel$plot_dag()</code><a class="anchor" aria-label="anchor" href="#kagumodel-plot-dag-"></a></h3>
 <p>Visualise the DAG structure.</p><div class="section">
-<h4 id="usage-5">Usage<a class="anchor" aria-label="anchor" href="#usage-5"></a></h4>
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">KaguModel</span><span class="op">$</span><span class="fu">plot_dag</span><span class="op">(</span>node_pos <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-5">Arguments<a class="anchor" aria-label="anchor" href="#arguments-5"></a></h4>
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>node_pos</code></dt>
 <dd><p>Optional named list of <code>c(row, col)</code> grid coordinates
 for manual node placement (overrides auto-layout for specified nodes).</p></dd>
@@ -252,7 +368,7 @@ for manual node placement (overrides auto-layout for specified nodes).</p></dd>
 
 </dl><p></p></div>
 </div><p></p><div class="section">
-<h4 id="returns-4">Returns<a class="anchor" aria-label="anchor" href="#returns-4"></a></h4>
+<h4 id="returns-7">Returns<a class="anchor" aria-label="anchor" href="#returns-7"></a></h4>
 <p>A <code>ggplot</code> object.</p>
 </div>
 
@@ -263,17 +379,17 @@ for manual node placement (overrides auto-layout for specified nodes).</p></dd>
 <p>Plot the posterior for a fitted node.</p>
 <p>Shows the node's direct local effects (each parent's gradient at the
 means) and residual noise, as posterior means with HDI intervals.</p><div class="section">
-<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">KaguModel</span><span class="op">$</span><span class="fu">plot_posterior</span><span class="op">(</span><span class="va">node</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>node</code></dt>
 <dd><p>Character scalar - the node to plot.</p></dd>
 
 
 </dl><p></p></div>
 </div><p></p><div class="section">
-<h4 id="returns-5">Returns<a class="anchor" aria-label="anchor" href="#returns-5"></a></h4>
+<h4 id="returns-8">Returns<a class="anchor" aria-label="anchor" href="#returns-8"></a></h4>
 <p>A <code>ggplot</code> object.</p>
 </div>
 
@@ -282,10 +398,10 @@ means) and residual noise, as posterior means with HDI intervals.</p><div class=
 <p></p><hr><a id="method-KaguModel-save"></a><div class="section">
 <h3 id="kagumodel-save-"><code>KaguModel$save()</code><a class="anchor" aria-label="anchor" href="#kagumodel-save-"></a></h3>
 <p>Save the fitted model to disk.</p><div class="section">
-<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<h4 id="usage-10">Usage<a class="anchor" aria-label="anchor" href="#usage-10"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">KaguModel</span><span class="op">$</span><span class="fu">save</span><span class="op">(</span><span class="va">path</span>, include_data <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<h4 id="arguments-10">Arguments<a class="anchor" aria-label="anchor" href="#arguments-10"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>path</code></dt>
 <dd><p>File path (e.g. <code>"model.rds"</code>).</p></dd>
 
@@ -304,10 +420,10 @@ the model (default <code>TRUE</code>, so <code>$effects()</code> works immediate
 <p>Print a concise model summary.</p>
 
 <p>Print summary of the model.</p><div class="section">
-<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<h4 id="usage-11">Usage<a class="anchor" aria-label="anchor" href="#usage-11"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">KaguModel</span><span class="op">$</span><span class="fu">print</span><span class="op">(</span><span class="va">...</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<h4 id="arguments-11">Arguments<a class="anchor" aria-label="anchor" href="#arguments-11"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>...</code></dt>
 <dd><p>Ignored.</p></dd>
 
@@ -320,10 +436,10 @@ the model (default <code>TRUE</code>, so <code>$effects()</code> works immediate
 <p></p><hr><a id="method-KaguModel-clone"></a><div class="section">
 <h3 id="kagumodel-clone-"><code>KaguModel$clone()</code><a class="anchor" aria-label="anchor" href="#kagumodel-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
+<h4 id="usage-12">Usage<a class="anchor" aria-label="anchor" href="#usage-12"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">KaguModel</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
+<h4 id="arguments-12">Arguments<a class="anchor" aria-label="anchor" href="#arguments-12"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 

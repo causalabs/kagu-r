@@ -15,6 +15,12 @@ without any explicit formula from the user.
 In this vignette, we’ll look at how to recover and visualise a
 continuous-continuous interaction using Kagu’s effect estimation.
 
+> **Note:** To keep the focus on the demonstration, this vignette skips
+> the full Bayesian workflow of checking priors before fitting and model
+> fit afterwards. With real data you should do both: see
+> [`vignette("predictive_checks")`](https://causalabs.github.io/kagu-r/articles/predictive_checks.md)
+> for how to run prior and posterior predictive checks.
+
 ## A system with a strong interaction
 
 Let’s simulate a system where \\A\\ and \\B\\ are independent causes of

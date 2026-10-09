@@ -16,6 +16,12 @@ only with the *correct* adjustment set, which you can only know from the
 causal structure; Kagu reads that structure off the DAG and applies the
 do-operator directly.
 
+> **Note:** To keep the focus on the demonstration, this vignette skips
+> the full Bayesian workflow of checking priors before fitting and model
+> fit afterwards. With real data you should do both: see
+> [`vignette("predictive_checks")`](https://causalabs.github.io/kagu-r/articles/predictive_checks.md)
+> for how to run prior and posterior predictive checks.
+
 ------------------------------------------------------------------------
 
 ## 1 - Confounder

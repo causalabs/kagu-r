@@ -39,6 +39,12 @@ to nodes, fit to data, and extract causal effects.
 
 - [`KaguModel$diagnostics()`](#method-KaguModel-diagnostics)
 
+- [`KaguModel$prior_predictive()`](#method-KaguModel-prior_predictive)
+
+- [`KaguModel$posterior_predictive()`](#method-KaguModel-posterior_predictive)
+
+- [`KaguModel$function_draws()`](#method-KaguModel-function_draws)
+
 - [`KaguModel$plot_dag()`](#method-KaguModel-plot_dag)
 
 - [`KaguModel$plot_posterior()`](#method-KaguModel-plot_posterior)
@@ -57,7 +63,7 @@ Create a new KaguModel.
 
 #### Usage
 
-    KaguModel$new(dag, mechanisms = NULL)
+    KaguModel$new(dag, mechanisms = NULL, default_mechanism = NULL)
 
 #### Arguments
 
@@ -69,7 +75,14 @@ Create a new KaguModel.
 - `mechanisms`:
 
   Optional named list of `Mechanism` instances. Any node not specified
-  receives a `GPMechanism` by default.
+  receives a copy of `default_mechanism`.
+
+- `default_mechanism`:
+
+  Optional `Mechanism` used for every node not listed in `mechanisms`
+  (each node gets its own copy). Defaults to `GPMechanism$new()`; pass
+  e.g. `GPMechanism$new(prior = gp_prior(...))` to set one prior for the
+  model.
 
 ------------------------------------------------------------------------
 
@@ -211,6 +224,130 @@ sd per node.
 #### Returns
 
 A `tibble` with `node`, `n_chains`, `n_draws`, `sigma`, `sigma_sd`.
+
+------------------------------------------------------------------------
+
+### `KaguModel$prior_predictive()`
+
+Simulate replicated datasets from the **prior** predictive distribution,
+by ancestral sampling through the DAG: each draw samples every node's
+hyperparameters, function and noise from its mechanism's prior, feeding
+simulated parents into their children. Needs no fit.
+
+#### Usage
+
+    KaguModel$prior_predictive(data = NULL, ndraws = 100L)
+
+#### Arguments
+
+- `data`:
+
+  A `data.frame`, used only for each variable's location and scale
+  (priors are on the standardised scale) and the number of rows.
+  Defaults to the fitted data.
+
+- `ndraws`:
+
+  Integer - number of replicated datasets.
+
+#### Returns
+
+A
+[PredictiveResult](https://causalabs.github.io/kagu-r/reference/PredictiveResult.md)
+with `type = "prior"`.
+
+------------------------------------------------------------------------
+
+### `KaguModel$posterior_predictive()`
+
+Simulate replicated datasets from the **posterior** predictive
+distribution.
+
+- `type = "conditional"`: every node is simulated given its *observed*
+  parents. This checks each mechanism (local fit) in isolation.
+
+- `type = "joint"`: the whole graph is simulated ancestrally from the
+  fitted model, with each node's posterior draw fed its simulated
+  parents. This checks what the DAG implies globally - e.g. a missing
+  edge shows up as a dependence the replicated data cannot reproduce.
+
+Hyperparameters are point estimates, so the replicates do not carry
+hyperparameter uncertainty and can be slightly too narrow.
+
+#### Usage
+
+    KaguModel$posterior_predictive(ndraws = 100L, type = c("conditional", "joint"))
+
+#### Arguments
+
+- `ndraws`:
+
+  Integer - number of replicated datasets (at most the number of stored
+  posterior draws).
+
+- `type`:
+
+  `"conditional"` or `"joint"`.
+
+#### Returns
+
+A
+[PredictiveResult](https://causalabs.github.io/kagu-r/reference/PredictiveResult.md).
+
+------------------------------------------------------------------------
+
+### `KaguModel$function_draws()`
+
+Prior or posterior draws of a node's conditional-mean function against
+one parent, with the other parents held fixed - for plotting what
+functions the prior allows or the posterior has learned.
+
+#### Usage
+
+    KaguModel$function_draws(
+      node,
+      parent = NULL,
+      ndraws = 50L,
+      n_grid = 100L,
+      prior = FALSE,
+      at = NULL,
+      data = NULL
+    )
+
+#### Arguments
+
+- `node`:
+
+  Character scalar - the node whose function to draw.
+
+- `parent`:
+
+  Character scalar - the parent to vary (default: the first).
+
+- `ndraws`:
+
+  Integer - number of function draws.
+
+- `n_grid`:
+
+  Integer - number of grid points across the parent's range.
+
+- `prior`:
+
+  Logical - draw from the prior (`TRUE`) or posterior.
+
+- `at`:
+
+  Optional named list of values for the other parents (default: their
+  means).
+
+- `data`:
+
+  Optional `data.frame` (defaults to the fitted data).
+
+#### Returns
+
+A `tibble` with columns `draw`, `parent_value`, `value`.
 
 ------------------------------------------------------------------------
 

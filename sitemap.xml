@@ -9,6 +9,7 @@
 <url><loc>https://causalabs.github.io/kagu-r/articles/ecology_case_study.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/articles/index.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/articles/interactions.html</loc></url>
+<url><loc>https://causalabs.github.io/kagu-r/articles/predictive_checks.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/articles/quickstart.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/authors.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/index.html</loc></url>
@@ -17,6 +18,7 @@
 <url><loc>https://causalabs.github.io/kagu-r/reference/GPMechanism.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/KaguModel.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/Mechanism.html</loc></url>
+<url><loc>https://causalabs.github.io/kagu-r/reference/PredictiveResult.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/ancestors.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/build_summary_table.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/compute_effect.html</loc></url>
@@ -26,6 +28,7 @@
 <url><loc>https://causalabs.github.io/kagu-r/reference/effects.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/enumerate_dags.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/fit_node.html</loc></url>
+<url><loc>https://causalabs.github.io/kagu-r/reference/gp_prior.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/index.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/inference.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/io.html</loc></url>
@@ -40,6 +43,7 @@
 <url><loc>https://causalabs.github.io/kagu-r/reference/mechanisms.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/node_depth.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/plots.html</loc></url>
+<url><loc>https://causalabs.github.io/kagu-r/reference/prior_families.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/summary.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/topological_sort.html</loc></url>
 <url><loc>https://causalabs.github.io/kagu-r/reference/validate_dag.html</loc></url>

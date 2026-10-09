@@ -5,6 +5,12 @@ behavioural ecology. We’ll use Kagu to perform causal discovery,
 estimate effects, unmask hidden interactions, and avoid the notorious
 “Table II fallacy” common in traditional regression.
 
+> **Note:** To keep the focus on the demonstration, this vignette skips
+> the full Bayesian workflow of checking priors before fitting and model
+> fit afterwards. With real data you should do both: see
+> [`vignette("predictive_checks")`](https://causalabs.github.io/kagu-r/articles/predictive_checks.md)
+> for how to run prior and posterior predictive checks.
+
 ## The study system
 
 Imagine a long-term field study of a social mammal population (e.g.,
@@ -155,18 +161,8 @@ those edges contradicts the strong, non-linear signature that `sex`,
 `sociality` and `food_sharing` jointly leave in `condition`. But `Alt1`,
 which drops the single `age → sociality` edge (claiming sociality has no
 measured cause), still retains ~17% of the posterior. With only 50 noisy
-individuals the weak influence of age on sociality is genuinely hard to
-detect, and Kagu reports that ambiguity honestly rather than papering
-over it.
-
-Two things are worth noting. First, the parents of `condition` are
-pinned down with near-certainty across every competitive structure - the
-strong `sex * sociality` interaction gives the GP a non-linear signature
-that no reversal of those edges can mimic. Second, the
-posterior-over-DAGs framing carries the residual structural uncertainty
-forward rather than discarding it, so we can go on to estimate effects
-while remaining appropriately humble about which structure generated the
-data.
+individuals the weak influence of age on sociality is hard to detect, so
+Kagu reports the full posterior.
 
 ## The Table II fallacy
 
@@ -232,11 +228,10 @@ between them is structural, not statistical.
 
 It can be worse still. An adjustment variable with its own unmeasured
 confounder gives a coefficient that is not merely the wrong estimand but
-outright confounded; Westreich & Greenland give the full taxonomy. The
-remedy is the same in every case: decide which estimand you want for
-each variable and let the graph deliver it, rather than reading a
-regression table as a list of interchangeable “effects” – which is
-exactly what Kagu does next.
+outright confounded. Instead the correct process is to decide which
+estimand you want for each variable and calculate the adjustment set
+from the graph, rather than reading a regression table as a list of
+interchangeable “effects”.
 
 ## Estimating the true effects with Kagu
 
@@ -257,16 +252,15 @@ mod$effects("sociality", "condition", hdi = 0.95)$summary()
 ```
 
 The point estimate is modestly positive (~0.38), but the 95% HDI is very
-wide and straddles zero. This is not a failure - it is Kagu being
-honest. The population-averaged total effect is pulled in two directions
-at once: the food-sharing mediation contributes a positive push, while
-the *direct* effect of sociality is strongly positive in females and
-strongly negative in males, so on average it nearly cancels and mostly
-inflates the spread. A single population-averaged number is therefore
-almost meaningless here; the wide HDI is Kagu’s way of telling us the
-effect is highly heterogeneous across the population. In the next
-section we split it apart by sex to reveal exactly what that average
-conceals.
+wide and straddles zero. The population-averaged total effect is pulled
+in two directions at once: the food-sharing mediation contributes a
+positive push, while the *direct* effect of sociality is strongly
+positive in females and strongly negative in males, so on average it
+nearly cancels and mostly inflates the spread. A single
+population-averaged number is therefore almost meaningless here; the
+wide HDI hints that the effect could be heterogeneous across the
+population. In the next section we split it apart by sex to reveal what
+happens in the two groups.
 
 ### Examining the mediator
 
@@ -289,8 +283,7 @@ mod$effects("food_sharing", "condition", sweep = TRUE, hdi = 0.95)$plot() +
 
 The model recovers the direct effect of food sharing (\\\approx 0.85\\
 here - close to the true value of 0.8, correctly identified as the
-strongest single pathway, and the one coefficient the flawed linear
-table got roughly right!).
+strongest single pathway).
 
 ### Unmasking the interaction
 
@@ -331,12 +324,11 @@ eff_multi$plot() +
 
 ![](ecology_case_study_files/figure-html/sweep-plot-1.png)
 
-The diverging plot reveals exactly what the classic regression table
-hid: sociality has a massive effect on body condition for both sexes.
-For females, the stress-buffering benefits of sociality compound with
-the food-sharing benefits, resulting in a steep positive slope. For
-males, the costs of agonistic competition overwhelm the food-sharing
-benefits, resulting in a negative slope.
+The diverging plot shows that sociality has a large effect on body
+condition for both sexes. For females, the stress-buffering benefits of
+sociality positively interact with the food-sharing benefits, resulting
+in a steep positive slope. For males, the costs of agonistic competition
+overwhelm the food-sharing benefits, resulting in a negative slope.
 
 We can read off the same story quantitatively by querying the
 conditional (per-sex) total effect directly:
@@ -400,8 +392,8 @@ for causal inference:
     optimally predict `condition` are fundamentally not the correct
     adjustment set for estimating the causal effect of `food_sharing`.
 
-Kagu avoids all of this by explicitly separating the *causal structure*
-(the DAG) from the *functional form* (the GPs). It discovers the
-interactions automatically to identify the structure, and then
-rigorously applies Do-calculus to estimate the exact marginal or
-conditional effects without falling into the Table II trap!
+GCMs avoid all of this by explicitly separating the *causal structure*
+(the DAG) from the querying procedure. It discovers the interactions
+automatically to identify the structure, and then applies forward
+propagation to estimate the exact marginal or conditional effects
+without falling into the Table II trap.

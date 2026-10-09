@@ -8,9 +8,15 @@
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/IBM_Plex_Sans-0.4.10/font.css" rel="stylesheet"><link href="../deps/IBM_Plex_Mono-0.4.10/font.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet"><script src="../extra.js"></script><meta property="og:title" content="Gaussian-process mechanism (default) — GPMechanism"><meta name="description" content="Models each node's conditional mean as an exact Gaussian process of its
 parents, with a squared-exponential (ARD) kernel - one lengthscale per parent,
 which captures non-linearity and interactions automatically. Kernel
-hyperparameters (lengthscales, signal and noise variance) are set by type-II
-maximum likelihood; there is no MCMC. A node with no parents is modelled by
-its marginal (a Normal). This is Kagu's default and only mechanism.
+hyperparameters (lengthscales, signal and noise variance) are point-estimated
+by type-II maximum likelihood (hyper = &quot;ml&quot;) or maximum a posteriori
+(hyper = &quot;map&quot;) under the priors in gp_prior(); there is no MCMC. A node
+with no parents is modelled by its marginal (a Normal). This is Kagu's
+default and only mechanism.
+The default gp_prior() is log-uniform over the box the likelihood search is
+bounded to, so the default ML fit is the MAP fit under that prior. Supplying
+any other prior switches the default to hyper = &quot;map&quot;, so the prior you
+check with $prior_predictive() is the prior the fit actually uses.
 Structure discovery uses the exact GP log marginal likelihood, which - in
 contrast to fast basis/eigenfunction approximations - is well calibrated: for
 a genuinely unidentifiable (e.g. linear-Gaussian) edge it does not manufacture
@@ -21,9 +27,15 @@ each draw is a coherent function evaluable at any point - giving correctly
 correlated uncertainty for do-calculus contrasts."><meta property="og:description" content="Models each node's conditional mean as an exact Gaussian process of its
 parents, with a squared-exponential (ARD) kernel - one lengthscale per parent,
 which captures non-linearity and interactions automatically. Kernel
-hyperparameters (lengthscales, signal and noise variance) are set by type-II
-maximum likelihood; there is no MCMC. A node with no parents is modelled by
-its marginal (a Normal). This is Kagu's default and only mechanism.
+hyperparameters (lengthscales, signal and noise variance) are point-estimated
+by type-II maximum likelihood (hyper = &quot;ml&quot;) or maximum a posteriori
+(hyper = &quot;map&quot;) under the priors in gp_prior(); there is no MCMC. A node
+with no parents is modelled by its marginal (a Normal). This is Kagu's
+default and only mechanism.
+The default gp_prior() is log-uniform over the box the likelihood search is
+bounded to, so the default ML fit is the MAP fit under that prior. Supplying
+any other prior switches the default to hyper = &quot;map&quot;, so the prior you
+check with $prior_predictive() is the prior the fit actually uses.
 Structure discovery uses the exact GP log marginal likelihood, which - in
 contrast to fast basis/eigenfunction approximations - is well calibrated: for
 a genuinely unidentifiable (e.g. linear-Gaussian) edge it does not manufacture
@@ -39,7 +51,7 @@ correlated uncertainty for do-calculus contrasts."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">kagu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +67,7 @@ correlated uncertainty for do-calculus contrasts."></head><body>
     <li><a class="dropdown-item" href="../articles/interactions.html">Modelling interactions</a></li>
     <li><a class="dropdown-item" href="../articles/comparison.html">Comparison vs OLS</a></li>
     <li><a class="dropdown-item" href="../articles/ecology_case_study.html">Ecology case study</a></li>
+    <li><a class="dropdown-item" href="../articles/predictive_checks.html">Predictive checks</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/causalabs/kagu-r/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
@@ -74,9 +87,15 @@ correlated uncertainty for do-calculus contrasts."></head><body>
     <p>Models each node's conditional mean as an <strong>exact Gaussian process</strong> of its
 parents, with a squared-exponential (ARD) kernel - one lengthscale per parent,
 which captures non-linearity and interactions automatically. Kernel
-hyperparameters (lengthscales, signal and noise variance) are set by type-II
-maximum likelihood; there is no MCMC. A node with no parents is modelled by
-its marginal (a Normal). This is Kagu's default and only mechanism.</p>
+hyperparameters (lengthscales, signal and noise variance) are point-estimated
+by type-II maximum likelihood (<code>hyper = "ml"</code>) or maximum a posteriori
+(<code>hyper = "map"</code>) under the priors in <code><a href="gp_prior.html">gp_prior()</a></code>; there is no MCMC. A node
+with no parents is modelled by its marginal (a Normal). This is Kagu's
+default and only mechanism.</p>
+<p>The default <code><a href="gp_prior.html">gp_prior()</a></code> is log-uniform over the box the likelihood search is
+bounded to, so the default ML fit <em>is</em> the MAP fit under that prior. Supplying
+any other prior switches the default to <code>hyper = "map"</code>, so the prior you
+check with <code>$prior_predictive()</code> is the prior the fit actually uses.</p>
 <p>Structure discovery uses the <strong>exact</strong> GP log marginal likelihood, which - in
 contrast to fast basis/eigenfunction approximations - is well calibrated: for
 a genuinely unidentifiable (e.g. linear-Gaussian) edge it does not manufacture
@@ -107,6 +126,14 @@ correlated uncertainty for do-calculus contrasts.</p>
 <dd><p>Numeric - diagonal jitter for numerical stability (default 1e-6).</p></dd>
 
 
+    <dt><code>prior</code></dt>
+<dd><p>A <code><a href="gp_prior.html">gp_prior()</a></code> - priors on the (standardised) hyperparameters.</p></dd>
+
+
+    <dt><code>hyper</code></dt>
+<dd><p>Character - <code>"ml"</code> (type-II maximum likelihood) or <code>"map"</code>.</p></dd>
+
+
 </dl><p></p></div>
     </div>
     <div class="section level2">
@@ -120,12 +147,21 @@ correlated uncertainty for do-calculus contrasts.</p>
 <li><p><a href="#method-GPMechanism-log_marglik"><code>GPMechanism$log_marglik()</code></a></p></li>
 <li><p><a href="#method-GPMechanism-posterior_shape"><code>GPMechanism$posterior_shape()</code></a></p></li>
 <li><p><a href="#method-GPMechanism-node_terms"><code>GPMechanism$node_terms()</code></a></p></li>
+<li><p><a href="#method-GPMechanism-simulate_prior"><code>GPMechanism$simulate_prior()</code></a></p></li>
+<li><p><a href="#method-GPMechanism-simulate_posterior"><code>GPMechanism$simulate_posterior()</code></a></p></li>
+<li><p><a href="#method-GPMechanism-function_draws"><code>GPMechanism$function_draws()</code></a></p></li>
 <li><p><a href="#method-GPMechanism-clone"><code>GPMechanism$clone()</code></a></p></li>
 </ul></div><p></p><hr><a id="method-GPMechanism-initialize"></a><div class="section">
 <h3 id="gpmechanism-new-"><code>GPMechanism$new()</code><a class="anchor" aria-label="anchor" href="#gpmechanism-new-"></a></h3>
 <p>Create a new GPMechanism.</p><div class="section">
 <h4 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a></h4>
-<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/GPMechanism.html">GPMechanism</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>num_results <span class="op">=</span> <span class="fl">1000L</span>, n_features <span class="op">=</span> <span class="fl">300L</span>, jitter <span class="op">=</span> <span class="fl">1e-06</span><span class="op">)</span></span></code></pre></div><p></p></div>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va"><a href="../reference/GPMechanism.html">GPMechanism</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span>  num_results <span class="op">=</span> <span class="fl">1000L</span>,</span>
+<span>  n_features <span class="op">=</span> <span class="fl">300L</span>,</span>
+<span>  jitter <span class="op">=</span> <span class="fl">1e-06</span>,</span>
+<span>  prior <span class="op">=</span> <span class="fu"><a href="../reference/gp_prior.html">gp_prior</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  hyper <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
 <h4 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>num_results</code></dt>
@@ -136,6 +172,14 @@ correlated uncertainty for do-calculus contrasts.</p>
 
       <dt><code>jitter</code></dt>
 <dd><p>Numeric - diagonal jitter added to the kernel.</p></dd>
+
+      <dt><code>prior</code></dt>
+<dd><p>A <code><a href="gp_prior.html">gp_prior()</a></code> object (default: the implicit log-uniform box).</p></dd>
+
+      <dt><code>hyper</code></dt>
+<dd><p><code>"ml"</code> or <code>"map"</code>. <code>NULL</code> (default) picks <code>"ml"</code> when every
+kernel prior is log-uniform (where ML and MAP coincide) and <code>"map"</code>
+otherwise.</p></dd>
 
 
 </dl><p></p></div>
@@ -258,13 +302,111 @@ parent, giving the parent values for each posterior draw.</p></dd>
 
 </div>
 
+<p></p><hr><a id="method-GPMechanism-simulate_prior"></a><div class="section">
+<h3 id="gpmechanism-simulate-prior-"><code>GPMechanism$simulate_prior()</code><a class="anchor" aria-label="anchor" href="#gpmechanism-simulate-prior-"></a></h3>
+<p>Prior predictive draws (see <a href="Mechanism.html">Mechanism</a>). Each draw samples
+hyperparameters from <code>prior</code>, an exact GP function at the parents' rows,
+and observation noise - on the standardised scale - then maps back to the
+data's location and scale.</p><div class="section">
+<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">GPMechanism</span><span class="op">$</span><span class="fu">simulate_prior</span><span class="op">(</span><span class="va">node</span>, <span class="va">parents</span>, <span class="va">parent_values</span>, <span class="va">data</span>, <span class="va">ndraws</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div><p></p><div class="section">
+<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>node</code></dt>
+<dd><p>Character scalar - the node name.</p></dd>
+
+      <dt><code>parents</code></dt>
+<dd><p>Character vector of parent node names.</p></dd>
+
+      <dt><code>parent_values</code></dt>
+<dd><p>Named list of <code>[ndraws, n]</code> matrices of simulated
+parent values, one per parent (empty for a root node).</p></dd>
+
+      <dt><code>data</code></dt>
+<dd><p>A <code>data.frame</code> - sets the node's location/scale and <code>n</code>.</p></dd>
+
+      <dt><code>ndraws</code></dt>
+<dd><p>Integer - number of prior predictive draws.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div>
+
+<p></p><hr><a id="method-GPMechanism-simulate_posterior"></a><div class="section">
+<h3 id="gpmechanism-simulate-posterior-"><code>GPMechanism$simulate_posterior()</code><a class="anchor" aria-label="anchor" href="#gpmechanism-simulate-posterior-"></a></h3>
+<p>Posterior predictive draws (see <a href="Mechanism.html">Mechanism</a>): the matched
+pathwise function draw at each row's parents plus noise, with the noise
+sd drawn as in <code>$node_terms()</code>.</p><div class="section">
+<h4 id="usage-7">Usage<a class="anchor" aria-label="anchor" href="#usage-7"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">GPMechanism</span><span class="op">$</span><span class="fu">simulate_posterior</span><span class="op">(</span><span class="va">node</span>, <span class="va">parents</span>, <span class="va">parent_values</span>, <span class="va">fit</span>, <span class="va">draws</span>, <span class="va">n</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div><p></p><div class="section">
+<h4 id="arguments-7">Arguments<a class="anchor" aria-label="anchor" href="#arguments-7"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>node</code></dt>
+<dd><p>Character scalar - the node name.</p></dd>
+
+      <dt><code>parents</code></dt>
+<dd><p>Character vector of parent node names.</p></dd>
+
+      <dt><code>parent_values</code></dt>
+<dd><p>Named list, one entry per parent: either a length-<code>n</code>
+vector shared by every draw (e.g. the observed parents) or a
+<code>[length(draws), n]</code> matrix with one row per draw.</p></dd>
+
+      <dt><code>fit</code></dt>
+<dd><p>A fit object from <code>$fit()</code>.</p></dd>
+
+      <dt><code>draws</code></dt>
+<dd><p>Integer vector - which posterior draws to use.</p></dd>
+
+      <dt><code>n</code></dt>
+<dd><p>Integer - number of observations to simulate per draw.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div>
+
+<p></p><hr><a id="method-GPMechanism-function_draws"></a><div class="section">
+<h3 id="gpmechanism-function-draws-"><code>GPMechanism$function_draws()</code><a class="anchor" aria-label="anchor" href="#gpmechanism-function-draws-"></a></h3>
+<p>Prior or posterior function draws on a grid (see <a href="Mechanism.html">Mechanism</a>).</p><div class="section">
+<h4 id="usage-8">Usage<a class="anchor" aria-label="anchor" href="#usage-8"></a></h4>
+<p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">GPMechanism</span><span class="op">$</span><span class="fu">function_draws</span><span class="op">(</span><span class="va">node</span>, <span class="va">parents</span>, <span class="va">grid</span>, <span class="va">data</span>, fit <span class="op">=</span> <span class="cn">NULL</span>, ndraws <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span></code></pre></div><p></p></div>
+</div><p></p><div class="section">
+<h4 id="arguments-8">Arguments<a class="anchor" aria-label="anchor" href="#arguments-8"></a></h4>
+<p></p><div class="arguments"><dl><dt><code>node</code></dt>
+<dd><p>Character scalar - the node name.</p></dd>
+
+      <dt><code>parents</code></dt>
+<dd><p>Character vector of parent node names.</p></dd>
+
+      <dt><code>grid</code></dt>
+<dd><p>A <code>data.frame</code> with one column per parent.</p></dd>
+
+      <dt><code>data</code></dt>
+<dd><p>A <code>data.frame</code> - sets the node's location/scale.</p></dd>
+
+      <dt><code>fit</code></dt>
+<dd><p>A fit object from <code>$fit()</code>, or <code>NULL</code> for prior draws.</p></dd>
+
+      <dt><code>ndraws</code></dt>
+<dd><p>Integer - number of function draws.</p></dd>
+
+
+</dl><p></p></div>
+</div>
+
+</div>
+
 <p></p><hr><a id="method-GPMechanism-clone"></a><div class="section">
 <h3 id="gpmechanism-clone-"><code>GPMechanism$clone()</code><a class="anchor" aria-label="anchor" href="#gpmechanism-clone-"></a></h3>
 <p>The objects of this class are cloneable with this method.</p><div class="section">
-<h4 id="usage-6">Usage<a class="anchor" aria-label="anchor" href="#usage-6"></a></h4>
+<h4 id="usage-9">Usage<a class="anchor" aria-label="anchor" href="#usage-9"></a></h4>
 <p></p><div class="r"><div class="sourceCode"><pre><code><span><span class="va">GPMechanism</span><span class="op">$</span><span class="fu">clone</span><span class="op">(</span>deep <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div><p></p></div>
 </div><p></p><div class="section">
-<h4 id="arguments-6">Arguments<a class="anchor" aria-label="anchor" href="#arguments-6"></a></h4>
+<h4 id="arguments-9">Arguments<a class="anchor" aria-label="anchor" href="#arguments-9"></a></h4>
 <p></p><div class="arguments"><dl><dt><code>deep</code></dt>
 <dd><p>Whether to make a deep clone.</p></dd>
 
@@ -280,6 +422,11 @@ parent, giving the parent values for each posterior draw.</p></dd>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="va">mech</span> <span class="op">&lt;-</span> <span class="va">GPMechanism</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Weakly informative priors, fitted by MAP</span></span></span>
+<span class="r-in"><span><span class="va">mech</span> <span class="op">&lt;-</span> <span class="va">GPMechanism</span><span class="op">$</span><span class="fu">new</span><span class="op">(</span>prior <span class="op">=</span> <span class="fu"><a href="gp_prior.html">gp_prior</a></span><span class="op">(</span>lengthscale <span class="op">=</span> <span class="fu"><a href="prior_families.html">prior_lognormal</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.5</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">mech</span><span class="op">$</span><span class="va">hyper</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "map"</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

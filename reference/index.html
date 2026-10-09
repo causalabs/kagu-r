@@ -13,7 +13,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">kagu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,7 @@
     <li><a class="dropdown-item" href="../articles/interactions.html">Modelling interactions</a></li>
     <li><a class="dropdown-item" href="../articles/comparison.html">Comparison vs OLS</a></li>
     <li><a class="dropdown-item" href="../articles/ecology_case_study.html">Ecology case study</a></li>
+    <li><a class="dropdown-item" href="../articles/predictive_checks.html">Predictive checks</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/causalabs/kagu-r/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
@@ -81,6 +82,36 @@
 
         </dt>
         <dd>Gaussian-process mechanism (default)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="priors-and-model-checking">Priors and model checking<a class="anchor" aria-label="anchor" href="#priors-and-model-checking"></a></h2>
+
+      <div class="section-desc"><p>Hyperparameter priors and prior / posterior predictive checks.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="gp_prior.html">gp_prior()</a></code>
+
+        </dt>
+        <dd>Priors for a GPMechanism's hyperparameters</dd>
+
+        <dt>
+
+          <code><a href="prior_families.html">prior_loguniform()</a></code> <code><a href="prior_families.html">prior_lognormal()</a></code> <code><a href="prior_families.html">prior_invgamma()</a></code> <code><a href="prior_families.html">prior_halfnormal()</a></code> <code><a href="prior_families.html">prior_normal()</a></code>
+
+        </dt>
+        <dd>Prior distributions for Gaussian-process hyperparameters</dd>
+
+        <dt>
+
+          <code><a href="PredictiveResult.html">PredictiveResult</a></code>
+
+        </dt>
+        <dd>Prior / posterior predictive check results</dd>
       </dl></div><div class="section level2">
       <h2 id="effects">Effects<a class="anchor" aria-label="anchor" href="#effects"></a></h2>
 

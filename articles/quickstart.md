@@ -3,6 +3,12 @@
 This quickstart fits a small causal model end to end: define the graph,
 fit it, and read off causal effects with full posterior uncertainty.
 
+> **Note:** To keep the focus on the demonstration, this vignette skips
+> the full Bayesian workflow of checking priors before fitting and model
+> fit afterwards. With real data you should do both: see
+> [`vignette("predictive_checks")`](https://causalabs.github.io/kagu-r/articles/predictive_checks.md)
+> for how to run prior and posterior predictive checks.
+
 ## Define the causal structure
 
 A Kagu model is a DAG - a named list mapping each node to its parent

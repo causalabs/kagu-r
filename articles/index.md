@@ -14,3 +14,5 @@
   interactions](https://causalabs.github.io/kagu-r/articles/interactions.md):
 - [Causal structure
   discovery](https://causalabs.github.io/kagu-r/articles/discovery.md):
+- [Prior and posterior predictive
+  checks](https://causalabs.github.io/kagu-r/articles/predictive_checks.md):

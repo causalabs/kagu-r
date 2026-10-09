@@ -16,6 +16,21 @@ Probabilistic models for node conditional distributions.
 - [`GPMechanism`](https://causalabs.github.io/kagu-r/reference/GPMechanism.md)
   : Gaussian-process mechanism (default)
 
+## Priors and model checking
+
+Hyperparameter priors and prior / posterior predictive checks.
+
+- [`gp_prior()`](https://causalabs.github.io/kagu-r/reference/gp_prior.md)
+  : Priors for a GPMechanism's hyperparameters
+- [`prior_loguniform()`](https://causalabs.github.io/kagu-r/reference/prior_families.md)
+  [`prior_lognormal()`](https://causalabs.github.io/kagu-r/reference/prior_families.md)
+  [`prior_invgamma()`](https://causalabs.github.io/kagu-r/reference/prior_families.md)
+  [`prior_halfnormal()`](https://causalabs.github.io/kagu-r/reference/prior_families.md)
+  [`prior_normal()`](https://causalabs.github.io/kagu-r/reference/prior_families.md)
+  : Prior distributions for Gaussian-process hyperparameters
+- [`PredictiveResult`](https://causalabs.github.io/kagu-r/reference/PredictiveResult.md)
+  : Prior / posterior predictive check results
+
 ## Effects
 
 Causal effect estimation and results.

@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">kagu</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,7 @@
     <li><a class="dropdown-item" href="../articles/interactions.html">Modelling interactions</a></li>
     <li><a class="dropdown-item" href="../articles/comparison.html">Comparison vs OLS</a></li>
     <li><a class="dropdown-item" href="../articles/ecology_case_study.html">Ecology case study</a></li>
+    <li><a class="dropdown-item" href="../articles/predictive_checks.html">Predictive checks</a></li>
   </ul>
 </li>
       </ul>
@@ -78,6 +79,13 @@
 behavioural ecology. We’ll use Kagu to perform causal discovery,
 estimate effects, unmask hidden interactions, and avoid the notorious
 “Table II fallacy” common in traditional regression.</p>
+<blockquote>
+<p><strong>Note:</strong> To keep the focus on the demonstration, this
+vignette skips the full Bayesian workflow of checking priors before
+fitting and model fit afterwards. With real data you should do both: see
+<code><a href="../articles/predictive_checks.html">vignette("predictive_checks")</a></code> for how to run prior and
+posterior predictive checks.</p>
+</blockquote>
 <div class="section level2">
 <h2 id="the-study-system">The study system<a class="anchor" aria-label="anchor" href="#the-study-system"></a>
 </h2>
@@ -234,17 +242,8 @@ contradicts the strong, non-linear signature that <code>sex</code>,
 <code>condition</code>. But <code>Alt1</code>, which drops the single
 <code>age → sociality</code> edge (claiming sociality has no measured
 cause), still retains ~17% of the posterior. With only 50 noisy
-individuals the weak influence of age on sociality is genuinely hard to
-detect, and Kagu reports that ambiguity honestly rather than papering
-over it.</p>
-<p>Two things are worth noting. First, the parents of
-<code>condition</code> are pinned down with near-certainty across every
-competitive structure - the strong <code>sex * sociality</code>
-interaction gives the GP a non-linear signature that no reversal of
-those edges can mimic. Second, the posterior-over-DAGs framing carries
-the residual structural uncertainty forward rather than discarding it,
-so we can go on to estimate effects while remaining appropriately humble
-about which structure generated the data.</p>
+individuals the weak influence of age on sociality is hard to detect, so
+Kagu reports the full posterior.</p>
 </div>
 <div class="section level2">
 <h2 id="the-table-ii-fallacy">The Table II fallacy<a class="anchor" aria-label="anchor" href="#the-table-ii-fallacy"></a>
@@ -304,11 +303,10 @@ With only 50 individuals both estimates are uncertain, yet the
 <em>distinction</em> between them is structural, not statistical.</p>
 <p>It can be worse still. An adjustment variable with its own unmeasured
 confounder gives a coefficient that is not merely the wrong estimand but
-outright confounded; Westreich &amp; Greenland give the full taxonomy.
-The remedy is the same in every case: decide which estimand you want for
-each variable and let the graph deliver it, rather than reading a
-regression table as a list of interchangeable “effects” – which is
-exactly what Kagu does next.</p>
+outright confounded. Instead the correct process is to decide which
+estimand you want for each variable and calculate the adjustment set
+from the graph, rather than reading a regression table as a list of
+interchangeable “effects”.</p>
 </div>
 <div class="section level2">
 <h2 id="estimating-the-true-effects-with-kagu">Estimating the true effects with Kagu<a class="anchor" aria-label="anchor" href="#estimating-the-true-effects-with-kagu"></a>
@@ -327,16 +325,15 @@ full posterior:</p>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> sociality condition -<span style="color: #BB0000;">0.091</span><span style="color: #BB0000; text-decoration: underline;">0</span> 0.909 0.384 0.231   -<span style="color: #BB0000;">0.060</span><span style="color: #BB0000; text-decoration: underline;">3</span>     0.844</span></span></code></pre></div>
 <p>The point estimate is modestly positive (~0.38), but the 95% HDI is
-very wide and straddles zero. This is not a failure - it is Kagu being
-honest. The population-averaged total effect is pulled in two directions
-at once: the food-sharing mediation contributes a positive push, while
-the <em>direct</em> effect of sociality is strongly positive in females
-and strongly negative in males, so on average it nearly cancels and
-mostly inflates the spread. A single population-averaged number is
-therefore almost meaningless here; the wide HDI is Kagu’s way of telling
-us the effect is highly heterogeneous across the population. In the next
-section we split it apart by sex to reveal exactly what that average
-conceals.</p>
+very wide and straddles zero. The population-averaged total effect is
+pulled in two directions at once: the food-sharing mediation contributes
+a positive push, while the <em>direct</em> effect of sociality is
+strongly positive in females and strongly negative in males, so on
+average it nearly cancels and mostly inflates the spread. A single
+population-averaged number is therefore almost meaningless here; the
+wide HDI hints that the effect could be heterogeneous across the
+population. In the next section we split it apart by sex to reveal what
+happens in the two groups.</p>
 <div class="section level3">
 <h3 id="examining-the-mediator">Examining the mediator<a class="anchor" aria-label="anchor" href="#examining-the-mediator"></a>
 </h3>
@@ -353,8 +350,7 @@ food sharing?</p>
 <span>  <span class="fu">ggtitle</span><span class="op">(</span><span class="st">"Direct effect of Food Sharing on Condition"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="ecology_case_study_files/figure-html/mediator-effect-1.png" class="r-plt" alt="" width="672"></p>
 <p>The model recovers the direct effect of food sharing (<span class="math inline">\(\approx 0.85\)</span> here - close to the true
-value of 0.8, correctly identified as the strongest single pathway, and
-the one coefficient the flawed linear table got roughly right!).</p>
+value of 0.8, correctly identified as the strongest single pathway).</p>
 </div>
 <div class="section level3">
 <h3 id="unmasking-the-interaction">Unmasking the interaction<a class="anchor" aria-label="anchor" href="#unmasking-the-interaction"></a>
@@ -391,12 +387,11 @@ can visualise the true, divergent effects of sociality by using a
 <span>    color <span class="op">=</span> <span class="st">"Sex"</span>, fill <span class="op">=</span> <span class="st">"Sex"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <p><img src="ecology_case_study_files/figure-html/sweep-plot-1.png" class="r-plt" alt="" width="672"></p>
-<p>The diverging plot reveals exactly what the classic regression table
-hid: sociality has a massive effect on body condition for both sexes.
-For females, the stress-buffering benefits of sociality compound with
-the food-sharing benefits, resulting in a steep positive slope. For
-males, the costs of agonistic competition overwhelm the food-sharing
-benefits, resulting in a negative slope.</p>
+<p>The diverging plot shows that sociality has a large effect on body
+condition for both sexes. For females, the stress-buffering benefits of
+sociality positively interact with the food-sharing benefits, resulting
+in a steep positive slope. For males, the costs of agonistic competition
+overwhelm the food-sharing benefits, resulting in a negative slope.</p>
 <p>We can read off the same story quantitatively by querying the
 conditional (per-sex) total effect directly:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -455,11 +450,11 @@ Fallacy</strong>. The variables chosen by AIC to optimally predict
 <code>condition</code> are fundamentally not the correct adjustment set
 for estimating the causal effect of <code>food_sharing</code>.</li>
 </ol>
-<p>Kagu avoids all of this by explicitly separating the <em>causal
-structure</em> (the DAG) from the <em>functional form</em> (the GPs). It
-discovers the interactions automatically to identify the structure, and
-then rigorously applies Do-calculus to estimate the exact marginal or
-conditional effects without falling into the Table II trap!</p>
+<p>GCMs avoid all of this by explicitly separating the <em>causal
+structure</em> (the DAG) from the querying procedure. It discovers the
+interactions automatically to identify the structure, and then applies
+forward propagation to estimate the exact marginal or conditional
+effects without falling into the Table II trap.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
