@@ -35,6 +35,15 @@
   ))
 }
 
+#' Validate a number-of-draws argument
+#' @noRd
+.check_ndraws <- function(ndraws) {
+  if (!is.numeric(ndraws) || length(ndraws) != 1L || is.na(ndraws) || ndraws < 1) {
+    stop("`ndraws` must be a single positive integer.")
+  }
+  as.integer(ndraws)
+}
+
 #' Convert a `[n_chains, n_draws]` matrix to a posterior draws_array
 #'
 #' Produces an array of class `draws_array` with dimensions

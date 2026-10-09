@@ -26,6 +26,12 @@ Kagu takes a different approach. Because Kagu models each node as a Gaussian Pro
 
 In this vignette, we'll look at how to recover and visualise a continuous-continuous interaction using Kagu's effect estimation.
 
+> **Note:** To keep the focus on the demonstration, this vignette skips the
+> full Bayesian workflow of checking priors before fitting and model fit
+> afterwards. With real data you should do both: see
+> `vignette("predictive_checks")` for how to run prior and posterior
+> predictive checks.
+
 ## A system with a strong interaction
 
 Let's simulate a system where $A$ and $B$ are independent causes of $Y$, but they interact multiplicatively. The true data-generating process is:

@@ -32,6 +32,8 @@ navbar:
           href: articles/comparison.html
         - text: "Ecology case study"
           href: articles/ecology_case_study.html
+        - text: "Predictive checks"
+          href: articles/predictive_checks.html
 
 home:
   title: Kagu
@@ -54,6 +56,12 @@ reference:
     contents:
       - Mechanism
       - GPMechanism
+  - title: "Priors and model checking"
+    desc: "Hyperparameter priors and prior / posterior predictive checks."
+    contents:
+      - gp_prior
+      - prior_families
+      - PredictiveResult
   - title: "Effects"
     desc: "Causal effect estimation and results."
     contents:
@@ -111,3 +119,4 @@ articles:
       - ecology_case_study
       - interactions
       - discovery
+      - predictive_checks

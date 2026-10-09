@@ -7,9 +7,16 @@
 Models each node's conditional mean as an \strong{exact Gaussian process} of its
 parents, with a squared-exponential (ARD) kernel - one lengthscale per parent,
 which captures non-linearity and interactions automatically. Kernel
-hyperparameters (lengthscales, signal and noise variance) are set by type-II
-maximum likelihood; there is no MCMC. A node with no parents is modelled by
-its marginal (a Normal). This is Kagu's default and only mechanism.
+hyperparameters (lengthscales, signal and noise variance) are point-estimated
+by type-II maximum likelihood (\code{hyper = "ml"}) or maximum a posteriori
+(\code{hyper = "map"}) under the priors in \code{\link[=gp_prior]{gp_prior()}}; there is no MCMC. A node
+with no parents is modelled by its marginal (a Normal). This is Kagu's
+default and only mechanism.
+
+The default \code{\link[=gp_prior]{gp_prior()}} is log-uniform over the box the likelihood search is
+bounded to, so the default ML fit \emph{is} the MAP fit under that prior. Supplying
+any other prior switches the default to \code{hyper = "map"}, so the prior you
+check with \verb{$prior_predictive()} is the prior the fit actually uses.
 
 Structure discovery uses the \strong{exact} GP log marginal likelihood, which - in
 contrast to fast basis/eigenfunction approximations - is well calibrated: for
@@ -23,6 +30,10 @@ correlated uncertainty for do-calculus contrasts.
 }
 \examples{
 mech <- GPMechanism$new()
+
+# Weakly informative priors, fitted by MAP
+mech <- GPMechanism$new(prior = gp_prior(lengthscale = prior_lognormal(0, 0.5)))
+mech$hyper
 }
 \section{Super class}{
 \code{\link[kagu:Mechanism]{Mechanism}} -> \code{GPMechanism}
@@ -36,6 +47,10 @@ mech <- GPMechanism$new()
 (default 300).}
 
     \item{\code{jitter}}{Numeric - diagonal jitter for numerical stability (default 1e-6).}
+
+    \item{\code{prior}}{A \code{\link[=gp_prior]{gp_prior()}} - priors on the (standardised) hyperparameters.}
+
+    \item{\code{hyper}}{Character - \code{"ml"} (type-II maximum likelihood) or \code{"map"}.}
   }
   \if{html}{\out{</div>}}
 }
@@ -48,6 +63,9 @@ mech <- GPMechanism$new()
     \item \href{#method-GPMechanism-log_marglik}{\code{GPMechanism$log_marglik()}}
     \item \href{#method-GPMechanism-posterior_shape}{\code{GPMechanism$posterior_shape()}}
     \item \href{#method-GPMechanism-node_terms}{\code{GPMechanism$node_terms()}}
+    \item \href{#method-GPMechanism-simulate_prior}{\code{GPMechanism$simulate_prior()}}
+    \item \href{#method-GPMechanism-simulate_posterior}{\code{GPMechanism$simulate_posterior()}}
+    \item \href{#method-GPMechanism-function_draws}{\code{GPMechanism$function_draws()}}
     \item \href{#method-GPMechanism-clone}{\code{GPMechanism$clone()}}
   }
 }
@@ -58,7 +76,13 @@ mech <- GPMechanism$new()
   Create a new GPMechanism.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{GPMechanism$new(num_results = 1000L, n_features = 300L, jitter = 1e-06)}
+    \preformatted{GPMechanism$new(
+  num_results = 1000L,
+  n_features = 300L,
+  jitter = 1e-06,
+  prior = gp_prior(),
+  hyper = NULL
+)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -67,6 +91,10 @@ mech <- GPMechanism$new()
       \item{\code{num_results}}{Integer - number of posterior draws to keep.}
       \item{\code{n_features}}{Integer - number of random Fourier features.}
       \item{\code{jitter}}{Numeric - diagonal jitter added to the kernel.}
+      \item{\code{prior}}{A \code{\link[=gp_prior]{gp_prior()}} object (default: the implicit log-uniform box).}
+      \item{\code{hyper}}{\code{"ml"} or \code{"map"}. \code{NULL} (default) picks \code{"ml"} when every
+kernel prior is log-uniform (where ML and MAP coincide) and \code{"map"}
+otherwise.}
     }
     \if{html}{\out{</div>}}
   }
@@ -175,6 +203,85 @@ parent, giving the parent values for each posterior draw.}
       \item{\code{parents}}{Character vector of parent node names.}
       \item{\code{data}}{A \code{data.frame}.}
       \item{\code{fit}}{A fit object from \verb{$fit()}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GPMechanism-simulate_prior"></a>}}
+\if{latex}{\out{\hypertarget{method-GPMechanism-simulate_prior}{}}}
+\subsection{\code{GPMechanism$simulate_prior()}}{
+  Prior predictive draws (see \link{Mechanism}). Each draw samples
+hyperparameters from \code{prior}, an exact GP function at the parents' rows,
+and observation noise - on the standardised scale - then maps back to the
+data's location and scale.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{GPMechanism$simulate_prior(node, parents, parent_values, data, ndraws)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar - the node name.}
+      \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{parent_values}}{Named list of \verb{[ndraws, n]} matrices of simulated
+parent values, one per parent (empty for a root node).}
+      \item{\code{data}}{A \code{data.frame} - sets the node's location/scale and \code{n}.}
+      \item{\code{ndraws}}{Integer - number of prior predictive draws.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GPMechanism-simulate_posterior"></a>}}
+\if{latex}{\out{\hypertarget{method-GPMechanism-simulate_posterior}{}}}
+\subsection{\code{GPMechanism$simulate_posterior()}}{
+  Posterior predictive draws (see \link{Mechanism}): the matched
+pathwise function draw at each row's parents plus noise, with the noise
+sd drawn as in \verb{$node_terms()}.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{GPMechanism$simulate_posterior(node, parents, parent_values, fit, draws, n)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar - the node name.}
+      \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{parent_values}}{Named list, one entry per parent: either a length-\code{n}
+vector shared by every draw (e.g. the observed parents) or a
+\verb{[length(draws), n]} matrix with one row per draw.}
+      \item{\code{fit}}{A fit object from \verb{$fit()}.}
+      \item{\code{draws}}{Integer vector - which posterior draws to use.}
+      \item{\code{n}}{Integer - number of observations to simulate per draw.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GPMechanism-function_draws"></a>}}
+\if{latex}{\out{\hypertarget{method-GPMechanism-function_draws}{}}}
+\subsection{\code{GPMechanism$function_draws()}}{
+  Prior or posterior function draws on a grid (see \link{Mechanism}).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{GPMechanism$function_draws(node, parents, grid, data, fit = NULL, ndraws = 50L)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{node}}{Character scalar - the node name.}
+      \item{\code{parents}}{Character vector of parent node names.}
+      \item{\code{grid}}{A \code{data.frame} with one column per parent.}
+      \item{\code{data}}{A \code{data.frame} - sets the node's location/scale.}
+      \item{\code{fit}}{A fit object from \verb{$fit()}, or \code{NULL} for prior draws.}
+      \item{\code{ndraws}}{Integer - number of function draws.}
     }
     \if{html}{\out{</div>}}
   }
