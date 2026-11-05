@@ -241,10 +241,20 @@ parent values, one per parent (empty for a root node).}
 \subsection{\code{GPMechanism$simulate_posterior()}}{
   Posterior predictive draws (see \link{Mechanism}): the matched
 pathwise function draw at each row's parents plus noise, with the noise
-sd drawn as in \verb{$node_terms()}.
+sd drawn as in \verb{$node_terms()}. \code{noise = FALSE} leaves the noise out,
+giving the function draws alone; a matrix of standard-normal deviates
+replaces the internally drawn ones.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{GPMechanism$simulate_posterior(node, parents, parent_values, fit, draws, n)}
+    \preformatted{GPMechanism$simulate_posterior(
+  node,
+  parents,
+  parent_values,
+  fit,
+  draws,
+  n,
+  noise = TRUE
+)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -258,6 +268,10 @@ vector shared by every draw (e.g. the observed parents) or a
       \item{\code{fit}}{A fit object from \verb{$fit()}.}
       \item{\code{draws}}{Integer vector - which posterior draws to use.}
       \item{\code{n}}{Integer - number of observations to simulate per draw.}
+      \item{\code{noise}}{\code{TRUE} (default) adds fresh observation noise; \code{FALSE}
+returns the conditional mean draws at each row's parents; a
+\verb{[length(draws), n]} matrix supplies the standard-normal deviates to
+scale by the noise sd (e.g. stratified or common random numbers).}
     }
     \if{html}{\out{</div>}}
   }

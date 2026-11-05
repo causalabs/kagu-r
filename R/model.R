@@ -124,10 +124,17 @@ KaguModel <- R6::R6Class("KaguModel",
     #' @param sweep_range Numeric vector `c(min, max)` for the sweep grid.
     #'   Defaults to the observed range of `source`.
     #' @param hdi Numeric in (0, 1) - HDI probability (default 0.90).
+    #' @param noise Logical - `TRUE` (default) averages over exogenous noise to
+    #'   give the interventional mean `E[target | do(source)]` over the observed
+    #'   population; `FALSE` uses the noise-free plug-in of conditional means.
+    #'   See [compute_effect()].
+    #' @param n_mc Integer - minimum simulated units per posterior draw when
+    #'   `noise = TRUE` (default 50); see [compute_effect()].
     #' @return An `EffectResult` object.
     effects = function(source, target, values = NULL, std_units = FALSE,
                        conditions = NULL, sweep = FALSE, sweep_n = 50L,
-                       sweep_range = NULL, hdi = 0.90) {
+                       sweep_range = NULL, hdi = 0.90, noise = TRUE,
+                       n_mc = 50L) {
       if (!self$.fitted) stop("Call $fit() before $effects().")
 
       is_list_of_lists <- is.list(conditions) && length(conditions) > 0 && is.list(conditions[[1]]) && !is.data.frame(conditions[[1]])
@@ -136,7 +143,7 @@ KaguModel <- R6::R6Class("KaguModel",
         # Compute the first condition as the base result
         res <- compute_effect(
           self, source, target, values, std_units, conditions[[1]],
-          sweep, sweep_n, sweep_range, hdi
+          sweep, sweep_n, sweep_range, hdi, noise, n_mc
         )
         
         label_fn <- function(cond) {
@@ -149,7 +156,7 @@ KaguModel <- R6::R6Class("KaguModel",
         for (i in seq_along(conditions)[-1]) {
           c_res <- compute_effect(
             self, source, target, values, std_units, conditions[[i]],
-            sweep, sweep_n, sweep_range, hdi
+            sweep, sweep_n, sweep_range, hdi, noise, n_mc
           )
           lbl <- label_fn(conditions[[i]])
           c_res$conditions_label <- lbl
@@ -168,7 +175,9 @@ KaguModel <- R6::R6Class("KaguModel",
         sweep       = sweep,
         sweep_n     = sweep_n,
         sweep_range = sweep_range,
-        hdi         = hdi
+        hdi         = hdi,
+        noise       = noise,
+        n_mc        = n_mc
       )
     },
 

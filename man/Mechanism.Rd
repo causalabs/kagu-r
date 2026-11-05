@@ -18,8 +18,9 @@ matrix (Gaussian processes use a single chain, so \code{n_chains = 1}).
 \item \verb{$node_terms(node, parents, data, fit)} - summary rows for \code{model$summary()}.
 \item \verb{$simulate_prior(node, parents, parent_values, data, ndraws)} - replicated
 node values drawn from the prior predictive distribution.
-\item \verb{$simulate_posterior(node, parents, parent_values, fit, draws, n)} -
-replicated node values drawn from the posterior predictive distribution.
+\item \verb{$simulate_posterior(node, parents, parent_values, fit, draws, n, noise)} -
+replicated node values drawn from the posterior predictive distribution
+(also used to average effects over exogenous noise).
 \item \verb{$function_draws(node, parents, grid, data, fit, ndraws)} - prior or
 posterior draws of the node's conditional-mean function on a grid.
 }
@@ -196,7 +197,15 @@ parent values, one per parent (empty for a root node).}
 distribution (conditional mean plus observation noise).
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{Mechanism$simulate_posterior(node, parents, parent_values, fit, draws, n)}
+    \preformatted{Mechanism$simulate_posterior(
+  node,
+  parents,
+  parent_values,
+  fit,
+  draws,
+  n,
+  noise = TRUE
+)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -210,6 +219,10 @@ vector shared by every draw (e.g. the observed parents) or a
       \item{\code{fit}}{A fit object from \verb{$fit()}.}
       \item{\code{draws}}{Integer vector - which posterior draws to use.}
       \item{\code{n}}{Integer - number of observations to simulate per draw.}
+      \item{\code{noise}}{\code{TRUE} (default) adds fresh observation noise; \code{FALSE}
+returns the conditional mean draws at each row's parents; a
+\verb{[length(draws), n]} matrix supplies the standard-normal deviates to
+scale by the noise sd (e.g. stratified or common random numbers).}
     }
     \if{html}{\out{</div>}}
   }

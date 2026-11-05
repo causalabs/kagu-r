@@ -158,16 +158,16 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
     #' path to `target` contribute a zero effect, exactly as they should.
     #'
     #' @param source,target Character scalars - intervention and outcome nodes.
-    #' @param values,std_units,conditions,sweep,sweep_n,sweep_range,hdi Passed to
-    #'   `KaguModel$effects()` (identical meaning).
+    #' @param values,std_units,conditions,sweep,sweep_n,sweep_range,hdi,noise,n_mc
+    #'   Passed to `KaguModel$effects()` (identical meaning).
     #' @param prob_threshold Numeric - DAGs with posterior probability below this
     #'   are skipped for efficiency (default 1e-3).
     #' @param n_samples Integer - size of the pooled mixture posterior (default 4000).
     #' @return An [EffectResult].
     effects = function(source, target, values = NULL, std_units = FALSE,
                        conditions = NULL, sweep = FALSE, sweep_n = 50L,
-                       sweep_range = NULL, hdi = 0.90,
-                       prob_threshold = 1e-3, n_samples = 4000L) {
+                       sweep_range = NULL, hdi = 0.90, noise = TRUE,
+                       n_mc = 50L, prob_threshold = 1e-3, n_samples = 4000L) {
       if (!source %in% self$nodes) stop(sprintf("Node '%s' not in nodes.", source))
       if (!target %in% self$nodes) stop(sprintf("Node '%s' not in nodes.", target))
 
@@ -190,7 +190,8 @@ DiscoveryResult <- R6::R6Class("DiscoveryResult",
         ers[[j]]    <- model$effects(source, target, values = values,
                                      std_units = std_units, conditions = conditions,
                                      sweep = sweep, sweep_n = sweep_n,
-                                     sweep_range = sweep_range, hdi = hdi)
+                                     sweep_range = sweep_range, hdi = hdi,
+                                     noise = noise, n_mc = n_mc)
         weights[[j]] <- self$prob[[i]]
         is_anc[[j]]  <- is_ancestor(dag, source, target)
       }

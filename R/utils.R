@@ -66,3 +66,18 @@
   class(arr) <- c("draws_array", "draws", "array")
   arr
 }
+
+#' Evaluate `code` under a fixed RNG seed, then restore the caller's RNG state
+#' @noRd
+.with_seed <- function(seed, code) {
+  env <- globalenv()
+  old <- if (exists(".Random.seed", envir = env, inherits = FALSE)) {
+    get(".Random.seed", envir = env, inherits = FALSE)
+  }
+  on.exit(
+    if (is.null(old)) rm(".Random.seed", envir = env)
+    else assign(".Random.seed", old, envir = env)
+  )
+  set.seed(seed)
+  code
+}

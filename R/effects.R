@@ -199,13 +199,34 @@ EffectResult <- R6::R6Class("EffectResult",
 #' @param sweep Logical - compute dose-response curve.
 #' @param sweep_n,sweep_range Sweep grid parameters.
 #' @param hdi Numeric - HDI probability.
+#' @param noise Logical - how exogenous variation is handled during
+#'   propagation.
+#'   - `TRUE` (default): the interventional mean `E[target | do(source = x)]`
+#'     over the observed population. Every observed row is a unit: root nodes
+#'     keep their observed values and every other node gets its posterior
+#'     observation noise. For each posterior draw the target is averaged over
+#'     all units, so the noise is integrated out rather than added to the
+#'     effect's uncertainty, and the uncertainty is about the mechanisms only
+#'     (the data are treated as the whole population, not a sample from a
+#'     larger one). The same units are reused for both arms of a contrast and
+#'     for every sweep point (common random numbers), so Monte Carlo error
+#'     largely cancels.
+#'   - `FALSE`: the noise-free plug-in. Root nodes are fixed at their mean and
+#'     each node is set to its conditional mean. Identical to `TRUE` when every
+#'     mechanism on the path is linear; otherwise it is the effect in a system
+#'     with the exogenous variation switched off. See
+#'     `vignette("noise_propagation")`.
+#' @param n_mc Integer - minimum number of simulated units per posterior draw
+#'   when `noise = TRUE` (default 50). The observed rows are replicated to reach
+#'   it, and only when a noisy node lies between the roots and the target;
+#'   with more rows than `n_mc` it has no effect.
 #' @return An `EffectResult`.
 #' @export
 compute_effect <- function(model, source, target,
                             values = NULL, std_units = FALSE,
                             conditions = NULL, sweep = FALSE,
                             sweep_n = 50L, sweep_range = NULL,
-                            hdi = 0.90) {
+                            hdi = 0.90, noise = TRUE, n_mc = 50L) {
   nodes <- names(model$dag)
   if (!source %in% nodes) stop(sprintf("Node '%s' not in DAG.", source))
   if (!target %in% nodes) stop(sprintf("Node '%s' not in DAG.", target))
@@ -220,6 +241,15 @@ compute_effect <- function(model, source, target,
       samples = zero_mat, hdi = hdi,
       std_units = FALSE, conditions = conditions
     ))
+  }
+
+  if (noise && is.null(model$data)) {
+    stop("`noise = TRUE` needs the training data; reattach it or use `noise = FALSE`.")
+  }
+  # One seed per query: every call to .propagate() below replays the same
+  # exogenous units (common random numbers across arms and sweep points).
+  exo <- if (noise) {
+    list(seed = sample.int(.Machine$integer.max, 1L), n_mc = as.integer(n_mc))
   }
 
   src_data  <- model$data[[source]]
@@ -237,7 +267,7 @@ compute_effect <- function(model, source, target,
 
     for (i in seq_along(grid)) {
       samples[i, , ] <- .propagate(model, source, target, grid[[i]],
-                                   conditions, n_chains, n_draws)
+                                   conditions, n_chains, n_draws, exo)
     }
 
     return(EffectResult$new(
@@ -272,8 +302,8 @@ compute_effect <- function(model, source, target,
     display_to   <- src_mean + 1.0
   }
 
-  out_from <- .propagate(model, source, target, from_val, conditions, n_chains, n_draws)
-  out_to   <- .propagate(model, source, target, to_val,   conditions, n_chains, n_draws)
+  out_from <- .propagate(model, source, target, from_val, conditions, n_chains, n_draws, exo)
+  out_to   <- .propagate(model, source, target, to_val,   conditions, n_chains, n_draws, exo)
 
   EffectResult$new(
     source     = source,
@@ -298,10 +328,17 @@ compute_effect <- function(model, source, target,
 #' @param value Numeric scalar - fixed value for the source node.
 #' @param conditions Named list of additional fixed nodes.
 #' @param n_chains,n_draws Posterior dimensions.
+#' @param exo `NULL` for the noise-free plug-in, or `list(seed, n_mc)` to
+#'   average the target over `n_mc` simulated units per draw.
 #' @return `[n_chains, n_draws]` matrix of target node values.
 #' @noRd
 .propagate <- function(model, source, target, value,
-                       conditions, n_chains, n_draws) {
+                       conditions, n_chains, n_draws, exo = NULL) {
+  if (!is.null(exo)) {
+    return(.with_seed(exo$seed, .propagate_mc(
+      model, source, target, value, conditions, n_chains, n_draws, exo$n_mc
+    )))
+  }
   order         <- topological_sort(model$dag)
   node_samples  <- list()
 
@@ -331,6 +368,76 @@ compute_effect <- function(model, source, target,
   }
 
   node_samples[[target]]
+}
+
+#' Monte Carlo propagation of the interventional mean, per posterior draw
+#'
+#' The observed rows are the population: every row is a unit and the target is
+#' averaged over all of them with equal weight. Roots keep their observed
+#' values; other nodes are drawn from their posterior predictive (function draw
+#' plus stratified noise). The target's own noise is mean-zero and is left out.
+#' If a noisy node lies on the way to the target, the rows are replicated until
+#' there are at least `n_mc` units per draw, so the noise is integrated over
+#' enough deviates. Called under a fixed seed so repeated calls share the same
+#' units.
+#' @noRd
+.propagate_mc <- function(model, source, target, value,
+                          conditions, n_chains, n_draws, n_mc) {
+  order  <- topological_sort(model$dag)
+  S      <- n_chains * n_draws
+  needed <- intersect(order, c(ancestors(model$dag, target), target))
+  fixed  <- c(source, names(conditions))
+
+  # Nodes that get noise: non-root, not fixed, not the target.
+  noisy <- setdiff(needed[lengths(model$dag[needed]) > 0L], c(fixed, target))
+  n_obs <- nrow(model$data)
+  reps  <- if (length(noisy)) max(1L, ceiling(n_mc / n_obs)) else 1L
+  n     <- n_obs * reps
+
+  # A node's values are a length-n vector while they are the same for every
+  # draw (roots, fixed nodes), and a [S, n] matrix once they vary by draw.
+  node_samples <- list()
+  for (node in needed) {
+    parents <- model$dag[[node]]
+    if (node == source) {
+      node_samples[[node]] <- rep(value, n)
+
+    } else if (node %in% names(conditions)) {
+      node_samples[[node]] <- rep(conditions[[node]], n)
+
+    } else if (length(parents) == 0L) {
+      node_samples[[node]] <- rep(model$data[[node]], reps)
+
+    } else {
+      pv <- node_samples[parents]
+      if (any(vapply(pv, is.matrix, logical(1)))) {
+        pv <- lapply(pv, function(v) if (is.matrix(v)) v else matrix(v, S, n, byrow = TRUE))
+      }
+      node_samples[[node]] <- model$mechanisms[[node]]$simulate_posterior(
+        node          = node,
+        parents       = parents,
+        parent_values = pv,
+        fit           = model$traces[[node]],
+        draws         = seq_len(S),
+        n             = n,
+        noise         = if (node == target) FALSE else
+          matrix(stats::qnorm(vapply(seq_len(S), function(s) .strata(n),
+                                     numeric(n))), nrow = S, byrow = TRUE)
+      )
+    }
+  }
+
+  out <- node_samples[[target]]
+  matrix(if (is.matrix(out)) rowMeans(out) else mean(out),
+         nrow = n_chains, ncol = n_draws)
+}
+
+#' Stratified uniforms on (0, 1), one per stratum, in random order
+#'
+#' Random order pairs strata independently across nodes (Latin hypercube).
+#' @noRd
+.strata <- function(k) {
+  (sample.int(k) - stats::runif(k)) / k
 }
 
 # =============================================================================

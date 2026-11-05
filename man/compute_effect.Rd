@@ -14,7 +14,9 @@ compute_effect(
   sweep = FALSE,
   sweep_n = 50L,
   sweep_range = NULL,
-  hdi = 0.9
+  hdi = 0.9,
+  noise = TRUE,
+  n_mc = 50L
 )
 }
 \arguments{
@@ -33,6 +35,31 @@ compute_effect(
 \item{sweep_n, sweep_range}{Sweep grid parameters.}
 
 \item{hdi}{Numeric - HDI probability.}
+
+\item{noise}{Logical - how exogenous variation is handled during
+propagation.
+\itemize{
+\item \code{TRUE} (default): the interventional mean \code{E[target | do(source = x)]}
+over the observed population. Every observed row is a unit: root nodes
+keep their observed values and every other node gets its posterior
+observation noise. For each posterior draw the target is averaged over
+all units, so the noise is integrated out rather than added to the
+effect's uncertainty, and the uncertainty is about the mechanisms only
+(the data are treated as the whole population, not a sample from a
+larger one). The same units are reused for both arms of a contrast and
+for every sweep point (common random numbers), so Monte Carlo error
+largely cancels.
+\item \code{FALSE}: the noise-free plug-in. Root nodes are fixed at their mean and
+each node is set to its conditional mean. Identical to \code{TRUE} when every
+mechanism on the path is linear; otherwise it is the effect in a system
+with the exogenous variation switched off. See
+\code{vignette("noise_propagation")}.
+}}
+
+\item{n_mc}{Integer - minimum number of simulated units per posterior draw
+when \code{noise = TRUE} (default 50). The observed rows are replicated to reach
+it, and only when a noisy node lies between the roots and the target;
+with more rows than \code{n_mc} it has no effect.}
 }
 \value{
 An \code{EffectResult}.

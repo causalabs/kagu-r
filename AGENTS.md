@@ -53,6 +53,7 @@ vignettes/
   quickstart.Rmd   # whistle-stop tour
   comparison.Rmd   # confounder/mediator/collider/M-bias vs OLS
   discovery.Rmd    # structure discovery - posterior over DAGs
+  noise_propagation.Rmd # noise-averaged vs plug-in effects (Jensen, roots)
 _pkgdown.yml       # pkgdown site config
 .github/workflows/
   ci.yml           # R-CMD-check on push/PR
@@ -77,7 +78,8 @@ Key methods:
 ```r
 model$fit(data, ...)                       # ... forwarded to mechanism$fit()
 model$effects(source, target, values=NULL, std_units=FALSE, conditions=NULL,
-              sweep=FALSE, sweep_n=50, sweep_range=NULL, hdi=0.90)
+              sweep=FALSE, sweep_n=50, sweep_range=NULL, hdi=0.90,
+              noise=TRUE, n_mc=50)
 model$summary(hdi_prob=0.90)
 model$diagnostics(node=NULL)
 model$plot_dag(node_pos=NULL)
@@ -95,6 +97,9 @@ Backend-agnostic interface (a mechanism owns its full lifecycle):
 - `$log_marglik(node, parents, data)` → scalar (for discovery)
 - `$posterior_shape(fit)` → `c(n_chains=1, n_draws)`
 - `$node_terms(node, parents, data, fit)` → summary rows
+- `$simulate_posterior(node, parents, parent_values, fit, draws, n, noise=TRUE)`
+  → `[length(draws), n]`; `noise` is `TRUE`, `FALSE` (function draws only) or a
+  matrix of standard-normal deviates (used by noise-averaged effects)
 
 `GPMechanism` (default and only): each node is an **exact Gaussian process** with
 a squared-exponential ARD kernel (one lengthscale per parent → non-linearity and
@@ -136,7 +141,33 @@ Intervention modes (same as Python):
 ### `.propagate()` (`R/effects.R`)
 
 Internal. Iterates topological order, fixes source and any `conditions` nodes,
-calls `mechanism$predict_mean()` for all others, stops at target.
+and propagates the rest. Two modes, chosen by `noise`:
+- `noise = TRUE` (default, `.propagate_mc()`): the interventional mean
+  `E[target | do(source)]` over the observed population. Every observed row is
+  a unit (replicated up to `n_mc` units only when a noisy node is on the path):
+  roots keep their observed values, other nodes come from
+  `simulate_posterior()` with stratified (Latin-hypercube) noise, the target's
+  own noise is dropped and units are averaged with equal weight. Nodes whose
+  inputs are the same for every draw are evaluated once for all draws. Runs
+  under one seed per `compute_effect()` call (`.with_seed()`), so both arms and
+  all sweep points share the same units (common random numbers).
+- `noise = FALSE`: the noise-free plug-in. Roots at their posterior mean, other
+  nodes at `mechanism$predict_mean()`. Equal to the above only when every
+  mechanism on the path is linear.
+
+**Why noise-averaged by default:** the plug-in dates from the original linear
+mechanism, where it is exact. With GP mechanisms `g(f(x))` differs from
+`E[g(f(x) + ε)]` wherever `g` curves (Jensen), and fixing roots at their mean
+gives the effect for an "average unit" rather than the average effect. Averaging
+integrates the noise out, so it does not widen the effect's posterior. See
+`vignettes/noise_propagation.Rmd`.
+
+**Why the data are the population (no bootstrap over rows):** the effect is the
+average over the units actually observed, so its uncertainty is about the
+mechanisms only. An earlier version resampled `n_mc` rows per draw under
+Bayesian-bootstrap weights; that subsampling added Monte Carlo error that
+tripled the effect's sd at the default `n_mc` when the effect varied with a
+root, and it was not faster.
 
 ---
 

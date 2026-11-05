@@ -230,6 +230,8 @@ path to \code{target} contribute a zero effect, exactly as they should.
   sweep_n = 50L,
   sweep_range = NULL,
   hdi = 0.9,
+  noise = TRUE,
+  n_mc = 50L,
   prob_threshold = 0.001,
   n_samples = 4000L
 )}
@@ -239,8 +241,7 @@ path to \code{target} contribute a zero effect, exactly as they should.
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{source, target}}{Character scalars - intervention and outcome nodes.}
-      \item{\code{values, std_units, conditions, sweep, sweep_n, sweep_range, hdi}}{Passed to
-\code{KaguModel$effects()} (identical meaning).}
+      \item{\code{values, std_units, conditions, sweep, sweep_n, sweep_range, hdi, noise, n_mc}}{Passed to \code{KaguModel$effects()} (identical meaning).}
       \item{\code{prob_threshold}}{Numeric - DAGs with posterior probability below this
 are skipped for efficiency (default 1e-3).}
       \item{\code{n_samples}}{Integer - size of the pooled mixture posterior (default 4000).}

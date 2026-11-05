@@ -32,6 +32,16 @@ test_that("GPMechanism models a root node as a marginal Normal", {
   expect_lt(abs(mean(preds) - 3), 0.3)
 })
 
+test_that("root evidence uses the same sd() standardisation as the GP", {
+  set.seed(1L)
+  y  <- rnorm(30L, mean = 3, sd = 2)
+  ys <- (y - mean(y)) / stats::sd(y)
+  # plug-in ML Normal log-likelihood of the sd()-standardised variable
+  expected <- sum(dnorm(ys, 0, sqrt(mean(ys^2)), log = TRUE))
+  mech <- GPMechanism$new()
+  expect_equal(mech$log_marglik("y", character(0), data.frame(y = y)), expected)
+})
+
 test_that("GPMechanism recovers a known linear slope via node_terms", {
   set.seed(1L)
   n  <- 500L
@@ -68,4 +78,17 @@ test_that("GPMechanism marginal likelihood favours the true parent set", {
   expect_gt(ll_true, ll_under)   # missing a real parent is worse
   expect_gt(ll_true, ll_wrong)   # an irrelevant parent is worse
   expect_gt(ll_true, ll_over)    # an extra noise parent is penalised (Occam)
+})
+
+test_that("simulate_posterior honours noise = FALSE and supplied deviates", {
+  data <- make_chain_data()
+  mech <- GPMechanism$new(num_results = 20L)
+  fit  <- mech$fit("m", "x", data)
+  pv   <- list(x = matrix(0.5, 20L, 3L))
+  f    <- mech$simulate_posterior("m", "x", pv, fit, draws = 1:20, n = 3L, noise = FALSE)
+  zero <- mech$simulate_posterior("m", "x", pv, fit, draws = 1:20, n = 3L,
+                                  noise = matrix(0, 20L, 3L))
+  expect_equal(dim(f), c(20L, 3L))
+  expect_equal(f, zero)
+  expect_equal(f[, 1], f[, 2])   # same point, same function draw
 })
