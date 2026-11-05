@@ -134,7 +134,7 @@ res <- KaguModel$discover(
 res$summary()
 ```
 
-Kagu places most of the posterior (~83%) on `dag_true`, but crucially it does **not** claim certainty. `Alt2` - the hypothesis that body condition *causes* sociality - is decisively rejected (~0%): reversing those edges contradicts the strong, non-linear signature that `sex`, `sociality` and `food_sharing` jointly leave in `condition`. But `Alt1`, which drops the single `age → sociality` edge (claiming sociality has no measured cause), still retains ~17% of the posterior. With only 50 noisy individuals the weak influence of age on sociality is hard to detect, so Kagu reports the full posterior.
+Kagu places most of the posterior (~75%) on `dag_true`, but crucially it does **not** claim certainty. `Alt2` - the hypothesis that body condition *causes* sociality - is decisively rejected (~0%): reversing those edges contradicts the strong, non-linear signature that `sex`, `sociality` and `food_sharing` jointly leave in `condition`. But `Alt1`, which drops the single `age → sociality` edge (claiming sociality has no measured cause), still retains ~25% of the posterior. With only 50 noisy individuals the weak influence of age on sociality is hard to detect, so Kagu reports the full posterior.
 
 ## The Table II fallacy
 
@@ -163,7 +163,7 @@ Kagu makes the distinction concrete. Asked for age's *total* effect, it propagat
 mod$effects("age", "condition", hdi = 0.95)$summary()
 ```
 
-The total effect (mean $\approx 1.0$) is larger than the regression's age coefficient ($\approx 0.6$): the difference is precisely the indirect path through sociality that the coefficient leaves out. Same data, same graph, but a different question and a different answer. With only 50 individuals both estimates are uncertain, yet the *distinction* between them is structural, not statistical.
+The total effect (mean $\approx 0.9$) is larger than the regression's age coefficient ($\approx 0.6$): the difference is precisely the indirect path through sociality that the coefficient leaves out. Same data, same graph, but a different question and a different answer. With only 50 individuals both estimates are uncertain, yet the *distinction* between them is structural, not statistical.
 
 It can be worse still. An adjustment variable with its own unmeasured confounder gives a coefficient that is not merely the wrong estimand but outright confounded. Instead the correct process is to decide which estimand you want for each variable and calculate the adjustment set from the graph, rather than reading a regression table as a list of interchangeable "effects".
 
@@ -176,7 +176,7 @@ The model is already fitted, so we can query any estimand we like from the same 
 mod$effects("sociality", "condition", hdi = 0.95)$summary()
 ```
 
-The point estimate is modestly positive (~0.38), but the 95% HDI is very wide and straddles zero. The population-averaged total effect is pulled in two directions at once: the food-sharing mediation contributes a positive push, while the *direct* effect of sociality is strongly positive in females and strongly negative in males, so on average it nearly cancels and mostly inflates the spread. A single population-averaged number is therefore almost meaningless here; the wide HDI hints that the effect could be heterogeneous across the population. In the next section we split it apart by sex to reveal what happens in the two groups.
+The point estimate is modestly positive (~0.35), and the 95% HDI is reasonably tight. The population-averaged total effect is pulled in two directions at once: the food-sharing mediation contributes a positive push, while the *direct* effect of sociality is strongly positive in females and strongly negative in males, so on average they largely cancel. The HDI says how well we know that *average* in this population of 50 animals, not how much the effect varies between them, so a tight interval is no reassurance that the effect is homogeneous. A single population-averaged number is therefore misleading here. In the next section we split it apart by sex to reveal what happens in the two groups.
 
 ### Examining the mediator
 
@@ -188,7 +188,7 @@ mod$effects("food_sharing", "condition", sweep = TRUE, hdi = 0.95)$plot() +
   ggtitle("Direct effect of Food Sharing on Condition")
 ```
 
-The model recovers the direct effect of food sharing ($\approx 0.85$ here - close to the true value of 0.8, correctly identified as the strongest single pathway).
+The model recovers the direct effect of food sharing ($\approx 0.79$ here - close to the true value of 0.8, correctly identified as the strongest single pathway).
 
 ### Unmasking the interaction
 

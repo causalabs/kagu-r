@@ -87,3 +87,74 @@ test_that("diagnostics returns a data frame with rhat column", {
   expect_true(is.data.frame(diag) || tibble::is_tibble(diag))
   expect_true("rhat" %in% names(diag))
 })
+
+# ---- Noise-averaged vs plug-in propagation ----------------------------------
+
+saturating_model <- local({
+  set.seed(RNG_SEED)
+  x <- rnorm(N)
+  m <- x + rnorm(N)
+  y <- 3 * tanh(2 * m) + rnorm(N, sd = 0.2)
+  model <- KaguModel$new(dag = CHAIN_DAG)
+  do.call(model$fit, c(list(data = data.frame(x = x, m = m, y = y)), SAMPLE_KWARGS))
+  model
+})
+
+test_that("noise-averaged and plug-in effects agree on a linear chain", {
+  skip_on_cran()
+  avg  <- chain_model$model$effects("x", "y", values = c(0, 1))
+  plug <- chain_model$model$effects("x", "y", values = c(0, 1), noise = FALSE)
+  expect_equal(mean(avg$samples), mean(plug$samples), tolerance = 0.05)
+})
+
+test_that("both arms share exogenous units, so a null contrast is exactly zero", {
+  skip_on_cran()
+  effect <- chain_model$model$effects("x", "y", values = c(0.5, 0.5))
+  expect_true(all(effect$samples == 0))
+})
+
+test_that("noise averaging recovers the interventional mean through a saturating mechanism", {
+  skip_on_cran()
+  # True E[y | do(x = 1)] - E[y | do(x = 0)] with m = x + N(0, 1)
+  z     <- stats::qnorm(stats::ppoints(1e5))
+  truth <- mean(3 * tanh(2 * (1 + z))) - mean(3 * tanh(2 * z))   # ~1.92
+  avg   <- mean(saturating_model$effects("x", "y", values = c(0, 1))$samples)
+  plug  <- mean(saturating_model$effects("x", "y", values = c(0, 1), noise = FALSE)$samples)
+  expect_lt(abs(avg - truth), 0.35)
+  expect_lt(abs(avg - truth), abs(plug - truth))
+})
+
+test_that("effects() is reproducible under set.seed and leaves the RNG stream usable", {
+  skip_on_cran()
+  set.seed(7); a <- chain_model$model$effects("x", "y", values = c(0, 1))$samples
+  set.seed(7); b <- chain_model$model$effects("x", "y", values = c(0, 1))$samples
+  expect_identical(a, b)
+  expect_false(identical(a, chain_model$model$effects("x", "y", values = c(0, 1))$samples))
+})
+
+test_that("noise = TRUE without training data gives an informative error", {
+  skip_on_cran()
+  model      <- chain_model$model$clone()
+  model$data <- NULL
+  expect_error(model$effects("x", "y", values = c(0, 1)), "noise = FALSE")
+})
+
+test_that("noise averaging treats the observed rows as the population", {
+  skip_on_cran()
+  set.seed(RNG_SEED)
+  a <- rnorm(80L); b <- rnorm(80L)
+  y <- a * b + rnorm(80L, sd = 0.3)
+  model <- KaguModel$new(dag = list(a = c(), b = c(), y = c("a", "b")))
+  do.call(model$fit, c(list(data = data.frame(a = a, b = b, y = y)), SAMPLE_KWARGS))
+
+  # Per draw, the effect is the plain average over every observed b
+  fit    <- model$traces$y
+  manual <- colMeans(kagu:::.gp_eval(fit, cbind(1, b), matched = FALSE) -
+                     kagu:::.gp_eval(fit, cbind(0, b), matched = FALSE))
+  effect <- model$effects("a", "y", values = c(0, 1))
+  expect_equal(as.vector(effect$samples), manual)
+
+  # With no noisy node on the path there is no Monte Carlo error to reduce
+  expect_equal(model$effects("a", "y", values = c(0, 1), n_mc = 1000L)$samples,
+               effect$samples)
+})

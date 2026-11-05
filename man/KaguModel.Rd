@@ -124,7 +124,9 @@ listed in \code{mechanisms} (each node gets its own copy). Defaults to
   sweep = FALSE,
   sweep_n = 50L,
   sweep_range = NULL,
-  hdi = 0.9
+  hdi = 0.9,
+  noise = TRUE,
+  n_mc = 50L
 )}
     \if{html}{\out{</div>}}
   }
@@ -145,6 +147,12 @@ a list of such lists to compute and overlay multiple conditions.}
       \item{\code{sweep_range}}{Numeric vector \code{c(min, max)} for the sweep grid.
 Defaults to the observed range of \code{source}.}
       \item{\code{hdi}}{Numeric in (0, 1) - HDI probability (default 0.90).}
+      \item{\code{noise}}{Logical - \code{TRUE} (default) averages over exogenous noise to
+give the interventional mean \code{E[target | do(source)]} over the observed
+population; \code{FALSE} uses the noise-free plug-in of conditional means.
+See \code{\link[=compute_effect]{compute_effect()}}.}
+      \item{\code{n_mc}}{Integer - minimum simulated units per posterior draw when
+\code{noise = TRUE} (default 50); see \code{\link[=compute_effect]{compute_effect()}}.}
     }
     \if{html}{\out{</div>}}
   }

@@ -32,6 +32,8 @@ navbar:
           href: articles/comparison.html
         - text: "Ecology case study"
           href: articles/ecology_case_study.html
+        - text: "Noise and the interventional mean"
+          href: articles/noise_propagation.html
         - text: "Predictive checks"
           href: articles/predictive_checks.html
 
@@ -118,5 +120,6 @@ articles:
       - comparison
       - ecology_case_study
       - interactions
+      - noise_propagation
       - discovery
       - predictive_checks

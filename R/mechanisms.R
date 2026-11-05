@@ -28,8 +28,9 @@ NULL
 #' - `$node_terms(node, parents, data, fit)` - summary rows for `model$summary()`.
 #' - `$simulate_prior(node, parents, parent_values, data, ndraws)` - replicated
 #'   node values drawn from the prior predictive distribution.
-#' - `$simulate_posterior(node, parents, parent_values, fit, draws, n)` -
-#'   replicated node values drawn from the posterior predictive distribution.
+#' - `$simulate_posterior(node, parents, parent_values, fit, draws, n, noise)` -
+#'   replicated node values drawn from the posterior predictive distribution
+#'   (also used to average effects over exogenous noise).
 #' - `$function_draws(node, parents, grid, data, fit, ndraws)` - prior or
 #'   posterior draws of the node's conditional-mean function on a grid.
 #'
@@ -106,8 +107,13 @@ Mechanism <- R6::R6Class("Mechanism",
     #' @param fit A fit object from `$fit()`.
     #' @param draws Integer vector - which posterior draws to use.
     #' @param n Integer - number of observations to simulate per draw.
+    #' @param noise `TRUE` (default) adds fresh observation noise; `FALSE`
+    #'   returns the conditional mean draws at each row's parents; a
+    #'   `[length(draws), n]` matrix supplies the standard-normal deviates to
+    #'   scale by the noise sd (e.g. stratified or common random numbers).
     #' @return A `[length(draws), n]` numeric matrix.
-    simulate_posterior = function(node, parents, parent_values, fit, draws, n) {
+    simulate_posterior = function(node, parents, parent_values, fit, draws, n,
+                                  noise = TRUE) {
       stop("Mechanism$simulate_posterior() is abstract - implement in a subclass.")
     },
 
@@ -303,11 +309,15 @@ GPMechanism <- R6::R6Class("GPMechanism",
 
     #' @description Posterior predictive draws (see [Mechanism]): the matched
     #'   pathwise function draw at each row's parents plus noise, with the noise
-    #'   sd drawn as in `$node_terms()`.
-    simulate_posterior = function(node, parents, parent_values, fit, draws, n) {
+    #'   sd drawn as in `$node_terms()`. `noise = FALSE` leaves the noise out,
+    #'   giving the function draws alone; a matrix of standard-normal deviates
+    #'   replaces the internally drawn ones.
+    simulate_posterior = function(node, parents, parent_values, fit, draws, n,
+                                  noise = TRUE) {
       k <- length(draws)
       if (identical(fit$kind, "root")) {
-        z <- matrix(stats::rnorm(k * n), k, n)
+        if (isFALSE(noise)) return(matrix(fit$mu_draws[draws], k, n))
+        z <- if (is.matrix(noise)) noise else matrix(stats::rnorm(k * n), k, n)
         return(fit$mu_draws[draws] + fit$sigma_draws[draws] * z)
       }
 
@@ -318,12 +328,14 @@ GPMechanism <- R6::R6Class("GPMechanism",
         X <- do.call(cbind, lapply(parents, function(q) parent_values[[q]]))
         f <- t(.gp_eval(fit, X, matched = FALSE)[, draws, drop = FALSE])   # [k x n]
       } else {
-        f <- t(vapply(seq_len(k), function(i) {
+        f <- matrix(vapply(seq_len(k), function(i) {
           X <- do.call(cbind, lapply(parents, function(q) parent_values[[q]][i, ]))
           .gp_eval_draw(fit, X, draws[[i]])
-        }, numeric(n)))
+        }, numeric(n)), nrow = k, byrow = TRUE)
       }
-      f + sig * matrix(stats::rnorm(k * n), k, n)   # sig recycles down the rows
+      if (isFALSE(noise)) return(f)
+      z <- if (is.matrix(noise)) noise else matrix(stats::rnorm(k * n), k, n)
+      f + sig * z   # sig recycles down the rows
     },
 
     #' @description Prior or posterior function draws on a grid (see [Mechanism]).
@@ -515,10 +527,12 @@ GPMechanism <- R6::R6Class("GPMechanism",
 #'
 #' Computed on the variable standardised to unit variance (as are the conditional
 #' evidences), so discovery scores are scale-free and comparable across nodes.
+#' Like `.gp_core()`, `y` is scaled by `sd()` (divisor n - 1), so the plug-in ML
+#' variance of the standardised variable is (n - 1) / n rather than 1.
 #' @noRd
 .gaussian_evidence <- function(y) {
   n <- length(y)
-  -0.5 * n * (log(2 * pi) + 1)
+  -0.5 * n * (log(2 * pi) + log((n - 1) / n) + 1)
 }
 
 #' Summarise a vector of posterior draws into one summary-table row
