@@ -60,23 +60,25 @@ mod$fit(df)
 ## The marginal effect
 
 If we ask Kagu for the effect of `a` on `y` without specifying anything
-else, it integrates out the uncertainty and natural distribution of `b`
-over the dataset.
+else, it averages the effect over the values of `b` observed in the
+dataset.
 
 ``` r
 
 # The average marginal gradient of a -> y
 mod$effects("a", "y")$summary()
 #> # A tibble: 1 × 8
-#>   source target    from    to  mean    sd hdi_lower hdi_upper
-#>   <chr>  <chr>    <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 a      y      -0.0300 0.970  1.41 0.108      1.25      1.59
+#>   source target    from    to  mean     sd hdi_lower hdi_upper
+#>   <chr>  <chr>    <dbl> <dbl> <dbl>  <dbl>     <dbl>     <dbl>
+#> 1 a      y      -0.0300 0.970  1.44 0.0394      1.38      1.50
 ```
 
 The average effect is positive (around 1.5), which matches the main
-effect of `a` in our simulation. However, the standard deviation/HDI is
-quite wide. That’s because the “true” effect of `a` is not a single
-number-it’s highly variable depending on `b`.
+effect of `a` in our simulation: `b` averages about zero, so the
+interaction cancels out on average. The HDI is narrow, but that only
+means we know the *average* slope well. It hides the fact that the
+“true” effect of `a` is not a single number - it’s highly variable
+depending on `b`.
 
 ## Conditioning to reveal the interaction
 

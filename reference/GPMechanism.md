@@ -295,11 +295,21 @@ then maps back to the data's location and scale.
 Posterior predictive draws (see
 [Mechanism](https://causalabs.github.io/kagu-r/reference/Mechanism.md)):
 the matched pathwise function draw at each row's parents plus noise,
-with the noise sd drawn as in `$node_terms()`.
+with the noise sd drawn as in `$node_terms()`. `noise = FALSE` leaves
+the noise out, giving the function draws alone; a matrix of
+standard-normal deviates replaces the internally drawn ones.
 
 #### Usage
 
-    GPMechanism$simulate_posterior(node, parents, parent_values, fit, draws, n)
+    GPMechanism$simulate_posterior(
+      node,
+      parents,
+      parent_values,
+      fit,
+      draws,
+      n,
+      noise = TRUE
+    )
 
 #### Arguments
 
@@ -328,6 +338,13 @@ with the noise sd drawn as in `$node_terms()`.
 - `n`:
 
   Integer - number of observations to simulate per draw.
+
+- `noise`:
+
+  `TRUE` (default) adds fresh observation noise; `FALSE` returns the
+  conditional mean draws at each row's parents; a `[length(draws), n]`
+  matrix supplies the standard-normal deviates to scale by the noise sd
+  (e.g. stratified or common random numbers).
 
 ------------------------------------------------------------------------
 

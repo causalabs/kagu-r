@@ -125,7 +125,9 @@ Estimate the causal effect of `source` on `target`.
       sweep = FALSE,
       sweep_n = 50L,
       sweep_range = NULL,
-      hdi = 0.9
+      hdi = 0.9,
+      noise = TRUE,
+      n_mc = 50L
     )
 
 #### Arguments
@@ -170,6 +172,20 @@ Estimate the causal effect of `source` on `target`.
 - `hdi`:
 
   Numeric in (0, 1) - HDI probability (default 0.90).
+
+- `noise`:
+
+  Logical - `TRUE` (default) averages over exogenous noise to give the
+  interventional mean `E[target | do(source)]` over the observed
+  population; `FALSE` uses the noise-free plug-in of conditional means.
+  See
+  [`compute_effect()`](https://causalabs.github.io/kagu-r/reference/compute_effect.md).
+
+- `n_mc`:
+
+  Integer - minimum simulated units per posterior draw when
+  `noise = TRUE` (default 50); see
+  [`compute_effect()`](https://causalabs.github.io/kagu-r/reference/compute_effect.md).
 
 #### Returns
 

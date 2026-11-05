@@ -84,7 +84,7 @@ effect$summary()
 #> # A tibble: 1 × 8
 #>   source    target  from    to  mean    sd hdi_lower hdi_upper
 #>   <chr>     <chr>  <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 education income  13.9  14.9  555.  49.7      470.      633.
+#> 1 education income  13.9  14.9  546.  47.6      465.      622.
 ```
 
 The summary is a tidy tibble. Reading the columns:
@@ -115,7 +115,7 @@ effect_sd$summary()
 #> # A tibble: 1 × 8
 #>   source    target  from    to  mean    sd hdi_lower hdi_upper
 #>   <chr>     <chr>  <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 education income  13.0  14.9 1076.  95.8      914.     1230.
+#> 1 education income  13.0  14.9 1058.  91.9      910.     1213.
 ```
 
 ### Explicit contrast
@@ -131,7 +131,7 @@ effect_contrast$summary()
 #> # A tibble: 1 × 8
 #>   source    target  from    to  mean    sd hdi_lower hdi_upper
 #>   <chr>     <chr>  <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 education income    12    16 2189.  192.     1874.     2506.
+#> 1 education income    12    16 2152.  185.     1874.     2475.
 ```
 
 The mean is roughly four times the unit effect, as expected for a
@@ -184,7 +184,7 @@ model$summary()
 #>   <chr>      <chr>           <dbl>   <dbl>     <dbl>     <dbl>
 #> 1 education  sigma (noise)    1.95  0.0637      1.86      2.07
 #> 2 experience sigma (noise)    5.17  0.169       4.92      5.46
-#> 3 income     sigma (noise) 1936.   61.7      1832.     2035.  
+#> 3 income     sigma (noise) 1936.   61.8      1849.     2053.  
 #> 4 income     education      555.   49.7       470.      633.  
 #> 5 income     experience     218.   19.0       186.      246.
 ```
@@ -202,7 +202,7 @@ model$diagnostics("income")
 #> # A tibble: 1 × 5
 #>   node   n_chains n_draws sigma sigma_sd
 #>   <chr>     <int>   <int> <dbl>    <dbl>
-#> 1 income        1    1000 1935.     59.6
+#> 1 income        1    1000 1934.     59.5
 ```
 
 ## Save and load
@@ -219,5 +219,5 @@ loaded$effects("education", "income")$summary()
 #> # A tibble: 1 × 8
 #>   source    target  from    to  mean    sd hdi_lower hdi_upper
 #>   <chr>     <chr>  <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 education income  13.9  14.9  555.  49.7      470.      633.
+#> 1 education income  13.9  14.9  546.  47.6      465.      622.
 ```

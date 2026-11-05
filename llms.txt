@@ -276,6 +276,8 @@ File-level documentation pages.
   ecology](https://causalabs.github.io/kagu-r/articles/ecology_case_study.md):
 - [Modelling
   interactions](https://causalabs.github.io/kagu-r/articles/interactions.md):
+- [Noise and the interventional
+  mean](https://causalabs.github.io/kagu-r/articles/noise_propagation.md):
 - [Causal structure
   discovery](https://causalabs.github.io/kagu-r/articles/discovery.md):
 - [Prior and posterior predictive

@@ -150,10 +150,10 @@ result$summary()
 #>  4     4 FY          4       -191.        0.143  
 #>  5     5 GE          5       -191.        0.141  
 #>  6     6 GA          5       -191.        0.141  
-#>  7     7 FO          6       -193.        0.0355 
-#>  8     8 CI          6       -194.        0.0160 
-#>  9     9 CQ          6       -195.        0.00645
-#> 10    10 FM          5       -195.        0.00635
+#>  7     7 FO          6       -192.        0.0355 
+#>  8     8 CI          6       -193.        0.0160 
+#>  9     9 CQ          6       -194.        0.00645
+#> 10    10 FM          5       -194.        0.00635
 ```
 
 To see what a given structure actually is, look it up by its id with
@@ -239,7 +239,7 @@ result$effects("education", "income")$summary()
 #> # A tibble: 1 × 8
 #>   source    target    from    to  mean    sd hdi_lower hdi_upper
 #>   <chr>     <chr>    <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 education income -0.0357 0.964  1.64 0.385     0.983      2.24
+#> 1 education income -0.0357 0.964  1.59 0.369     0.985      2.19
 ```
 
 This estimate carries both the parameter uncertainty within each model
@@ -266,12 +266,12 @@ head(res_linear$summary())
 #> # A tibble: 6 × 5
 #>    rank id    n_edges log_marglik posterior_prob
 #>   <int> <chr>   <int>       <dbl>          <dbl>
-#> 1     1 G           2      -1526.         0.324 
-#> 2     2 I           3      -1526.         0.248 
-#> 3     3 R           2      -1527.         0.100 
-#> 4     4 T           3      -1527.         0.0769
-#> 5     5 U           2      -1527.         0.0705
-#> 6     6 W           3      -1527.         0.0679
+#> 1     1 I           3      -1502.         0.377 
+#> 2     2 G           2      -1503.         0.231 
+#> 3     3 T           3      -1503.         0.129 
+#> 4     4 W           3      -1504.         0.108 
+#> 5     5 R           2      -1504.         0.0789
+#> 6     6 P           3      -1505.         0.0286
 ```
 
 The search decisively rejects the independent graph and any structure

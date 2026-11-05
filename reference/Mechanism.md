@@ -22,9 +22,9 @@ decoupled from any particular inference backend. Subclasses implement:
 - `$simulate_prior(node, parents, parent_values, data, ndraws)` -
   replicated node values drawn from the prior predictive distribution.
 
-- `$simulate_posterior(node, parents, parent_values, fit, draws, n)` -
+- `$simulate_posterior(node, parents, parent_values, fit, draws, n, noise)` -
   replicated node values drawn from the posterior predictive
-  distribution.
+  distribution (also used to average effects over exogenous noise).
 
 - `$function_draws(node, parents, grid, data, fit, ndraws)` - prior or
   posterior draws of the node's conditional-mean function on a grid.
@@ -243,7 +243,15 @@ Simulate node values from the posterior predictive distribution
 
 #### Usage
 
-    Mechanism$simulate_posterior(node, parents, parent_values, fit, draws, n)
+    Mechanism$simulate_posterior(
+      node,
+      parents,
+      parent_values,
+      fit,
+      draws,
+      n,
+      noise = TRUE
+    )
 
 #### Arguments
 
@@ -272,6 +280,13 @@ Simulate node values from the posterior predictive distribution
 - `n`:
 
   Integer - number of observations to simulate per draw.
+
+- `noise`:
+
+  `TRUE` (default) adds fresh observation noise; `FALSE` returns the
+  conditional mean draws at each row's parents; a `[length(draws), n]`
+  matrix supplies the standard-normal deviates to scale by the noise sd
+  (e.g. stratified or common random numbers).
 
 #### Returns
 

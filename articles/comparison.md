@@ -104,9 +104,9 @@ df_mediator <- data.frame(x = x, m = m, y = y)
 ``` r
 
 cat("OLS (naive):   ", coef(lm(y ~ x, df_mediator))[["x"]], "\n")
-#> OLS (naive):    -1.610851
+#> OLS (naive):    -1.610657
 cat("OLS (adjusted):", coef(lm(y ~ x + m, df_mediator))[["x"]], "\n")
-#> OLS (adjusted): 0.02841504
+#> OLS (adjusted): 0.02796309
 ```
 
 ``` r
@@ -130,7 +130,7 @@ model_mediator$effects("x", "y", values = c(0, 1))$summary()
 #> # A tibble: 1 × 8
 #>   source target  from    to  mean     sd hdi_lower hdi_upper
 #>   <chr>  <chr>  <dbl> <dbl> <dbl>  <dbl>     <dbl>     <dbl>
-#> 1 x      y          0     1 -1.65 0.0598     -1.76     -1.56
+#> 1 x      y          0     1 -1.65 0.0618     -1.76     -1.55
 ```
 
 Here the roles flip: *naive* OLS is correct and *adjusted* OLS is
@@ -161,9 +161,9 @@ df_collider <- data.frame(x = x, y = y, c = c)
 ``` r
 
 cat("OLS (naive):   ", coef(lm(y ~ x, df_collider))[["x"]], "\n")
-#> OLS (naive):    -0.03820014
+#> OLS (naive):    -0.0180188
 cat("OLS (adjusted):", coef(lm(y ~ x + c, df_collider))[["x"]], "\n")
-#> OLS (adjusted): -0.6685109
+#> OLS (adjusted): -0.7050317
 ```
 
 ``` r
@@ -220,9 +220,9 @@ df_mbias <- data.frame(a = a, b = b, x = x, y = y, m = m)
 ``` r
 
 cat("OLS (naive):   ", coef(lm(y ~ x, df_mbias))[["x"]], "\n")
-#> OLS (naive):    0.9261762
+#> OLS (naive):    0.9061008
 cat("OLS (adjusted):", coef(lm(y ~ x + m, df_mbias))[["x"]], "\n")
-#> OLS (adjusted): 0.4620789
+#> OLS (adjusted): 0.5172523
 ```
 
 ``` r
@@ -252,7 +252,7 @@ model_mbias$effects("x", "y", values = c(0, 1))$summary()
 #> # A tibble: 1 × 8
 #>   source target  from    to  mean     sd hdi_lower hdi_upper
 #>   <chr>  <chr>  <dbl> <dbl> <dbl>  <dbl>     <dbl>     <dbl>
-#> 1 x      y          0     1  1.02 0.0233     0.979      1.06
+#> 1 x      y          0     1  1.00 0.0243     0.966      1.05
 ```
 
 M-bias is the subtle one: `m` is a *pre-treatment* collider, so the
@@ -301,7 +301,7 @@ naive one - there is no `u` column to adjust for:
 ``` r
 
 cat("OLS (naive):   ", coef(lm(y ~ x, df_latent))[["x"]], "\n")
-#> OLS (naive):    2.275413
+#> OLS (naive):    2.320544
 cat("OLS (adjusted): unavailable - 'u' is not measured\n")
 #> OLS (adjusted): unavailable - 'u' is not measured
 ```
@@ -346,7 +346,7 @@ model_latent_naive$effects("x", "y", values = c(0, 1))$summary()
 #> # A tibble: 1 × 8
 #>   source target  from    to  mean     sd hdi_lower hdi_upper
 #>   <chr>  <chr>  <dbl> <dbl> <dbl>  <dbl>     <dbl>     <dbl>
-#> 1 x      y          0     1  2.30 0.0307      2.24      2.34
+#> 1 x      y          0     1  2.33 0.0320      2.28      2.38
 ```
 
 The estimate lands near the inflated OLS value, not the true 1.5, and

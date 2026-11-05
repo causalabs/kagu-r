@@ -258,6 +258,8 @@ single-DAG workflow. DAGs in which `source` has no causal path to
       sweep_n = 50L,
       sweep_range = NULL,
       hdi = 0.9,
+      noise = TRUE,
+      n_mc = 50L,
       prob_threshold = 0.001,
       n_samples = 4000L
     )
@@ -268,7 +270,7 @@ single-DAG workflow. DAGs in which `source` has no causal path to
 
   Character scalars - intervention and outcome nodes.
 
-- `values, std_units, conditions, sweep, sweep_n, sweep_range, hdi`:
+- `values, std_units, conditions, sweep, sweep_n, sweep_range, hdi, noise, n_mc`:
 
   Passed to `KaguModel$effects()` (identical meaning).
 

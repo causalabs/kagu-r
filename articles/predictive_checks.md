@@ -203,8 +203,8 @@ rbind(
   cbind(prior = "weakly informative (MAP)", wi_model$effects("x", "y", hdi = 0.95)$summary())
 )[, c("prior", "mean", "hdi_lower", "hdi_upper")]
 #>                      prior     mean hdi_lower hdi_upper
-#> 1             default (ML) 2.514723  2.015332  3.107309
-#> 2 weakly informative (MAP) 2.579754  2.154849  3.075798
+#> 1             default (ML) 2.419755  1.976440  2.842129
+#> 2 weakly informative (MAP) 2.472378  2.139541  2.826592
 ```
 
 The estimates barely move, so the conclusions are not an artefact of the
@@ -246,14 +246,14 @@ pc$summary(stats = c("mean", "sd", "min", "max"), nodes = c("z", "y"))
 #> # A tibble: 8 × 7
 #>   node  stat  observed rep_mean rep_lower rep_upper p_value
 #>   <chr> <chr>    <dbl>    <dbl>     <dbl>     <dbl>   <dbl>
-#> 1 z     mean    0.0418   0.0401  -0.0109      0.100    0.47
-#> 2 z     sd      1.05     1.05     1.00        1.10     0.53
-#> 3 z     min    -1.93    -1.81    -2.01       -1.62     0.84
-#> 4 z     max     1.86     2.01     1.77        2.34     0.79
-#> 5 y     mean    0.0570   0.0569  -0.00730     0.126    0.49
-#> 6 y     sd      1.15     1.15     1.09        1.23     0.46
-#> 7 y     min    -2.27    -2.19    -2.67       -1.83     0.63
-#> 8 y     max     2.69     2.97     2.58        3.36     0.89
+#> 1 z     mean    0.0418   0.0390   -0.0238    0.0971    0.49
+#> 2 z     sd      1.05     1.05      0.981     1.10      0.5 
+#> 3 z     min    -1.93    -1.80     -1.99     -1.62      0.86
+#> 4 z     max     1.86     2.01      1.76      2.31      0.79
+#> 5 y     mean    0.0570   0.0569   -0.0124    0.136     0.48
+#> 6 y     sd      1.15     1.15      1.08      1.22      0.48
+#> 7 y     min    -2.27    -2.20     -2.75     -1.81      0.66
+#> 8 y     max     2.69     2.99      2.54      3.41      0.85
 ```
 
 These posterior predictive p-values are not classical p-values: they are

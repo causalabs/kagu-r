@@ -149,18 +149,18 @@ res$summary()
 #> # A tibble: 3 × 5
 #>    rank id    n_edges log_marglik posterior_prob
 #>   <int> <chr>   <int>       <dbl>          <dbl>
-#> 1     1 True        6       -296.       8.34e- 1
-#> 2     2 Alt 1       5       -298.       1.66e- 1
-#> 3     3 Alt 2       6       -335.       7.10e-18
+#> 1     1 True        6       -295.       7.52e- 1
+#> 2     2 Alt 1       5       -296.       2.48e- 1
+#> 3     3 Alt 2       6       -334.       6.40e-18
 ```
 
-Kagu places most of the posterior (~83%) on `dag_true`, but crucially it
+Kagu places most of the posterior (~75%) on `dag_true`, but crucially it
 does **not** claim certainty. `Alt2` - the hypothesis that body
 condition *causes* sociality - is decisively rejected (~0%): reversing
 those edges contradicts the strong, non-linear signature that `sex`,
 `sociality` and `food_sharing` jointly leave in `condition`. But `Alt1`,
 which drops the single `age → sociality` edge (claiming sociality has no
-measured cause), still retains ~17% of the posterior. With only 50 noisy
+measured cause), still retains ~25% of the posterior. With only 50 noisy
 individuals the weak influence of age on sociality is hard to detect, so
 Kagu reports the full posterior.
 
@@ -216,10 +216,10 @@ mod$effects("age", "condition", hdi = 0.95)$summary()
 #> # A tibble: 1 × 8
 #>   source target       from    to  mean    sd hdi_lower hdi_upper
 #>   <chr>  <chr>       <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 age    condition -0.0581 0.942 0.987 0.318     0.435      1.63
+#> 1 age    condition -0.0581 0.942 0.880 0.214     0.478      1.31
 ```
 
-The total effect (mean \\\approx 1.0\\) is larger than the regression’s
+The total effect (mean \\\approx 0.9\\) is larger than the regression’s
 age coefficient (\\\approx 0.6\\): the difference is precisely the
 indirect path through sociality that the coefficient leaves out. Same
 data, same graph, but a different question and a different answer. With
@@ -248,19 +248,20 @@ mod$effects("sociality", "condition", hdi = 0.95)$summary()
 #> # A tibble: 1 × 8
 #>   source    target       from    to  mean    sd hdi_lower hdi_upper
 #>   <chr>     <chr>       <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 sociality condition -0.0910 0.909 0.384 0.231   -0.0603     0.844
+#> 1 sociality condition -0.0910 0.909 0.353 0.117     0.139     0.590
 ```
 
-The point estimate is modestly positive (~0.38), but the 95% HDI is very
-wide and straddles zero. The population-averaged total effect is pulled
-in two directions at once: the food-sharing mediation contributes a
-positive push, while the *direct* effect of sociality is strongly
-positive in females and strongly negative in males, so on average it
-nearly cancels and mostly inflates the spread. A single
-population-averaged number is therefore almost meaningless here; the
-wide HDI hints that the effect could be heterogeneous across the
-population. In the next section we split it apart by sex to reveal what
-happens in the two groups.
+The point estimate is modestly positive (~0.35), and the 95% HDI is
+reasonably tight. The population-averaged total effect is pulled in two
+directions at once: the food-sharing mediation contributes a positive
+push, while the *direct* effect of sociality is strongly positive in
+females and strongly negative in males, so on average they largely
+cancel. The HDI says how well we know that *average* in this population
+of 50 animals, not how much the effect varies between them, so a tight
+interval is no reassurance that the effect is homogeneous. A single
+population-averaged number is therefore misleading here. In the next
+section we split it apart by sex to reveal what happens in the two
+groups.
 
 ### Examining the mediator
 
@@ -274,14 +275,14 @@ mod$effects("food_sharing", "condition", hdi = 0.95)$summary()
 #> # A tibble: 1 × 8
 #>   source       target      from    to  mean     sd hdi_lower hdi_upper
 #>   <chr>        <chr>      <dbl> <dbl> <dbl>  <dbl>     <dbl>     <dbl>
-#> 1 food_sharing condition -0.194 0.806 0.854 0.0920     0.692      1.05
+#> 1 food_sharing condition -0.194 0.806 0.786 0.0560     0.679     0.892
 mod$effects("food_sharing", "condition", sweep = TRUE, hdi = 0.95)$plot() +
   ggtitle("Direct effect of Food Sharing on Condition")
 ```
 
 ![](ecology_case_study_files/figure-html/mediator-effect-1.png)
 
-The model recovers the direct effect of food sharing (\\\approx 0.85\\
+The model recovers the direct effect of food sharing (\\\approx 0.79\\
 here - close to the true value of 0.8, correctly identified as the
 strongest single pathway).
 
@@ -339,12 +340,12 @@ mod$effects("sociality", "condition", conditions = list(sex = -1), hdi = 0.95)$s
 #> # A tibble: 1 × 8
 #>   source    target       from    to  mean    sd hdi_lower hdi_upper
 #>   <chr>     <chr>       <dbl> <dbl> <dbl> <dbl>     <dbl>     <dbl>
-#> 1 sociality condition -0.0910 0.909  1.44 0.142      1.16      1.71
+#> 1 sociality condition -0.0910 0.909  1.44 0.142      1.15      1.71
 mod$effects("sociality", "condition", conditions = list(sex =  1), hdi = 0.95)$summary()  # Males
 #> # A tibble: 1 × 8
 #>   source    target       from    to   mean    sd hdi_lower hdi_upper
 #>   <chr>     <chr>       <dbl> <dbl>  <dbl> <dbl>     <dbl>     <dbl>
-#> 1 sociality condition -0.0910 0.909 -0.572 0.121    -0.789    -0.329
+#> 1 sociality condition -0.0910 0.909 -0.572 0.120    -0.790    -0.335
 ```
 
 For females the effect is strongly positive (\\\approx 1.4\\), for males
